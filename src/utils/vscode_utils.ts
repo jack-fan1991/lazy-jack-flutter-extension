@@ -81,7 +81,7 @@ export function saveActivateEditor() {
 }
 
 
-export async function insertToActivateEditor(text: string, msg: string | undefined = undefined, range: vscode.Position | undefined = undefined) {
+export async function insertToActivateEditor(text: string, range: vscode.Position | undefined = undefined, msg: string | undefined = undefined) {
     await getActivateTextEditor().edit((editBuilder) => {
         if (msg) {
             vscode.window.showInformationMessage(msg)
@@ -90,6 +90,19 @@ export async function insertToActivateEditor(text: string, msg: string | undefin
     })
 }
 
-export function openBrowser(url: string){
+export async function insertToEditor(editor: vscode.TextEditor, text: string, range: vscode.Position | undefined = undefined, msg: string | undefined = undefined) {
+    await getActivateTextEditor().edit((editBuilder) => {
+        if (msg) {
+            vscode.window.showInformationMessage(msg)
+        }
+        editBuilder.insert(range ?? new vscode.Position(0, 0), text);
+
+    })
+    if (editor.document.isDirty) {
+        await editor.document.save()
+    }
+}
+
+export function openBrowser(url: string) {
     vscode.env.openExternal(vscode.Uri.parse(url));
 }

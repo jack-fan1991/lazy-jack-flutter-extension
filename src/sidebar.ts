@@ -8,8 +8,8 @@ import { selectToUpdate } from './utils/dart/pubspec/analyze_dart_git_dependency
 
 export enum ScriptsType {
     terminal = 'terminal',
-    command = 'command', 
-    browser= 'browser',
+    command = 'command',
+    browser = 'browser',
     customer = 'customer'
 
 }
@@ -269,8 +269,7 @@ async function terminalAction(context: vscode.ExtensionContext, command: string)
         return
     }
     if (command.includes("push -f")) {
-        const cwd = vscode.workspace.rootPath;
-        let branch = await terminal_util.runCommand("cd " + cwd + " && git rev-parse --abbrev-ref HEAD")
+        let branch = await terminal_util.runCommand("git rev-parse --abbrev-ref HEAD")
         let gitCommand = command + " " + branch
         showInfo2OptionMessage("你確定要執行 " + gitCommand, undefined, undefined, () => (
             terminal_util.runTerminal(gitCommand))

@@ -43,11 +43,11 @@ class OpenCloseFinder {
         this.closeCount -= number;
     }
 
-    findRange(document: vscode.TextDocument, startLine:number): vscode.Range | undefined {
+    findRange(document: vscode.TextDocument, startLine: number): vscode.Range | undefined {
         return this.reverse ? this.findReverse(document, startLine) : this.sequence(document, startLine)
     }
 
-    private findReverse(document: vscode.TextDocument, startLine:number): vscode.Range | undefined {
+    private findReverse(document: vscode.TextDocument, startLine: number): vscode.Range | undefined {
         this.reset()
         let classRange: vscode.Range | undefined = undefined;
         let endLine = startLine;
@@ -67,7 +67,7 @@ class OpenCloseFinder {
             }
             else {
                 startLine--
-                classRange = new vscode.Range(startLine, 0, endLine+1, 0)
+                classRange = new vscode.Range(startLine, 0, endLine + 1, 0)
                 let result = document.getText(classRange)
                 break;
             }
@@ -75,7 +75,7 @@ class OpenCloseFinder {
         return classRange
     }
 
-    private sequence(document: vscode.TextDocument, startLine:number): vscode.Range | undefined {
+    private sequence(document: vscode.TextDocument, startLine: number): vscode.Range | undefined {
         this.reset()
         let classRange: vscode.Range | undefined = undefined;
         let endLine = startLine;
@@ -129,13 +129,23 @@ export class FlutterOpenCloseFinder extends OpenCloseFinder {
         super(biggerOpenRegex, biggerCloseRegex)
     }
 
-    findRange(document: vscode.TextDocument, startLine:number): vscode.Range | undefined {
+    findRange(document: vscode.TextDocument, startLine: number): vscode.Range | undefined {
         this.reset()
         let classRange: vscode.Range | undefined = undefined;
         let endLine = startLine;
         let firstLineText = document.lineAt(startLine).text
         let match = firstLineText.match(biggerOpenRegex)
-        if (match == null) return undefined
+
+        if (match == null) {
+            let maxTry = 3
+            let tryCount = 0
+            while (tryCount < maxTry ) {
+                match = document.lineAt(startLine + tryCount).text.match(biggerOpenRegex)
+                if (match != null) break;
+                tryCount++
+            }
+            if (match == null) return undefined
+        }
         let allText = document.getText(new vscode.Range(startLine, 0, document.lineCount + 1, 0))
         const lines = allText.split('\n');
         let classMatch = firstLineText.match(findClassRegex)

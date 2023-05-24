@@ -13,7 +13,7 @@ export class MyCompletionItemProvider implements CompletionItemProvider {
         let text = getActivateText()
         let match = text.match(findClassRegex) ?? []
         let lineText = getCursorLineText();
-        if (lineText?.startsWith('class ')) {
+        if (lineText?.startsWith('class ')||lineText?.startsWith('abstract class ')) {
             if (match.length == 0) {
                 let fileName = getActivityFileName()
                 let className = toUpperCamelCase(fileName)

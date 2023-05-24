@@ -7,9 +7,10 @@ import { convertPathIfWindow, getRootPath, reFormat } from './vscode_utils';
 import { nameCheckerRegex, toSnakeCase } from './regex_utils';
 import { openEditor } from './common';
 import { DartPartFixer } from '../code_action/dart/dart_part_fixer';
+import { type } from 'os';
 
 export function getWorkspaceFolderPath(): string | undefined {
-    let path = getActivityEditorFilePath()
+    let path = getActivateEditorFilePath()
     const workspaceFolder = vscode.workspace.getWorkspaceFolder(vscode.Uri.file(path));
     if (workspaceFolder) {
         const workspaceFolderPath = workspaceFolder.uri.fsPath;
@@ -19,17 +20,26 @@ export function getWorkspaceFolderPath(): string | undefined {
 }
 /// 取得當前焦點編輯器文件名
 export function getActivityEditorFileName(showFileType: boolean = false): string {
-    let file = path.basename(getActivityEditorFilePath())
+    let file = path.basename(getActivateEditorFilePath())
     logInfo('total file name: ' + file)
     return showFileType ? file : file.split('.')[0]
 }
 
-export function getActivityEditorFilePath(): string {
+export function getActivateEditorFilePath(): string {
     let editor = vscode.window.activeTextEditor
     if (!editor)
         throw new Error('No active editor');
     return editor.document.fileName
 }
+
+
+export function getActivateEditorFileUri(): vscode.Uri {
+    let editor = vscode.window.activeTextEditor
+    if (!editor)
+        throw new Error('No active editor');
+    return editor.document.uri
+}
+
 
 export function getActivityEditor(): vscode.TextEditor {
     let editor = vscode.window.activeTextEditor
@@ -46,9 +56,9 @@ export function getActivityUri(): vscode.Uri {
     return getActivityDocument().uri;
 }
 
-export function getActivityPath(fullPath:boolean=false): string {
-    let path =  fullPath? getActivityUri().fsPath: getActivityUri().path;
-    path= convertPathIfWindow(path)
+export function getActivityPath(fullPath: boolean = false): string {
+    let path = fullPath ? getActivityUri().fsPath : getActivityUri().path;
+    path = convertPathIfWindow(path)
     return path;
 }
 
@@ -79,7 +89,11 @@ export function removeFolderPath(document: vscode.TextDocument) {
 }
 
 export function getFolderPath(document: vscode.TextDocument): string {
-    return path.dirname(document.fileName);
+    return path.dirname(convertPathIfWindow(document.fileName));
+}
+
+export function resolve(document: vscode.TextDocument): string {
+    return path.dirname(convertPathIfWindow(document.fileName));
 }
 
 
@@ -102,7 +116,7 @@ export async function createFile(
                     return;
                 }
                 resolve();
-                
+
             }
         );
     });
@@ -116,10 +130,10 @@ export function readFileToText(path: string) {
     return fs.readFileSync(path, 'utf8')
 }
 
-export function isFileExist(filePath:string){
+export function isFileExist(filePath: string) {
     let root = getRootPath()
-    if(!filePath.startsWith(root)){
-        filePath = path.join(root,filePath)
+    if (!filePath.startsWith(root)) {
+        filePath = path.join(root, filePath)
     }
     let exist = existsSync(filePath)
     return exist
@@ -251,70 +265,9 @@ function getWordRangeAtPosition(document: vscode.TextDocument, position: vscode.
 
 
 
-export async function createFileInPicker(editor: vscode.TextEditor, uriPath: string | undefined, fileName: string | undefined, range: vscode.Range,onCreateFile: (uri: vscode.Uri) => void) {
-    let uriString = uriPath ?? ""
-    let document = editor.document
-    let data =document.getText(range)
-    let defaultUri;
-    if (uriPath != null) {
-        defaultUri = vscode.Uri.file(uriPath)
-    }
-    else if (uriPath == null && fileName == null) {
-        defaultUri = vscode.window.activeTextEditor?.document.uri
-    } else if (fileName != null) {
-        let folder = getFolderPath(vscode.window.activeTextEditor!.document)
-        let file: string = fileNameFormat(fileName ?? "temp")
-        file += `.${getFileType()}`
-        defaultUri = vscode.Uri.file(path.join(folder, file))
-    }
-    let options: vscode.SaveDialogOptions = {
-        defaultUri: defaultUri,
-        filters: {
-
-            'All Files': ['*']
-        }
-    };
-
-    const needPartOfUri = await vscode.window.showSaveDialog(options);
-
-    if (needPartOfUri) {
-        fs.writeFile(needPartOfUri.fsPath, data, async (err) => {
-            if (err) {
-                vscode.window.showErrorMessage(`Failed to create file: ${err.message}`);
-            } else {
-                let needPartDir = path.dirname(document.fileName);
-                let needPartFileName = path.basename(document.fileName);
-                let needPartOfAbsPath = path.resolve(needPartDir, needPartOfUri.fsPath);
-                let needPartOfDir = path.dirname(needPartOfAbsPath);
-                let needPartOfFileName = path.basename(needPartOfAbsPath);
-                let partOfName = path.join(path.relative(needPartOfDir, needPartDir), needPartFileName);
-                let newPath = needPartOfUri.fsPath.replace(getWorkspaceFolderPath() ?? "", '')
-                let partEditor = await openEditor(needPartOfUri.fsPath)
-                if (partOfName.split('/')[0] != '..' || partOfName.split('/').length === 1) {
-                    partOfName = `./${partOfName}`;
-                }
-                await partEditor?.edit((editBuilder) => {
-                    editBuilder.insert(new vscode.Position(0, 0), `part of '${partOfName}';\n\n`);
-                })
-                let partPath = path.join(path.relative(needPartDir,needPartOfDir ), needPartOfFileName);
-                if (partPath.split('/')[0] != '..' || partPath.split('/').length === 1) {
-                    partPath = `./${partPath}`;
-                }
-                let partImportLine = `part '${partPath}';`;
-                let needPartFile = path.join(needPartDir, needPartFileName)
-                await partEditor?.edit((editBuilder) => {
-                    editBuilder.replace(range, '')
-                })
-                await vscode.commands.executeCommand(DartPartFixer.command, document, needPartFile, partImportLine);
-                vscode.window.showInformationMessage(`File created: ${newPath}`);
-                onCreateFile(needPartOfUri)
-            }
-        });
-    }
-}
 
 
-function fileNameFormat(fileName: string): string {
+export function fileNameFormat(fileName: string): string {
     let language = vscode.window.activeTextEditor?.document.languageId
     let fileType = 'txt'
     switch (language) {
@@ -327,7 +280,7 @@ function fileNameFormat(fileName: string): string {
 }
 
 
-function getFileType(): string {
+export function getFileType(): string {
     let language = vscode.window.activeTextEditor?.document.languageId
     let fileType = 'txt'
     switch (language) {
@@ -371,3 +324,28 @@ function getFileType(): string {
     }
     return fileType
 }
+
+
+
+export function getRelativePath(file1: string, file2: string, fileName: string | undefined = undefined): string {
+    file1 = file1.replace(/\\/g, '/')
+    file2 = file2.replace(/\\/g, '/')
+    const relativePath = vscode.workspace.asRelativePath(file1, true);
+    const relativePath2 = vscode.workspace.asRelativePath(file2, true);
+    const relate = path.relative(path.dirname(relativePath), path.dirname(relativePath2))
+    if (fileName != undefined) {
+        return path.join(relate, fileName).replace(/\\/g, '/')
+    }
+    return relate.replace(/\\/g, '/');
+}
+
+
+export function createPartOfLine(file1: string, file2: string, fileName: string | undefined = undefined): string {
+    let relativePath = getRelativePath(file1, file2, fileName)
+    if (relativePath.split('/')[0] != '..' || relativePath.split('/').length === 1) {
+        relativePath = `./${relativePath}`;
+    }
+    return `part of '${relativePath}';`
+
+}
+
