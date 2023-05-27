@@ -3,10 +3,7 @@ import { runCommand, runTerminal } from "../utils/src/terminal_utils/terminal_ut
 import { ScriptsType, SideBarEntryItem, TreeScriptModel } from "../utils/src/vscode_feature/sidebar/sidebar_model";
 import { BaseTreeDataProvider } from "../utils/src/vscode_feature/sidebar/sidebar_tree_provider";
 import * as vscode from 'vscode';
-import { createReflogOptionsInput, createReflogOptionsInput } from "./git_sidebar_action";
-import { logInfo } from "../utils/src/logger/logger";
-
-
+import {  createReflogOptionsInput } from "./git_sidebar_action";
 
 
 const gitScripts: TreeScriptModel[] = [

@@ -12,8 +12,8 @@ class ArbFileListener extends FileListenerBase {
     }
     onDidSaveTextDocument(): vscode.Disposable | undefined {
         return vscode.workspace.onDidSaveTextDocument((document) => {
-            let editor = getActivateTextEditor()
-            if (isFlutterProject(), editor?.document.uri.path.endsWith('.arb') ) {
+            // Arb save auto run flutter pub get
+            if (isFlutterProject()&&document.uri.path.endsWith('.arb')) {
                 /// validate document text is json 
                 try {
                     JSON.parse(document.getText())

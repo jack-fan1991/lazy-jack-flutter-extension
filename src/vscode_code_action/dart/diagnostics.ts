@@ -52,15 +52,3 @@ export function refreshDiagnostics(document: vscode.TextDocument, partFixDiagnos
 }
 
 
-function autoImport(){
-	if(!activeEditorIsDart())return
-	let text = getActivateText()
-	if(text.includes("StatelessWidget")||text.includes('StatefulWidget')){
-		if(text.includes("import 'package:flutter/material.dart';"))return
-		if(text.includes("import 'package:flutter/widgets.dart';"))return
-		if(text.includes("import 'package:flutter/widgets.dart';"))return
-		if(text.includes("import 'package:flutter/cupertino.dart';"))return
-		if(text.includes("part of"))return		
-		insertToActivateEditor("import 'package:flutter/material.dart';\n")
-
-	}}

@@ -4,7 +4,9 @@ import { CodeActionProviderInterface } from '../code_action';
 import { StatusCode } from '../error_code';
 import { getActivateText, getActivateTextEditor, reFormat } from '../../utils/src/vscode_utils/activate_editor_utils';
 import { findClassRegex, findFreezedClassRegex } from '../../utils/src/regex/regex_utils';
+import { FlutterOpenCloseFinder } from '../../utils/src/regex/open_close_finder';
 
+const flutterOpenCloseFinder = new FlutterOpenCloseFinder();
 
 export class FreezedUnionFixer implements CodeActionProviderInterface<string> {
 
@@ -30,12 +32,14 @@ export class FreezedUnionFixer implements CodeActionProviderInterface<string> {
         let actions: vscode.CodeAction[] = [];
         let match = line.match(findFreezedClassRegex) ?? [];
         let classNameMatch = line.match(findClassRegex) ?? []
+        let classRange = flutterOpenCloseFinder.findRange(document, range.start.line)
+     
         if (match.length > 0) {
             actions.push(this.createAddUnitStateAction(document, range,classNameMatch[1]));
             if (classNameMatch.length > 0) {
                 let className = classNameMatch[1]
                 let factoryLine = `factory ${className}.fromJson`
-                if (!editor.document.getText().includes(factoryLine)) {
+                if (!editor.document.getText(classRange).includes(factoryLine)) {
                     actions.push(this.createAddFromJsonFixAction(document, range));
                 }
             }

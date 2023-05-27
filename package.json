@@ -1,8 +1,10 @@
+
+
 {
   "name": "lazy-jack",
   "displayName": "lazy Jack",
   "description": "lets go",
-  "version": "0.0.62",
+  "version": "0.0.66",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -59,11 +61,6 @@
     "commands": [
       {
         "category": "lazy Jack",
-        "command": "dart.import.freezed",
-        "title": "@freezed Import freezed part"
-      },
-      {
-        "category": "lazy Jack",
         "command": "command_create_freezed_class_by_base_fileName",
         "title": "@freezed Create freezed class by file name"
       },
@@ -79,28 +76,8 @@
       },
       {
         "category": "lazy Jack",
-        "command": "command_create_from_json",
-        "title": "Create FromJson by file name"
-      },
-      {
-        "category": "lazy Jack",
-        "command": "command_dart_2_require_param",
-        "title": "To require param (Selected field)"
-      },
-      {
-        "category": "lazy Jack",
-        "command": "command_dart_json_to_freezed",
-        "title": "Json to freezed format (Selected json)"
-      },
-      {
-        "category": "lazy Jack",
         "command": "command_dart_selected_to_factory",
         "title": "To factory constructor (Selected field)"
-      },
-      {
-        "category": "lazy Jack",
-        "command": "command_dart_generate_getter_setter",
-        "title": "To getter setter (Selected field)"
       },
       {
         "category": "lazy Jack",
@@ -118,32 +95,12 @@
         {
           "when": "editorFocus && resourceLangId == dart",
           "command": "command_create_freezed_class_by_base_fileName",
-          "group": "0_b_jack_dart_freezed_utils@0"
+          "group": "0_b_jack_dart_freezed@0"
         },
         {
           "when": "editorFocus && resourceLangId == dart",
           "command": "command_create_freezed_union_class_by_base_fileName",
-          "group": "0_b_jack_dart_freezed_bloc@1"
-        },
-        {
-          "when": "editorFocus && resourceLangId == dart && editorHasSelection",
-          "command": "command_dart_2_require_param",
-          "group": "0_A_jack_dart_selected@1"
-        },
-        {
-          "when": "editorFocus && resourceLangId == dart && editorHasSelection",
-          "command": "command_dart_json_to_freezed",
-          "group": "0_A_jack_dart_selected@2"
-        },
-        {
-          "when": "editorFocus && resourceLangId == dart && editorHasSelection",
-          "command": "command_dart_selected_to_factory",
-          "group": "0_A_jack_dart_selected@4"
-        },
-        {
-          "when": "editorFocus && resourceLangId == dart&& editorHasSelection",
-          "command": "command_dart_generate_getter_setter",
-          "group": "0_A_jack_dart_selected@5"
+          "group": "0_b_jack_dart_freezed@1"
         }
       ],
       "explorer/context": [

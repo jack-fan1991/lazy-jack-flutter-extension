@@ -2,6 +2,7 @@ import path = require('path');
 import * as vscode from 'vscode';
 import {  EzCodeActionProviderInterface } from '../../code_action';
 import { toLowerCamelCase, toSnakeCase, toUpperCamelCase } from '../../../utils/src/regex/regex_utils';
+import { replaceSelectionText } from '../../../utils/src/vscode_utils/editor_utils';
 
 export class StringConvertFixer implements EzCodeActionProviderInterface {
 
@@ -77,7 +78,7 @@ export class StringConvertFixer implements EzCodeActionProviderInterface {
 
 
     // 註冊action 按下後的行為
-    registerCommand(context: vscode.ExtensionContext) {
+    setOnActionCommandCallback(context: vscode.ExtensionContext) {
         context.subscriptions.push(vscode.commands.registerCommand(StringConvertFixer.commandToUpperCamel, async (range: vscode.Range) => {
             replaceSelectionText(range, toUpperCamelCase)
         }));
@@ -95,7 +96,5 @@ export class StringConvertFixer implements EzCodeActionProviderInterface {
     }
 
 }
-function replaceSelectionText(range: vscode.Range, toUpperCamelCase: (str: string) => string) {
-    throw new Error('Function not implemented.');
-}
+
 

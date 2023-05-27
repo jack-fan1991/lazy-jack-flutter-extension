@@ -2,6 +2,8 @@
 import * as vscode from 'vscode';
 import { FileListenerBase } from './base_file_listener';
 import {  arbFileListener } from './arb_file_listener';
+import { logInfo } from '../utils/src/logger/logger';
+import { DartAutoImportFileListener } from './dart_auto_import_listener';
 
 const commonStartFileListener = "common.startFileListener"
 const commonStopFileListener = "common.stopFileListener"
@@ -19,7 +21,8 @@ export function registerFileListener(context: vscode.ExtensionContext) {
     }
     )
     );
-    startFileListener(new ActivateFileListener())
+    startFileListener(new FileListenerManger())
+    startFileListener(new DartAutoImportFileListener())
 }
 
 export function startFileListener(fileListener: FileListenerBase) {
@@ -31,7 +34,7 @@ export function stopFileListener(fileListener: FileListenerBase) {
     vscode.commands.executeCommand(commonStopFileListener, fileListener)
 }
 
-export class ActivateFileListener extends FileListenerBase {
+export class FileListenerManger extends FileListenerBase {
     constructor() {
         super();
     }
@@ -49,5 +52,5 @@ export class ActivateFileListener extends FileListenerBase {
             }
         })
     }
-    
+
 }
