@@ -27,11 +27,6 @@
           "id": "lazy-sidebar",
           "title": "lazy-sidebar",
           "icon": "/image/rocket.svg"
-        },
-        {
-          "id": "lazy-flutter-flavor",
-          "title": "lazy-flutter-flavor",
-          "icon": "/image/settings_app.svg"
         }
       ]
     },
@@ -42,43 +37,23 @@
       }
     ],
     "views": {
-      "lazy-flutter-flavor":[
-        {
-          "id": "ProjectSetupDataProvider",
-          "name": "project-setup-lazy-cmd"
-          
-        },
-        {
-          "id": "FirebaseDataProvider",
-          "name": "firebase-lazy-cmd"
-        }
-      ],
       "lazy-sidebar": [
         {
           "id": "fast-repo-gui",
           "name": "fast-repo-gui"
         },
         {
-          "id": "flutter-lazy-cmd",
-          "name": "flutter-lazy-cmd"
+          "id": "GitDataProvider",
+          "name": "Git"
         },
         {
-          "id": "build_runner-lazy-cmd",
-          "name": "build_runner-lazy-cmd"
+          "id": "FlutterDataProvider",
+          "name": "Flutter"
         },
         {
-          "id": "git-lazy-cmd",
-          "name": "git-lazy-cmd"
-        },
-        {
-          "id": "npm-lazy-cmd",
-          "name": "npm-lazy-cmd"
-        },
-        {
-          "id": "vscode-extension-lazy-cmd",
-          "name": "vscode-extension-lazy-cmd"
+          "id": "TypescriptDataProvider",
+          "name": "Typescript"
         }
-       
       ]
     },
     "commands": [
