@@ -21,7 +21,7 @@ export class DartCurserDetector implements EzCodeActionProviderInterface {
         let cursorLineText = getCursorLineText()
         if (cursorLineText == undefined) return undefined
         let action = convertParamToRequireAction(document, range, cursorLineText)
-        autoSave(document)
+        autoSave(document,cursorLineText)
         if (action != undefined) {
             return [action]
         }
@@ -76,9 +76,9 @@ function createToRequireFixAction(range: vscode.Range): vscode.CodeAction {
 }
 
 
-function autoSave(document: vscode.TextDocument) {
+function autoSave(document: vscode.TextDocument,cursorLineText: string) {
     let text = document.getText()
-    if (text.includes('@freezed') || text.includes('StatelessWidget') || text.includes('StatefulWidget')) {
+    if (cursorLineText.includes('@freezed') || cursorLineText.includes('StatelessWidget') || cursorLineText.includes('StatefulWidget')) {
         document.save()
     }
 }
