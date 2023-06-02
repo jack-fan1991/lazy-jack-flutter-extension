@@ -65,7 +65,7 @@ function autoImportFreezed(cursorLineText: string) {
         if (!text.includes(importFreezedLine)) {
             allImport.push(importFreezedLine)
         }
-        if (!text.includes(partGLine)) {
+        if (!text.includes(partGLine)&& text.includes(".fromJson")) {
             allImport.push(partGLine)
         }
         if (!text.includes(partFreezedLine)) {
