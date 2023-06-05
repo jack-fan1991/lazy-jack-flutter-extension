@@ -20,11 +20,11 @@ export class DartCurserDetector implements EzCodeActionProviderInterface {
     public provideCodeActions(document: vscode.TextDocument, range: vscode.Range): vscode.CodeAction[] | undefined {
         let cursorLineText = getCursorLineText()
         if (cursorLineText == undefined) return undefined
-        let action = convertParamToRequireAction(document, range, cursorLineText)
+        // let action = convertParamToRequireAction(document, range, cursorLineText)
         autoSave(document,cursorLineText)
-        if (action != undefined) {
-            return [action]
-        }
+        // if (action != undefined) {
+        //     return [action]
+        // }
 
     }
 
@@ -59,21 +59,21 @@ function autoImport() {
 
 
 
-function convertParamToRequireAction(document: vscode.TextDocument, range: vscode.Range, cursorLineText: string): vscode.CodeAction | undefined {
-    if (!cursorLineText.includes('(')) return undefined
-    if (cursorLineText.includes('{')) return undefined
-    let constructorParamRange = new SmallerOpenCloseFinder().findRange(document, range.start.line)
-    if (constructorParamRange == undefined) return undefined
-    return createToRequireFixAction(constructorParamRange)
-}
+// function convertParamToRequireAction(document: vscode.TextDocument, range: vscode.Range, cursorLineText: string): vscode.CodeAction | undefined {
+//     if (!cursorLineText.includes('(')) return undefined
+//     if (cursorLineText.includes('{')) return undefined
+//     let constructorParamRange = new SmallerOpenCloseFinder().findRange(document, range.start.line)
+//     if (constructorParamRange == undefined) return undefined
+//     return createToRequireFixAction(constructorParamRange)
+// }
 
-function createToRequireFixAction(range: vscode.Range): vscode.CodeAction {
-    let title = 'Convert to required'
-    const fix = new vscode.CodeAction(title, vscode.CodeActionKind.QuickFix);
-    fix.command = { command: DartCurserDetector.command_to_require, title: title, arguments: [range] };
-    fix.isPreferred = true;
-    return fix;
-}
+// function createToRequireFixAction(range: vscode.Range): vscode.CodeAction {
+//     let title = 'Convert to required'
+//     const fix = new vscode.CodeAction(title, vscode.CodeActionKind.QuickFix);
+//     fix.command = { command: DartCurserDetector.command_to_require, title: title, arguments: [range] };
+//     fix.isPreferred = true;
+//     return fix;
+// }
 
 
 function autoSave(document: vscode.TextDocument,cursorLineText: string) {

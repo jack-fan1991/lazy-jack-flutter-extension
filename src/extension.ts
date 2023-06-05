@@ -17,6 +17,7 @@ import { TypescriptDataProvider } from './vscode_sidebar/typescript_sidebar';
 import { SidebarManager } from './utils/src/vscode_feature/sidebar/sidebar_manger';
 import { registerDartSnippet } from './snippet/register_dart_snippet';
 import { registerUpdateDependencyVersion } from './utils/src/language_utils/dart/pubspec/update_git_dependency';
+import { registerToRequireParams } from './helper/dart/to_require_params';
 let sidebarManger = new SidebarManager()
 
 
@@ -25,7 +26,7 @@ export async function activate(context: vscode.ExtensionContext) {
   checkGitExtensionInYamlIfDart(true)
   registerDartSnippet(context)
   registerGithubGuiCommand(context)
-  // registerToRequireParams(context)
+  registerToRequireParams(context)
   registerJsonToFreezed(context)
   // registerCommandDartSelectedToFactory(context)
   registerGenerateSvg(context)

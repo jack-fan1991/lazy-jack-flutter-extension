@@ -4,7 +4,7 @@
   "name": "lazy-jack",
   "displayName": "lazy Jack",
   "description": "lets go",
-  "version": "0.0.68",
+  "version": "0.0.69",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -88,6 +88,11 @@
         "category": "lazy Jack",
         "command": "extension.updateDependencyVersion",
         "title": "Update Dependency Version"
+      },
+      {
+        "category": "lazy Jack",
+        "command": "command_dart_2_require_param",
+        "title": "To require param (Selected field)"
       }
     ],
     "menus": {
@@ -101,6 +106,11 @@
           "when": "editorFocus && resourceLangId == dart",
           "command": "command_create_freezed_union_class_by_base_fileName",
           "group": "0_b_jack_dart_freezed@1"
+        },
+        {
+          "when": "editorFocus && resourceLangId == dart && editorHasSelection",
+          "command": "command_dart_2_require_param",
+          "group": "0_A_jack_dart_selected@1"
         }
       ],
       "explorer/context": [
