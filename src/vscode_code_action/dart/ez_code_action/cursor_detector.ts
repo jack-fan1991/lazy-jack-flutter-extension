@@ -31,9 +31,9 @@ export class DartCurserDetector implements EzCodeActionProviderInterface {
 
     setOnActionCommandCallback(context: vscode.ExtensionContext) {
         // 注册 Quick Fix 命令
-        context.subscriptions.push(vscode.commands.registerCommand(DartCurserDetector.command_to_require, async (range: vscode.Range) => {
-            paramToRequireGenerator(range)
-        }));
+        // context.subscriptions.push(vscode.commands.registerCommand(DartCurserDetector.command_to_require, async (range: vscode.Range) => {
+        //     paramToRequireGenerator(range)
+        // }));
     }
 
 
