@@ -13,6 +13,8 @@ export class DartAutoImportFileListener extends FileListenerBase {
         return vscode.workspace.onDidSaveTextDocument((document) => {
             // Arb save auto run flutter pub get
             if (!document.fileName.endsWith('.dart')) return
+            let activateFile=   getActivateEditorFileName(true)
+            if (!document.fileName.endsWith( activateFile) )return
             let text = document.getText()
             if (!isFlutterProject()) return
             if (attentionOnFreezed(text)) {
