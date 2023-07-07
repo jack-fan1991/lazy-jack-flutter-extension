@@ -78,7 +78,7 @@ function autoImport() {
 
 function autoSave(document: vscode.TextDocument,cursorLineText: string) {
     let text = document.getText()
-    if (cursorLineText.includes('@freezed') || cursorLineText.includes('StatelessWidget') || cursorLineText.includes('StatefulWidget')) {
+    if (cursorLineText.includes('@freezed')) {
         document.save()
     }
 }
