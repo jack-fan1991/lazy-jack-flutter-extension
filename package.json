@@ -1,10 +1,8 @@
-
-
 {
   "name": "lazy-jack",
   "displayName": "lazy Jack",
   "description": "lets go",
-  "version": "0.0.73",
+  "version": "0.0.74",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -162,6 +160,7 @@
     "iconv-lite": "^0.6.3",
     "js-yaml": "^4.1.0",
     "lodash": "^4.17.19",
+    "vsce": "^2.15.0",
     "yaml": "^2.2.1"
   },
   "devDependencies": {

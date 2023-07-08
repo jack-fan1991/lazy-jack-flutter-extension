@@ -27,6 +27,8 @@ export function registerGithubGuiCommand(context: vscode.ExtensionContext) {
 async function openGitHubBrowserAction(context: vscode.ExtensionContext, args: string) {
     const cwd = vscode.workspace.rootPath;
     let uri = await runCommand("cd " + cwd + " && git config --get remote.origin.url")
+    /// remove \n
+    uri = uri.replace(/(\r\n|\n|\r)/gm, "");
     uri = uri.replace("git@github.com:", "https://github.com/").split('.git')[0]
     switch (args) {
         case "repo":
