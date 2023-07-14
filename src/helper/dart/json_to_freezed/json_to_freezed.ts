@@ -21,6 +21,18 @@ export function registerJsonToFreezed(context: vscode.ExtensionContext) {
     }));
 }
 
+function findOuterKeys(jsonString: string): string[] {
+    const pattern = /"([^"]+)":/g;  // 正則表達式模式
+    const matches = jsonString.matchAll(pattern);
+    const outerKeys: string[] = [];
+
+    for (const match of matches) {
+        outerKeys.push(match[1]);
+    }
+
+    return outerKeys;
+}
+
 export async function freezedGenerator() {
     jsonObjectManger = new JsonObjectManger()
     const editor = vscode.window.activeTextEditor;
@@ -32,14 +44,20 @@ export async function freezedGenerator() {
     const fileNameGPart = `part '${baseFileName}.g.dart';`;
     const fileNameFPart = `part '${baseFileName}.freezed.dart';`;
     let importLine: string[] = [];
-    let text =getActivateText()
-    for(let importText of [firstImport, fileNameGPart, fileNameFPart]){
-      if(!text.includes(importText)){
-        importLine.push(importText)
-      }
-    }
+    let text = getActivateText()
+
     let jsonObject = tryParseJson(selectedText);
     let className = toUpperCamelCase(baseFileName);
+    if (getActivateText().includes(`class ${className}`)) {
+        className = findOuterKeys(getSelectedText())[0];
+        className = toUpperCamelCase(className);
+    } else {
+        for (let importText of [firstImport, fileNameGPart, fileNameFPart]) {
+            if (!text.includes(importText)) {
+                importLine.push(importText)
+            }
+        }
+    }
     // 回傳最接近的[type,type,type]
     // type = string | number | boolean | object | array
     // 因為是第一層所以如果 object 則用 baseFileName 當作 class 名稱
@@ -51,7 +69,7 @@ export async function freezedGenerator() {
     // generateClassTemplate(jsonObject, className);
     // generateResponseData(className, jsonObject);
     let e = new vscode.WorkspaceEdit()
-    e.replace(editor.document.uri, editor.selection,finalResult)
+    e.replace(editor.document.uri, editor.selection, finalResult)
     vscode.workspace.applyEdit(e)
 
 
@@ -75,9 +93,9 @@ async function parse(jsonObject: any, parentKey: string = "", objInArray: boolea
                         return wrapperClassName
                     }
                 })
-                let wrapper =new CustomType(arrayObjType, arrayObjType, true)
+                let wrapper = new CustomType(arrayObjType, arrayObjType, true)
                 console.log(`Add wrapper ${wrapper.toFreezedFieldFormat()}`)
-                jsonObjectManger.classWrapper.set( wrapperClassName,wrapper)
+                jsonObjectManger.classWrapper.set(wrapperClassName, wrapper)
             }
             return arrayObjType;
         } else if (typeof jsonObject === 'object' && jsonObject !== null) {

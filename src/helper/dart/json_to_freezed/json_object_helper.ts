@@ -1,3 +1,4 @@
+import { toUpperCamelCase } from "../../../utils/src/regex/regex_utils";
 import { freezedClassTemplate, freezedWrapperClassTemplate, toFreezedArrayFieldFormat, toFreezedFieldFormat } from "./freezed_template";
 
 export class JsonObjectManger {
@@ -32,7 +33,7 @@ export class JsonObjectManger {
         for (const className of this.classWrapper.keys()) {
             let value = this.classWrapper.get(className)
             if (value != null) {
-                let template = freezedWrapperClassTemplate(className, [value.toFreezedFieldFormat()],value.fieldType)
+                let template = freezedWrapperClassTemplate(className, [value.toFreezedFieldFormat()], value.fieldType)
                 this.freezedTemplateList.push(template)
             }
         }
@@ -48,7 +49,10 @@ export class JsonObjectManger {
             throw new Error(`mainClass: ${mainClass} not found`)
         }
         let mainClassTemplate = freezedClassTemplate(mainClass, mainFreezedFields)
-        this.freezedTemplateList.push(mainClassTemplate)
+        /// 避免重複
+        if (subClass.filter((sub) => toUpperCamelCase(sub) === mainClass).length == 0) {
+            this.freezedTemplateList.push(mainClassTemplate)
+        }
         for (let className of subClass) {
             let customTypeManger = this.getCustomTypeManger(className)
             if (customTypeManger != null) {

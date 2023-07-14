@@ -13,27 +13,30 @@ export function createPartOfLine(file1: string, file2: string, fileName: string 
 }
 
 
-export function findLastPartIdx(document: vscode.TextDocument) {
+export function findLastPartIdx(text: string, document: vscode.TextDocument) {
     let lines = document.getText().split(/\r?\n/)
     let lastPartLine = ''
     let insertIdx = 0
     for (let l of lines) {
         if (l.includes('import')) continue
+        if (text.includes('import') && l.includes('part')) {
+            insertIdx = lines.indexOf(l) - 1;
+            break
+        }
         if (l.includes('part')) continue
         if (l.includes('as')) continue
         if (l === '') continue
-        insertIdx = lines.indexOf(l) - 1;
         break
     }
-    return insertIdx <0 ? 0 : insertIdx
+    return insertIdx < 0 ? 0 : insertIdx
 }
 
 
 export async function insertPartLine(editor: vscode.TextEditor, partLine: string) {
     let text = editor.document.getText()
     if (!text.includes(partLine)) {
-        let insertIdx = await findLastPartIdx(editor.document)
-        await insertToEditor( editor,partLine + '\n',new vscode.Position(insertIdx, 0))
+        let insertIdx = await findLastPartIdx(partLine, editor.document)
+        await insertToEditor(editor, partLine + '\n', new vscode.Position(insertIdx, 0))
     }
     reFormat()
 }
