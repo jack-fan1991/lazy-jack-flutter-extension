@@ -14,7 +14,7 @@ function freezedToJsonMethod(className: string): string {
 
 export function toFreezedArrayFieldFormat(dartType: string, fieldName: string): string {
     let jsonKey = fieldName;
-    if (dartType != 'dynamic') {
+    if (!['int', 'double', 'dynamic', 'bool'].includes(dartType)) {
         dartType = toUpperCamelCase(dartType)
     }
     fieldName = toLowerCamelCase(fieldName)
