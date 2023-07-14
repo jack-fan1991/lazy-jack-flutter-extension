@@ -19,7 +19,7 @@ export class MyCompletionItemProvider implements CompletionItemProvider {
                 let className = toUpperCamelCase(fileName)
                 completionItems.push(new CompletionItem(className, CompletionItemKind.Class));
             } else {
-                let match = text.match(findClassRegex) ?? []
+                let match = lineText.match(findClassRegex) ?? []
                 let className = match[1]
                 if (!lineText.includes('extends')){
                     if(activeEditorIsDart()){

@@ -35,11 +35,11 @@ export function toFreezedFieldFormat(dartType: string, fieldName: string): strin
     let defaultVal = setFreezedDefault(dartType);
     let fDefault = defaultVal ? `@Default(${defaultVal})` : '';
     let prefix = dartType === 'dynamic' ? "// Parse Null value as dynamic\n\t\t" : ''
-    dartType=  defaultVal ? dartType  : dartType+ '?';
+    dartType=  defaultVal ? `final ${dartType}`  :`required final ${dartType}`;
     if (isLowerCamelCase(jsonKey)) {
-        return `${prefix} ${fDefault} final ${dartType} ${fieldName}`;
+        return `${prefix} ${fDefault} ${dartType} ${fieldName}`;
     } else {
-        return `${prefix} ${fDefault} @JsonKey(name: '${jsonKey}')\tfinal ${dartType} ${fieldName}`;
+        return `${prefix} ${fDefault} @JsonKey(name: '${jsonKey}')\t${dartType} ${fieldName}`;
     }
 }
 
