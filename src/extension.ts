@@ -18,12 +18,18 @@ import { SidebarManager } from './utils/src/vscode_feature/sidebar/sidebar_mange
 import { registerDartSnippet } from './snippet/register_dart_snippet';
 import { registerUpdateDependencyVersion } from './utils/src/language_utils/dart/pubspec/update_git_dependency';
 import { registerToRequireParams } from './helper/dart/to_require_params';
+import { log } from 'console';
 let sidebarManger = new SidebarManager()
-
+export class APP {
+  public static yaml: any|undefined = undefined;
+}
 
 export async function activate(context: vscode.ExtensionContext) {
   console.log('your extension "Lazy-Jack" is now active!')
-  checkGitExtensionInYamlIfDart(true)
+   checkGitExtensionInYamlIfDart(true).then((yaml) => {
+    APP.yaml = yaml
+    log(APP.yaml)
+  })
   registerDartSnippet(context)
   registerGithubGuiCommand(context)
   registerToRequireParams(context)

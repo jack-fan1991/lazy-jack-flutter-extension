@@ -4,16 +4,19 @@ import * as fs from 'fs';
 import path = require('path');
 import { BiggerOpenCloseFinder, FlutterOpenCloseFinder } from '../../../utils/src/regex/open_close_finder';
 import { getActivateEditor, getActivateFileAsUri, getCursorLineText, getFolderPath, openEditor, replaceText } from '../../../utils/src/vscode_utils/editor_utils';
-import { getActivateText } from '../../../utils/src/vscode_utils/activate_editor_utils';
+import { getActivateText, insertToActivateEditor, reFormat } from '../../../utils/src/vscode_utils/activate_editor_utils';
 import { findClassRegex, toSnakeCase } from '../../../utils/src/regex/regex_utils';
-import { logInfo } from '../../../utils/src/logger/logger';
+import { logError, logInfo } from '../../../utils/src/logger/logger';
 import { PartPair, createPartLine, insertPartLine } from '../../../helper/dart/part_utils';
+import { APP } from '../../../extension';
+import { find } from 'lodash';
+import { sleep } from '../../../utils/src/vscode_utils/vscode_utils';
 
 const flutterOpenCloseFinder = new FlutterOpenCloseFinder();
 
 
 
-export class ExtractClassFixer implements EzCodeActionProviderInterface {
+export class ClassQuickFix implements EzCodeActionProviderInterface {
 
     getLangrageType(): vscode.DocumentSelector {
         return { scheme: 'file' }
@@ -31,11 +34,11 @@ export class ExtractClassFixer implements EzCodeActionProviderInterface {
         let upLineText = document.lineAt(range.start.line - 1).text
         let nextLineText = document.lineAt(range.start.line + 1).text
         if (classRange != undefined) {
-            if (upLineText.includes("@freezed")) {
-                if(!nextLineText.includes("@HiveType")){
+            if (upLineText.includes("@freezed") && APP.yaml['dependencies']['hive'] != undefined) {
+                if (!nextLineText.includes("@HiveType")) {
                     actions.push(this.convertFreezedToHiveAction(getActivateEditor()!, classRange))
                 }
-            }else{
+            } else {
                 actions.push(this.createExtractClassAction(getActivateEditor()!, classRange))
             }
             return actions
@@ -46,7 +49,7 @@ export class ExtractClassFixer implements EzCodeActionProviderInterface {
     convertFreezedToHiveAction(editor: vscode.TextEditor, range: vscode.Range): vscode.CodeAction {
         let data = "Add Hive Adapter"
         const fix = new vscode.CodeAction(data, vscode.CodeActionKind.Refactor);
-        fix.command = { command: ExtractClassFixer.commandAddHiveAdapter, title: data, arguments: [editor, range] };
+        fix.command = { command: ClassQuickFix.commandAddHiveAdapter, title: data, arguments: [editor, range] };
         fix.isPreferred = true;
         return fix;
     }
@@ -54,14 +57,14 @@ export class ExtractClassFixer implements EzCodeActionProviderInterface {
     createExtractClassAction(editor: vscode.TextEditor, range: vscode.Range): vscode.CodeAction {
         let data = "Extract Class to file"
         const fix = new vscode.CodeAction(data, vscode.CodeActionKind.RefactorExtract);
-        fix.command = { command: ExtractClassFixer.commandExtractClass, title: data, arguments: [editor, range] };
+        fix.command = { command: ClassQuickFix.commandExtractClass, title: data, arguments: [editor, range] };
         fix.isPreferred = true;
         return fix;
     }
 
     // 註冊action 按下後的行為
     setOnActionCommandCallback(context: vscode.ExtensionContext) {
-        context.subscriptions.push(vscode.commands.registerCommand(ExtractClassFixer.commandExtractClass, async (editor: vscode.TextEditor, range: vscode.Range) => {
+        context.subscriptions.push(vscode.commands.registerCommand(ClassQuickFix.commandExtractClass, async (editor: vscode.TextEditor, range: vscode.Range) => {
             let text = getActivateText(range)
             let match = text.match(findClassRegex)
 
@@ -71,13 +74,14 @@ export class ExtractClassFixer implements EzCodeActionProviderInterface {
         }))
 
 
-        context.subscriptions.push(vscode.commands.registerCommand(ExtractClassFixer.commandAddHiveAdapter, async (editor: vscode.TextEditor, range: vscode.Range) => {
+        context.subscriptions.push(vscode.commands.registerCommand(ClassQuickFix.commandAddHiveAdapter, async (editor: vscode.TextEditor, range: vscode.Range) => {
             let text = getActivateText(range)
             let match = text.match(findClassRegex)
             let className = match![1]
             logInfo("Search Hive typeId...")
             let lasId = await searchMaxHiveIdxForText()
-            let hiveAdapter = `@HiveType(typeId: ${lasId}, adapterName: '${className}Adapter')`
+            let hiveAdapter = `@HiveType(typeId: ${lasId + 1}, adapterName: '${className}Adapter')`
+            searchAndInsertHiveInit(`${className}Adapter`)
             let result = ''
             let start = 0
             let isParam = false
@@ -101,8 +105,8 @@ export class ExtractClassFixer implements EzCodeActionProviderInterface {
                     }
 
                 }
-                else if (isParam&&char!='}') {
-                    if (!result.includes('fromJson')&&char.trim()!='') {
+                else if (isParam && char != '}') {
+                    if (!result.includes('fromJson') && char.trim() != '') {
                         result += `@HiveField(${hiveField})  `
                         result += char
                         hiveField++
@@ -259,6 +263,51 @@ async function searchMaxHiveIdxForText(): Promise<number> {
             if (typeId > maxId) {
                 maxId = typeId;
             }
+        }
+    }
+    return maxId
+}
+
+
+async function searchAndInsertHiveInit(insertAdapter: string): Promise<number> {
+    const files = await vscode.workspace.findFiles('**/lib/**/*.dart');
+    let maxId: number = 0;
+    logInfo("Search registerAdapter...")
+    for (const file of files) {
+        const document = await vscode.workspace.openTextDocument(file);
+        const fileContent = document.getText();
+        if (fileContent.includes('@HiveType(typeId:')) {
+            const idMatch = fileContent.match(/@HiveType\(typeId: (\d+)/);
+            let classMatch = fileContent.match(findClassRegex)
+            if (!classMatch) continue
+            let className = classMatch![1]
+            for (const file of files) {
+                const document = await vscode.workspace.openTextDocument(file);
+                const fileContent = document.getText();
+                if (fileContent.includes(`.registerAdapter(${className}Adapter())`)) {
+                    let editor= await openEditor(file.fsPath)
+                    let index = -1
+                    let lines = fileContent.split('\n')
+                    for (let line of lines) {
+                        if (line.includes('.registerAdapter(')) {
+                            index = lines.indexOf(line)
+                        }
+                    }
+                    let objName = fileContent.match(/(\w+)\.registerAdapter/)?.[1]
+                    index++
+                    let insertLine = `${objName}.registerAdapter(${insertAdapter}());`
+                    await insertToActivateEditor(insertLine + '\n', new vscode.Position(index, 0))
+                    // put cursor to the end of the line
+                    if(editor!=null){
+                        editor.selection = new vscode.Selection(new vscode.Position(index, 0), new vscode.Position(index, insertLine.length))
+                    }
+                    reFormat()
+
+                    break
+                }
+            }
+            break
+
         }
     }
     return maxId
