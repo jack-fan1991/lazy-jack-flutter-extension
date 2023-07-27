@@ -18,14 +18,29 @@ export function findLastPartIdx(text: string, document: vscode.TextDocument) {
     let lastPartLine = ''
     let insertIdx = 0
     for (let l of lines) {
-        if (l.includes('import')) continue
+        if (l.includes('import')||l.includes('part')) {
+            insertIdx++;
+            continue
+        }
+        if (l.includes('')){
+            let idx =  lines.indexOf(l)
+            let pre = lines[idx-1]
+            let next = lines[idx+1]
+            if(pre.includes('import')||next.includes('import')||pre.includes('part')||next.includes('part')){
+                insertIdx++;
+                continue
+            }
+            if(next.includes('class')){
+                insertIdx--
+                break
+            }
+
+        }
+        if (l.includes('as')) continue
         if (text.includes('import') && l.includes('part')) {
             insertIdx = lines.indexOf(l) - 1;
             break
-        }
-        if (l.includes('part')) continue
-        if (l.includes('as')) continue
-        if (l === '') continue
+        }      
         break
     }
     return insertIdx < 0 ? 0 : insertIdx
