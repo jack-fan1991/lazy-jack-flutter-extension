@@ -1,4 +1,5 @@
-# Feature
+# Feature 
+## Most of feature is support on MacOs
 ## New 
   * String format (onSelected)
   
