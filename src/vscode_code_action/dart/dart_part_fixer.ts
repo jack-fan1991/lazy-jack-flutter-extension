@@ -5,6 +5,7 @@ import { CodeActionProviderInterface } from '../code_action';
 import { StatusCode } from '../error_code';
 import { getRelativePath, insertToEditor, openEditor, removeFolderPath } from '../../utils/src/vscode_utils/editor_utils';
 import { reFormat } from '../../utils/src/vscode_utils/activate_editor_utils';
+import { insertPartLine } from '../../helper/dart/part_utils';
 
 export class PartFixInfo {
     targetAbsPath: string;
@@ -94,21 +95,7 @@ export class DartPartFixer implements CodeActionProviderInterface<PartFixInfo> {
                 } else {
                     let text = textEditor.document.getText()
                     if (!text.includes(importText)) {
-                        let lines = text.split(/\r?\n/)
-                        let insertIdx = 0
-                        for (let l of lines) {
-                            if (l.includes('import')) continue
-                            if (l.includes('part')) continue
-                            if (l === '') continue
-
-                            insertIdx = lines.indexOf(l) - 1;
-                            break
-                        }
-
-                        await textEditor.edit((editBuilder) => {
-                            editBuilder.insert(new vscode.Position(importText.includes('part') ? insertIdx : 0, 0), importText + '\n');
-                        })
-
+                        await insertPartLine(textEditor,importText)
                         if (textEditor.document.isDirty) {
                             await textEditor.document.save()
                         }
