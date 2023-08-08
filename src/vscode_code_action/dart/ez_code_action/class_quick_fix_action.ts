@@ -75,7 +75,9 @@ export class ClassQuickFix implements EzCodeActionProviderInterface {
 
 
         context.subscriptions.push(vscode.commands.registerCommand(ClassQuickFix.commandAddHiveAdapter, async (editor: vscode.TextEditor, range: vscode.Range) => {
-            let text = getActivateText(range)
+            let srcText = getActivateText(range)
+            let lines = srcText.split('\n').filter((line) => !line.includes("_()"))
+            let text = lines.join('\n')
             let match = text.match(findClassRegex)
             let className = match![1]
             logInfo("Search Hive typeId...")
@@ -131,7 +133,7 @@ export class ClassQuickFix implements EzCodeActionProviderInterface {
             }
             let line = text.split('\n')
 
-            replaceText(editor.document.uri.fsPath, text, result)
+            replaceText(editor.document.uri.fsPath, srcText, result)
 
             editor.document.save()
 
@@ -255,21 +257,26 @@ async function searchMaxHiveIdxForText(): Promise<number> {
         const fileContent = document.getText();
 
         if (fileContent.includes('@HiveType(typeId:')) {
-            const idMatch = fileContent.match(/@HiveType\(typeId: (\d+)/);
-            if (!idMatch) {
+            const idMatch = fileContent.match(/@HiveType\(typeId:\s*(\d+)/g);
+            if (idMatch == null || idMatch?.length == 0) {
                 continue;
             }
-            const typeId = parseInt(idMatch[1]);
-            if (typeId > maxId) {
-                maxId = typeId;
+            for (let s of idMatch) {
+                let id = s.match(/@HiveType\(typeId:\s*(\d+)/)![1]
+                const typeId = parseInt(id);
+                if (typeId > maxId) {
+                    maxId = typeId;
+                }
             }
+
+
         }
     }
     return maxId
 }
 
 
-async function searchAndInsertHiveInit(insertAdapter: string): Promise<number> {
+async function searchAndInsertHiveInit(insertAdapter: string): Promise<void> {
     const files = await vscode.workspace.findFiles('**/lib/**/*.dart');
     let maxId: number = 0;
     logInfo("Search registerAdapter...")
@@ -285,7 +292,7 @@ async function searchAndInsertHiveInit(insertAdapter: string): Promise<number> {
                 const document = await vscode.workspace.openTextDocument(file);
                 const fileContent = document.getText();
                 if (fileContent.includes(`.registerAdapter(${className}Adapter())`)) {
-                    let editor= await openEditor(file.fsPath)
+                    let editor = await openEditor(file.fsPath)
                     let index = -1
                     let lines = fileContent.split('\n')
                     for (let line of lines) {
@@ -296,19 +303,20 @@ async function searchAndInsertHiveInit(insertAdapter: string): Promise<number> {
                     let objName = fileContent.match(/(\w+)\.registerAdapter/)?.[1]
                     index++
                     let insertLine = `${objName}.registerAdapter(${insertAdapter}());`
-                    await insertToActivateEditor(insertLine + '\n', new vscode.Position(index, 0))
+                    await editor?.edit((editBuilder) => {
+                        editBuilder.insert( new vscode.Position(index, 0), insertLine + '\n');
+                    })
                     // put cursor to the end of the line
-                    if(editor!=null){
+                    if (editor != null) {
                         editor.selection = new vscode.Selection(new vscode.Position(index, 0), new vscode.Position(index, insertLine.length))
                     }
                     reFormat()
 
-                    break
+                    return
                 }
             }
-            break
 
         }
     }
-    return maxId
+    return
 }
