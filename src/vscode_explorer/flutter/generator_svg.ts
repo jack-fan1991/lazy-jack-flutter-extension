@@ -5,6 +5,7 @@ const command_dart_assert = "command_dart_assert"
 import * as changeCase from "change-case";
 import { openEditor } from '../../utils/src/vscode_utils/editor_utils';
 import { runCommand } from '../../utils/src/terminal_utils/terminal_utils';
+import { reFormat } from '../../utils/src/vscode_utils/activate_editor_utils';
 
 
 export function registerGenerateAssert(context: vscode.ExtensionContext) {
@@ -153,6 +154,7 @@ async function generatorPng(folderUri: any) {
     if (newIcon.length > 0) {
         openEditor(assertPath)
     }
+    reFormat()
 
 }
 
@@ -165,12 +167,18 @@ enum SvgIcon {
   final String path;
   const SvgIcon(this.path);
 
-  Widget toIcon({double? width, double? height,Color? color}) => SvgPicture.asset(
-    path,
-    width: width,
-    height: height,
-    color:color
-  );
+  Widget toIcon({double? width, double? height, Color? color}) =>
+      SvgPicture.asset(
+        path,
+        width: width,
+        height: height,
+        colorFilter: color == null
+            ? null
+            : ColorFilter.mode(
+                color,
+                BlendMode.srcIn,
+        ),
+    );
 }
 `
 }
