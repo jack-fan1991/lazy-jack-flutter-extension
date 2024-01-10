@@ -4,6 +4,7 @@ import * as path from 'path';
 const command_dart_assert = "command_dart_assert"
 import * as changeCase from "change-case";
 import { openEditor } from '../../utils/src/vscode_utils/editor_utils';
+import { runCommand } from '../../utils/src/terminal_utils/terminal_utils';
 
 
 export function registerGenerateAssert(context: vscode.ExtensionContext) {
@@ -23,6 +24,7 @@ async function generatorSvg(folderUri: any) {
     let isNew: boolean = false;
     if (!fs.existsSync(assertPath)) {
         isNew = true
+        runCommand('mkdir -p lib/const')
         fs.writeFileSync(assertPath, "enum SvgIcon{} ");
     }
     let editor: vscode.TextEditor | undefined = await openEditor(assertPath)
@@ -93,6 +95,7 @@ async function generatorPng(folderUri: any) {
     let isNew: boolean = false;
     if (!fs.existsSync(assertPath)) {
         isNew = true
+        runCommand('mkdir -p lib/const')
         fs.writeFileSync(assertPath, "enum PngImage{} ");
     }
     let editor: vscode.TextEditor | undefined = await openEditor(assertPath)
