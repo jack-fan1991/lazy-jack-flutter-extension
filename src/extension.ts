@@ -6,7 +6,6 @@ import { registerFileListener } from './vscode_file_listener/activate_file_liste
 import { registerCompletionItemProvider } from './vscode_completion_item_provider/completion_item_provider';
 import { checkGitExtensionInYamlIfDart } from './utils/src/language_utils/dart/pubspec/analyze_dart_git_dependency';
 import { registerGithubGuiCommand } from './vscode_views_welcome/git_gui';
-import { registerJsonToFreezed } from './helper/dart/json_to_freezed/json_to_freezed';
 import { registerGenerateAssert as registerGenerateSvg } from './vscode_explorer/flutter/generator_svg';
 import { BaseTreeDataProvider } from './utils/src/vscode_feature/sidebar/sidebar_tree_provider';
 import { GitDataProvider } from './vscode_sidebar/git_sidebar';
@@ -35,12 +34,11 @@ export async function activate(context: vscode.ExtensionContext) {
   registerDartSnippet(context)
   registerGithubGuiCommand(context)
   registerToRequireParams(context)
-  registerJsonToFreezed(context)
   // registerCommandDartSelectedToFactory(context)
   registerGenerateSvg(context)
   registerUpdateDependencyVersion(context)
-  codeAction.register(context)
-  registerEzAction(context)
+  // codeAction.register(context)
+  // registerEzAction(context)
   registerFileListener(context)
   // 自動補全
   registerCompletionItemProvider(context)
