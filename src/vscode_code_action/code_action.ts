@@ -1,11 +1,8 @@
 import * as vscode from 'vscode';
-import { DartPartFixer } from './dart/dart_part_fixer';
 import { DiagnosticsErrorCodeHandler } from './dart/diagnostics_error_code_handler';
 import { subscribeToDocumentChanges } from './dart/diagnostics';
 import { StatusCode } from './error_code';
-import { FreezedFixer } from './dart/freezed_import_fixer';
-import { JsonToFreezedFixer } from './dart/json_to_freezed_fixer';
-import { FreezedUnionFixer } from './dart/freezed_union_fixer';
+// import { FreezedFixer } from './dart/freezed_import_fixer';
 
 // import { StringConvertFixer } from './dart/string_convert_fixer';
 // 設定常數，代表指令的名稱
@@ -17,10 +14,7 @@ export const diagnostics = vscode.languages.createDiagnosticCollection("DartPart
 // 啟動擴充套件
 export function register(context: vscode.ExtensionContext) {
     let providers: CodeActionProviderInterface<any>[] = []
-    providers.push(new FreezedUnionFixer())
-    providers.push(new DartPartFixer())
     // providers.push(new FreezedFixer())
-    providers.push(new JsonToFreezedFixer())
     // providers.push(new ParamToRequiredFixer())
     // providers.push(new RefactorTextStyleFixer())
 
