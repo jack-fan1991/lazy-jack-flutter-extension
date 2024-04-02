@@ -38,7 +38,7 @@ export async function activate(context: vscode.ExtensionContext) {
   registerGenerateSvg(context)
   registerUpdateDependencyVersion(context)
   // codeAction.register(context)
-  // registerEzAction(context)
+  registerEzAction(context)
   registerFileListener(context)
   // 自動補全
   registerCompletionItemProvider(context)

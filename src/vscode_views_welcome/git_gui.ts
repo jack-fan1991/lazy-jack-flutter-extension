@@ -1,6 +1,7 @@
 import exp = require('constants');
 import * as vscode from 'vscode';
 import { runCommand, runTerminal } from '../utils/src/terminal_utils/terminal_utils';
+import { log } from 'console';
 
 
 const command_open_github_repo = 'command_open_github_repo';
@@ -32,6 +33,10 @@ async function openGitHubBrowserAction(context: vscode.ExtensionContext, args: s
     uri = uri.replace("git@github.com:", "https://github.com/").split('.git')[0]
     switch (args) {
         case "repo":
+            let branch = await runCommand("cd " + cwd + " && git branch --show-current")
+            //remove \n
+            branch = branch.replace(/(\r\n|\n|\r)/gm, "");
+            uri = uri + '/tree/' + branch
             break
         case "pr":
             uri = uri + '/' + 'pulls'

@@ -1,9 +1,2 @@
-# Change Log
-
-All notable changes to the "jack" extension will be documented in this file.
-
-Check [Keep a Changelog](http://keepachangelog.com/) for recommendations on how to structure this file.
-
-## [Unreleased]
-
-- Initial release
+# 0.0.96
+- feature redirect to local branch when use open github sidebar ui 

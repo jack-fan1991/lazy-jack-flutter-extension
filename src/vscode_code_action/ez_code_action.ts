@@ -10,8 +10,8 @@ const quickFixCodeAction = [vscode.CodeActionKind.Refactor];
 export function registerEzAction(context: vscode.ExtensionContext) {
     let providers: EzCodeActionProviderInterface[] = []
     providers.push(new StringConvertFixer())
-    providers.push(new ClassQuickFix())
-    providers.push(new DartCurserDetector())
+    // providers.push(new ClassQuickFix())
+    // providers.push(new DartCurserDetector())
     for (let p of providers) {
         // 註冊命令回調
         p.setOnActionCommandCallback(context)
