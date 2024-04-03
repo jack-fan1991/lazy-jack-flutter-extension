@@ -19,6 +19,7 @@ import { registerUpdateDependencyVersion } from './utils/src/language_utils/dart
 import { registerToRequireParams } from './helper/dart/to_require_params';
 import { log } from 'console';
 import { updateGitSubModule } from './utils/src/language_utils/dart/pubspec/update_git_submodule';
+import { registerCleanArchitectureGenerate } from './vscode_explorer/flutter/generate_clean_architecture_feature';
 let sidebarManger = new SidebarManager()
 export class APP {
   public static yaml: any|undefined = undefined;
@@ -35,7 +36,6 @@ export async function activate(context: vscode.ExtensionContext) {
   registerGithubGuiCommand(context)
   registerToRequireParams(context)
   // registerCommandDartSelectedToFactory(context)
-  registerGenerateSvg(context)
   registerUpdateDependencyVersion(context)
   // codeAction.register(context)
   registerEzAction(context)
@@ -43,6 +43,10 @@ export async function activate(context: vscode.ExtensionContext) {
   // 自動補全
   registerCompletionItemProvider(context)
   setupSideBar(context)
+
+  //側邊欄擴展
+  registerGenerateSvg(context)
+  registerCleanArchitectureGenerate(context)
 }
 
 

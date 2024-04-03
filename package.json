@@ -91,6 +91,11 @@
         "category": "lazy Jack",
         "command": "command_dart_2_require_param",
         "title": "To require param (Selected field)"
+      },
+      {
+        "category": "lazy Jack",
+        "command": "command_clean_architecture",
+        "title": "Generate Clean Architecture feature"
       }
     ],
     "menus": {
@@ -116,6 +121,12 @@
           "command": "command_dart_assert",
           "title": "Generate assert file from folder",
           "when": "explorerResourceIsFolder"
+        },
+        {
+          "command": "command_clean_architecture",
+          "title": "Generate Clean Architecture feature",
+          "when": "explorerResourceIsFolder"
+
         }
       ]
     },
