@@ -20,6 +20,7 @@ import { registerToRequireParams } from './helper/dart/to_require_params';
 import { log } from 'console';
 import { updateGitSubModule } from './utils/src/language_utils/dart/pubspec/update_git_submodule';
 import { registerCleanArchitectureGenerate } from './vscode_explorer/flutter/generate_clean_architecture_feature';
+import { registerQuickFix } from './vscode_code_action/code_action';
 let sidebarManger = new SidebarManager()
 export class APP {
   public static yaml: any|undefined = undefined;
@@ -47,6 +48,7 @@ export async function activate(context: vscode.ExtensionContext) {
   //側邊欄擴展
   registerGenerateSvg(context)
   registerCleanArchitectureGenerate(context)
+
 }
 
 

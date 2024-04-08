@@ -1,4 +1,7 @@
-# 0.0.98
+# 0.0.100
+- Add qraphql to dart api template code action for quick fix 
+
+# 0.0.99
 - Rename architecture pattern main file class name 
 
 # 0.0.98

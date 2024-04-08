@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { DiagnosticsErrorCodeHandler } from './dart/diagnostics_error_code_handler';
 import { subscribeToDocumentChanges } from './dart/diagnostics';
 import { StatusCode } from './error_code';
+import { GraphqlToDartApiFixer } from './qraphql/graphql_to_dart_api_fixer';
 // import { FreezedFixer } from './dart/freezed_import_fixer';
 
 // import { StringConvertFixer } from './dart/string_convert_fixer';
@@ -12,8 +13,10 @@ export const diagnostics = vscode.languages.createDiagnosticCollection("DartPart
 
 /// 監聽文件變化時會重新刷新的action
 // 啟動擴充套件
-export function register(context: vscode.ExtensionContext) {
+export function registerQuickFix(context: vscode.ExtensionContext) {
     let providers: CodeActionProviderInterface<any>[] = []
+    
+
     // providers.push(new FreezedFixer())
     // providers.push(new ParamToRequiredFixer())
     // providers.push(new RefactorTextStyleFixer())
