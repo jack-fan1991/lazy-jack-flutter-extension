@@ -12,7 +12,7 @@ export function registerCleanArchitectureGenerate(context: vscode.ExtensionConte
     context.subscriptions.push(vscode.commands.registerCommand(command_clean_architecture, async (folderUri) => {
 
         const featureName = await vscode.window.showInputBox({
-            placeHolder: folderUri
+            placeHolder: 'Enter feature name',
         });
 
         if (featureName) {

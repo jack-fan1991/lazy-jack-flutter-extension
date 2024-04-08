@@ -1,3 +1,6 @@
+# 0.0.98
+- Update placeholder text for feature name input box
+
 # 0.0.97
 - Add feature generation clean architecture pattern when right click on folder
 
