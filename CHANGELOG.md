@@ -1,4 +1,7 @@
 # 0.0.98
+- Rename architecture pattern main file class name 
+
+# 0.0.98
 - Update placeholder text for feature name input box
 
 # 0.0.97

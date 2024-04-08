@@ -25,7 +25,7 @@ export function registerCleanArchitectureGenerate(context: vscode.ExtensionConte
                 fs.mkdirSync(path.join(featurePath, 'presentation'));
                 fs.mkdirSync(path.join(featurePath, 'presentation', 'bloc'));
                 fs.mkdirSync(path.join(featurePath, 'presentation', 'widgets'));
-                let mainClass = `${featureName}Page`;
+                let mainClass = `${featureName}`;
                 let dart =path.join(featurePath, `${mainClass}.dart`)
                 fs.writeFileSync(dart, getTemplate(mainClass));
                 //open file
