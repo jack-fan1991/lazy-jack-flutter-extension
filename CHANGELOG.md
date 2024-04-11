@@ -1,3 +1,6 @@
+# 0.0.102
+- support module update when project open (popup in dialog)
+
 # 0.0.101
 - Sidebar/Flutter/update git dependencies action support hide branch
 ```
