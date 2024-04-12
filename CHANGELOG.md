@@ -1,3 +1,6 @@
+# 0.0.103
+- Add git scripts for merge, checkout, and create branch in Sidebar/Git
+
 # 0.0.102
 - support module update when project open (popup in dialog)
 

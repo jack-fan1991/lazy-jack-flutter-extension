@@ -3,7 +3,7 @@ import { runCommand, runTerminal } from "../utils/src/terminal_utils/terminal_ut
 import { ScriptsType, SideBarEntryItem, TreeScriptModel } from "../utils/src/vscode_feature/sidebar/sidebar_model";
 import { BaseTreeDataProvider } from "../utils/src/vscode_feature/sidebar/sidebar_tree_provider";
 import * as vscode from 'vscode';
-import {  createReflogOptionsInput } from "./git_sidebar_action";
+import {  createBranch, createCheckout, createMergeNoFFInput, createReflogOptionsInput } from "./git_sidebar_action";
 
 
 const gitScripts: TreeScriptModel[] = [
@@ -18,8 +18,44 @@ const gitScripts: TreeScriptModel[] = [
         label: "git reflog",
         script: 'git reflog',
         itemAction: ()=>  createReflogOptionsInput('git reflog')
+    },
+    {
+        scriptsType: ScriptsType.customer,
+        label: "git merge --no-ff",
+        script: 'git merge',
+        itemAction: ()=>  createMergeNoFFInput('git merge')
+    },
+    {
+        scriptsType: ScriptsType.customer,
+        label: "git checkout",
+        script: 'git checkout',
+        itemAction: ()=>  createCheckout('git checkout')
+    },
+    {
+        scriptsType: ScriptsType.customer,
+        label: "git create branch",
+        script: 'git create branch',
+        itemAction: ()=>  createBranch('git create branch')
+    },
+    {
+        scriptsType: ScriptsType.customer,
+        label: "git status",
+        script: 'git status',
+        itemAction: ()=>   runTerminal(
+            `git status`
+        )
     }
+    // ,
+    // {
+    //     scriptsType: ScriptsType.customer,
+    //     label: "git tree",
+    //     script: 'git tree',
+    //     itemAction: ()=>   runTerminal(
+    //         `git log --graph --pretty=oneline --abbrev-commit`
+    //     )
+    // }
 ]
+
 
 export class GitDataProvider extends BaseTreeDataProvider {
     supportScripts(): TreeScriptModel[] {
