@@ -96,10 +96,11 @@ export class GraphqlToDartApiFixer implements EzCodeActionProviderInterface {
 function createTemplate(action: string,apiName:string) {
     let bigCamelAction = toUpperCamelCase(action)
     let bigCamelApiName = toUpperCamelCase(apiName)
+    let smallCamelAction = toLowerCamelCase(action)
     let smallCamelApiName= toLowerCamelCase(apiName) 
     let objName =`${bigCamelAction}__${bigCamelApiName}`
     return `
-    Future<Result<${objName}>> ${smallCamelApiName}({
+    Future<Result<${objName}>> ${smallCamelAction}__${smallCamelApiName}({
         required Variables__${objName} params,
       });
     
