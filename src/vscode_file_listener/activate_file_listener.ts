@@ -4,6 +4,7 @@ import { FileListenerBase } from './base_file_listener';
 import {  arbFileListener } from './arb_file_listener';
 import { logInfo } from '../utils/src/logger/logger';
 import { DartAutoImportFileListener } from './dart_auto_import_listener';
+import {  graphQlFileListener, shownGraphqlConvertMessage } from './graphql_file_listener';
 
 const commonStartFileListener = "common.startFileListener"
 const commonStopFileListener = "common.stopFileListener"
@@ -21,8 +22,10 @@ export function registerFileListener(context: vscode.ExtensionContext) {
     }
     )
     );
+    
     startFileListener(new FileListenerManger())
     startFileListener(new DartAutoImportFileListener())
+    startFileListener(graphQlFileListener)
 }
 
 export function startFileListener(fileListener: FileListenerBase) {
@@ -43,6 +46,10 @@ export class FileListenerManger extends FileListenerBase {
             if ( editor?.document.uri.path.endsWith('.arb')) {
                 startFileListener(arbFileListener)
             }
+            if ( editor?.document.uri.path.endsWith('.graphql')) {
+                shownGraphqlConvertMessage( editor.document)
+            }
+          
         })
     }
     onDidCloseTextDocument(): vscode.Disposable | undefined {
@@ -50,6 +57,7 @@ export class FileListenerManger extends FileListenerBase {
             if ( doc.uri.path.endsWith('.arb')) {
                 stopFileListener (arbFileListener)
             }
+          
         })
     }
 

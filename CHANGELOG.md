@@ -1,3 +1,7 @@
+# 0.0.106
+- Add Convert file : ${filePath} to dart interface template when open , save ,or select part of context then quick fix
+- depencency on https://pub.dev/packages/graphql_codegen
+
 # 0.0.104
 - Add auto running 'flutter gen-l10n' when ".arb" file save
 

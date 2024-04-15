@@ -15,6 +15,7 @@ import { logInfo } from '../../utils/src/logger/logger';
 import { EzCodeActionProviderInterface } from '../ez_code_action';
 import { log } from 'console';
 import { toLowerCamelCase, toUpperCamelCase } from '../../utils/src/regex/regex_utils';
+import { is } from 'cheerio/lib/api/traversing';
 
 // let counter = new OpenCloseFinder()
 export class GraphqlToDartApiFixer implements EzCodeActionProviderInterface {
@@ -45,7 +46,7 @@ export class GraphqlToDartApiFixer implements EzCodeActionProviderInterface {
                 }
             }
             console.log(`json: ${result}`);
-            const quickFix = this.createCommonAction(GraphqlToDartApiFixer.command, document, range, "Graphql to dart api", result);
+            const quickFix = this.createCommonAction(GraphqlToDartApiFixer.command, document, range, "Graphql to dart api", text);
             // 將所有程式碼動作打包成陣列，並回傳
             return [quickFix];
 
@@ -68,8 +69,7 @@ export class GraphqlToDartApiFixer implements EzCodeActionProviderInterface {
         // 注册 Quick Fix 命令
         context.subscriptions.push(vscode.commands.registerCommand(GraphqlToDartApiFixer.command, async (document: vscode.TextDocument, range: vscode.Range, text: string) => {
             // create new editor
-            let editor = vscode.window.activeTextEditor;
-            let lines = editor?.document.getText().split('\n') ?? []
+            let lines = text.split('\n') ?? []
             let newText =''
             for (let l of lines) {
                 let isQlLine = l.startsWith('query') || l.startsWith('mutation') || l.startsWith('subscription')
@@ -78,8 +78,6 @@ export class GraphqlToDartApiFixer implements EzCodeActionProviderInterface {
                     let result = splitAction(l, lines[idx + 1])
                     newText += createTemplate(result[0],result[1])
                 }
-
-
             }
             vscode.workspace.openTextDocument({ language: 'dart',content: newText }).then(document => {
                 vscode.window.showTextDocument(document);
@@ -105,6 +103,20 @@ function createTemplate(action: string,apiName:string) {
       });
     
     `
+
+}
+
+
+export function isGraphqlFile(text: string){
+    let lines = text.split('\n')
+    let isQlFile = false
+    for (let i in lines) {
+        let l = lines[i]
+        if (isQlFile == false) {
+            isQlFile = l.startsWith('query') || l.startsWith('mutation') || l.startsWith('subscription')
+        }
+    }
+    return isQlFile
 
 }
 
