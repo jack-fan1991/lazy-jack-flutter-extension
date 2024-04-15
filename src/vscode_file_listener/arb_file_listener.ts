@@ -4,6 +4,7 @@ import { getActivateTextEditor } from '../utils/src/vscode_utils/activate_editor
 import { isFlutterProject } from '../utils/src/language_utils/dart/pubspec/pubspec_utils';
 import { logError } from '../utils/src/logger/logger';
 import { runFlutterPubGet } from '../utils/src/common/lazy_common';
+import { runTerminal } from '../utils/src/terminal_utils/terminal_utils';
 
 
 class ArbFileListener extends FileListenerBase {
@@ -17,7 +18,7 @@ class ArbFileListener extends FileListenerBase {
                 /// validate document text is json 
                 try {
                     JSON.parse(document.getText())
-                    runFlutterPubGet()
+                    runTerminal('flutter gen-l10n');
                 } catch (e) {
                     let fileName = document.uri.path.split('/').pop()
                     let message = `File ${fileName} has error Json format`

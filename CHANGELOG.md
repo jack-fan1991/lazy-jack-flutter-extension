@@ -1,3 +1,6 @@
+# 0.0.104
+- Add auto running 'flutter gen-l10n' when ".arb" file save
+
 # 0.0.103
 - Add git scripts for merge, checkout, and create branch in Sidebar/Git
 
