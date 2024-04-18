@@ -6,8 +6,8 @@ import { logInfo } from '../utils/src/logger/logger';
 import { DartAutoImportFileListener } from './dart_auto_import_listener';
 import {  graphQlFileListener, shownGraphqlConvertMessage } from './graphql_file_listener';
 
-const commonStartFileListener = "common.startFileListener"
-const commonStopFileListener = "common.stopFileListener"
+const commonStartFileListener = "common.jack.tools.startFileListener"
+const commonStopFileListener = "common.jack.tools.stopFileListener"
 
 
 

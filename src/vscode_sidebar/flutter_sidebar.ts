@@ -3,6 +3,7 @@ import { ScriptsType, SideBarEntryItem, TreeScriptModel } from "../utils/src/vsc
 import { BaseTreeDataProvider } from "../utils/src/vscode_feature/sidebar/sidebar_tree_provider";
 import { onDart } from "../utils/src/language_utils/language_utils";
 import { selectUpdateDependency } from "../utils/src/language_utils/dart/pubspec/analyze_dart_git_dependency";
+import { logInfo } from "../utils/src/logger/logger";
 
 const flutterScripts = [
     {
@@ -39,6 +40,7 @@ export class FlutterDataProvider extends BaseTreeDataProvider {
     
     dispatchEvent(context: ExtensionContext, scriptModel: TreeScriptModel): void {
         if(scriptModel.script.includes("Update flutter git dependencies") ){
+            logInfo("Loading....")
             selectUpdateDependency()
         }else{
             super.dispatchEvent(context, scriptModel);

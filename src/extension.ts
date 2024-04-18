@@ -21,17 +21,20 @@ import { log } from 'console';
 import { updateGitSubModule } from './utils/src/language_utils/dart/pubspec/update_git_submodule';
 import { registerCleanArchitectureGenerate } from './vscode_explorer/flutter/generate_clean_architecture_feature';
 import { registerQuickFix } from './vscode_code_action/code_action';
+import { getPubspecLockAsMap } from './utils/src/language_utils/dart/pubspec/pubspec_utils';
 let sidebarManger = new SidebarManager()
 export class APP {
-  public static yaml: any|undefined = undefined;
+  public static pubspecYaml: any|undefined = undefined;
+  public static pubspecLockYaml: any|undefined = undefined;
 }
 
 export async function activate(context: vscode.ExtensionContext) {
   console.log('your extension "Lazy-Jack" is now active!')
    updateGitSubModule(context)
-   checkGitExtensionInYamlIfDart(true).then((yaml) => {
-    APP.yaml = yaml
-    log(APP.yaml)
+  await checkGitExtensionInYamlIfDart(true).then(async (yaml) => {
+    APP.pubspecYaml = yaml
+    APP.pubspecLockYaml =await getPubspecLockAsMap()
+    log(APP.pubspecYaml)
   })
   registerDartSnippet(context)
   registerGithubGuiCommand(context)

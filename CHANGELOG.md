@@ -1,3 +1,17 @@
+# 0.0.107
+- Sidebar/Flutter/update git dependencies action support hide branch 
+- refactor key from  hideUpdate: [test,dev] to skipBranch: [test,dev]
+```
+if use flutter git repo as dependencies, you can hide branch in the sidebar with 
+    // pubspec.yaml
+    flutter_lazy_j_tools:
+        git:
+            url: url
+            ref: main
+            // this only support on my extension  Sidebar  action "Sidebar/Flutter/update git dependencies"
+            skipBranch: [test,dev]
+``` 
+
 # 0.0.106
 - Add Convert file : ${filePath} to dart interface template when open , save ,or select part of context then quick fix
 - depencency on https://pub.dev/packages/graphql_codegen
