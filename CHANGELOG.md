@@ -1,3 +1,7 @@
+# 0.0.110
+- Check conflict when merge --no -ff
+
+
 # 0.0.107
 - Sidebar/Flutter/update git dependencies action support hide branch 
 - refactor key from  hideUpdate: [test,dev] to skipBranch: [test,dev]

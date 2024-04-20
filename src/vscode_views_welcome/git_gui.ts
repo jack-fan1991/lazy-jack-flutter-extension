@@ -21,7 +21,7 @@ export function registerGithubGuiCommand(context: vscode.ExtensionContext) {
         openGitHubBrowserAction(context, "wiki");
     }));
     context.subscriptions.push(vscode.commands.registerCommand(command_open_sourcetree_local_repo, async () => {
-        runTerminal("open -a SourceTree ./")
+        runCommand("open -a SourceTree ./")
     }));
 }
 

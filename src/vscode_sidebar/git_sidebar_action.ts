@@ -55,7 +55,7 @@ export async function createMergeNoFFInput(script: string) {
         windows: `git branch`,
         mac: `git branch `,
     };
-    let currentBranch = (await runCommand(`git branch --show-current`)).replace('\n','')
+    let currentBranch = (await runCommand(`git branch --show-current`)).replace('\n', '')
     let allBranch = await runCommand(isWindows() ? gitCommand.windows : gitCommand.mac)
     let branches = allBranch.split('\n')
     let items: { label: string; description: string }[] = []
@@ -73,25 +73,60 @@ export async function createMergeNoFFInput(script: string) {
         runCommand(
             `git checkout ${checkoutBranch}`,
         ).then(async () => {
-            // merge --no-ff
-            // show input dialog
-            let defaultCommit = `Merge into '${checkoutBranch}' from ${currentBranch}`
-            vscode.window.showInputBox({ prompt: `Enter commit or "default"`, value: `${defaultCommit}` }).then(async (commit) => {
-                let cmd = `git merge ${currentBranch} --no-ff -m "${commit}"`
-                showInfo(cmd)
-                runCommand(
-                    cmd,
-                ).then((r) => {
-                    if (r != "") {
-                        showInfo(`${r}`)
-                    }
-                    runTerminal(
-                        'git status'
-                    )
-                    showInfo(`Merge completed`)
+            // 檢查衝突
+            runCommand(
+                `git diff ${currentBranch}`,
+            ).then((r) => {
+                if (r != "") {
+                    showErrorMessage(`[ Merge failed conflict ] => ${r}`)
 
-                })
+                    // rebase
+                    vscode.window.showInformationMessage(`Rebase  ${currentBranch} onto ${checkoutBranch}`, 'Confirm').then(async (result) => {
+                        if (result == 'Confirm') {
+                             runTerminal(
+                                `git checkout ${currentBranch}`
+                            )
+                             runTerminal(
+                                `git rebase ${checkoutBranch}`
+                            )
+                              runTerminal(
+                                'git status'
+                            )
+                            logInfo("Rebase done")
+
+                        }
+                    })
+
+
+                } else {
+
+                    // merge --no-ff
+                    // show input dialog
+                    let defaultCommit = `Merge into '${checkoutBranch}' from ${currentBranch}`
+                    vscode.window.showInputBox({ prompt: `Enter commit or "default"`, value: `${defaultCommit}` }).then(async (commit) => {
+                        let cmd = `git merge ${currentBranch} --no-ff -m "${commit}"`
+                        showInfo(cmd)
+                        runCommand(
+                            cmd,
+                        ).then((r) => {
+                            if (r != "") {
+                                showInfo(`${r}`)
+                            }
+                            runTerminal(
+                                'git status'
+                            )
+                            showInfo(`Merge completed`)
+
+                        })
+                    })
+
+                }
+
+
             })
+
+
+
 
         }
         )
@@ -138,7 +173,7 @@ export async function createCheckout(script: string) {
 
 export async function createBranch(script: string) {
     vscode.window.showInputBox({ prompt: `Enter branch name"`, value: '' }).then(async (name) => {
-        if (name === ''|| name ==undefined) return
+        if (name === '' || name == undefined) return
         let cmd = `git branch ${name}`
         showInfo(cmd)
         runCommand(
@@ -152,10 +187,10 @@ export async function createBranch(script: string) {
             )
 
         },
-        (f)=>{
-            showErrorMessage(`Error: ${f}`)
-        }
-    )
+            (f) => {
+                showErrorMessage(`Error: ${f}`)
+            }
+        )
     })
 
 }
