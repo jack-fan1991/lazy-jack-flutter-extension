@@ -97,6 +97,15 @@ function createTemplate(action: string,apiName:string) {
     let smallCamelAction = toLowerCamelCase(action)
     let smallCamelApiName= toLowerCamelCase(apiName) 
     let objName =`${bigCamelAction}__${bigCamelApiName}`
+    if(action === 'subscription'){
+        return`
+    Stream<QueryResult<${objName}>> ${smallCamelAction}__${smallCamelApiName}({
+        required Variables__${objName} params,
+        });
+    
+    ` 
+    }
+
     return `
     Future<Result<${objName}>> ${smallCamelAction}__${smallCamelApiName}({
         required Variables__${objName} params,
