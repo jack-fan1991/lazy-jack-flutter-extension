@@ -1,3 +1,8 @@
+# 0.0.114
+- Work with https://marketplace.visualstudio.com/items?itemName=jackFan.lazy-jack-flutter-logger-easy-life
+- https://pub.dev/packages/color_observer_logger 
+- https://pub.dev/packages/color_logging
+
 # 0.0.110
 - Check conflict when merge --no -ff
 

@@ -30,7 +30,7 @@ export class APP {
 
 export async function activate(context: vscode.ExtensionContext) {
   console.log('your extension "Lazy-Jack" is now active!')
-   updateGitSubModule(context)
+  updateGitSubModule(context)
   await checkGitExtensionInYamlIfDart(true).then(async (yaml) => {
     APP.pubspecYaml = yaml
     APP.pubspecLockYaml =await getPubspecLockAsMap()
@@ -51,6 +51,10 @@ export async function activate(context: vscode.ExtensionContext) {
   //側邊欄擴展
   registerGenerateSvg(context)
   registerCleanArchitectureGenerate(context)
+
+
+  
+
 
 }
 

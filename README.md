@@ -1,6 +1,24 @@
 # Feature 
 ## Most of feature is support on MacOs
 ## New 
+
+  * [Vscode extension flutter logger easy life](https://marketplace.visualstudio.com/items?itemName=jackFan.lazy-jack-flutter-logger-easy-life)
+
+  * without extension
+  ![](./image/logger/color_looger_bad1.png)
+  ![](./image/logger/color_looger_bad2.png)
+
+  * with you can tap absolute path to code line
+  ![](./image/logger/color_looger_good1.png)
+  ![](./image/logger/color_looger_good2.png)
+
+
+
+
+## Old feature
+
+
+
   * String format (onSelected)
   
     ![](./image/quickfix/string_format.png)
@@ -10,8 +28,6 @@
   * Extract class to file
 
     ![](./image/quickfix/class/excract_class.png)
-
-## Old feature
 
 #### freezed 
   * Create freezed
