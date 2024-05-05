@@ -70,16 +70,16 @@ export class GraphqlToDartApiFixer implements EzCodeActionProviderInterface {
         context.subscriptions.push(vscode.commands.registerCommand(GraphqlToDartApiFixer.command, async (document: vscode.TextDocument, range: vscode.Range, text: string) => {
             // create new editor
             let lines = text.split('\n') ?? []
-            let newText =''
+            let newText = ''
             for (let l of lines) {
                 let isQlLine = l.startsWith('query') || l.startsWith('mutation') || l.startsWith('subscription')
                 if (isQlLine) {
                     let idx = lines.indexOf(l)
                     let result = splitAction(l, lines[idx + 1])
-                    newText += createTemplate(result[0],result[1])
+                    newText += createTemplate(result[0], result[1])
                 }
             }
-            vscode.workspace.openTextDocument({ language: 'dart',content: newText }).then(document => {
+            vscode.workspace.openTextDocument({ language: 'dart', content: newText }).then(document => {
                 vscode.window.showTextDocument(document);
             });
 
@@ -91,23 +91,34 @@ export class GraphqlToDartApiFixer implements EzCodeActionProviderInterface {
 }
 
 
-function createTemplate(action: string,apiName:string) {
+function createTemplate(action: string, apiName: string) {
+   
     let bigCamelAction = toUpperCamelCase(action)
     let bigCamelApiName = toUpperCamelCase(apiName)
     let smallCamelAction = toLowerCamelCase(action)
-    let smallCamelApiName= toLowerCamelCase(apiName) 
-    let objName =`${bigCamelAction}__${bigCamelApiName}`
-    if(action === 'subscription'){
-        return`
-    Stream<QueryResult<${objName}>> ${smallCamelAction}__${smallCamelApiName}({
+    let smallCamelApiName = toLowerCamelCase(apiName)
+    let objName = `${bigCamelAction}__${bigCamelApiName}`
+
+    let methodName = ''
+    if(action.toLowerCase() === 'mutation'){
+        smallCamelAction ='mutate'
+    }
+    if (bigCamelApiName.toLowerCase().startsWith('update') || bigCamelApiName.toLowerCase().startsWith('create') || bigCamelApiName.toLowerCase().startsWith('query') || bigCamelApiName.toLowerCase().startsWith('mutation') || bigCamelApiName.toLowerCase().startsWith('subscription')) {
+        methodName = smallCamelApiName
+    } else {
+        methodName = `${bigCamelApiName}`
+    }
+    if (action === 'subscription') {
+        return `
+    Stream<QueryResult<${objName}>> ${smallCamelAction}__${bigCamelApiName}({
         required Variables__${objName} params,
         });
     
-    ` 
+    `
     }
 
     return `
-    Future<Result<${objName}>> ${smallCamelAction}__${smallCamelApiName}({
+    Future<Result<${objName}>> ${smallCamelAction}__${bigCamelApiName}({
         required Variables__${objName} params,
       });
     
@@ -116,7 +127,7 @@ function createTemplate(action: string,apiName:string) {
 }
 
 
-export function isGraphqlFile(text: string){
+export function isGraphqlFile(text: string) {
     let lines = text.split('\n')
     let isQlFile = false
     for (let i in lines) {
@@ -140,7 +151,7 @@ function splitAction(text: string, nextText: string) {
             action = action
             updateName = true
         }
-        if (c == "(") {
+        if (c == "(" || c == "{") {
             break
         }
         if (updateName) {
