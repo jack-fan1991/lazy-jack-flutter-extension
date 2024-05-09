@@ -2,6 +2,10 @@
 ## Most of feature is support on MacOs
 ## New 
 
+  - Assert image Generate  only show menu when right-click when folder name is 'images'
+  - Generate Clean Architecture folder only show menu when right-click when folder name is 'features'
+
+
   * [Vscode extension flutter logger easy life](https://marketplace.visualstudio.com/items?itemName=jackFan.lazy-jack-flutter-logger-easy-life)
 
   * without extension
@@ -109,6 +113,7 @@
     ```
 
 #### Assert image Generate
+* !! Support only folder name is "images"
 * Right click on folder will show "Generate assert file from folder"
   * support "png", "svg"
   * Generate file in "lib/const/folderName_images_supportType.lazyjack.dart"

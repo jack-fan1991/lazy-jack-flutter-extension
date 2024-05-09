@@ -22,6 +22,7 @@ import { updateGitSubModule } from './utils/src/language_utils/dart/pubspec/upda
 import { registerCleanArchitectureGenerate } from './vscode_explorer/flutter/generate_clean_architecture_feature';
 import { registerQuickFix } from './vscode_code_action/code_action';
 import { getPubspecLockAsMap } from './utils/src/language_utils/dart/pubspec/pubspec_utils';
+import { registerToGqlFragmentToDart } from './vscode_explore_menu/graphql_fragment_to_typedef';
 let sidebarManger = new SidebarManager()
 export class APP {
   public static pubspecYaml: any|undefined = undefined;
@@ -29,6 +30,8 @@ export class APP {
 }
 
 export async function activate(context: vscode.ExtensionContext) {
+  registerToGqlFragmentToDart(context)
+
   console.log('your extension "Lazy-Jack" is now active!')
   updateGitSubModule(context)
   await checkGitExtensionInYamlIfDart(true).then(async (yaml) => {
@@ -52,7 +55,6 @@ export async function activate(context: vscode.ExtensionContext) {
   registerGenerateSvg(context)
   registerCleanArchitectureGenerate(context)
 
-
   
 
 
@@ -68,3 +70,7 @@ function setupSideBar(context: vscode.ExtensionContext) {
     .registerSideBarCommands(context, "lazy-jack.sidebar_command_onselect")
     .registerSideBar(context)
 }
+
+
+
+

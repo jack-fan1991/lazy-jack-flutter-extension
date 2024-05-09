@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.118",
+  "version": "0.0.120",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -96,6 +96,11 @@
         "category": "lazy Jack",
         "command": "command_clean_architecture",
         "title": "Generate Clean Architecture feature"
+      },
+      {
+        "category": "lazy Jack",
+        "command": "graphql_code_gen_fragment_to_dart_type_def",
+        "title": "Fragment to dart type def"
       }
     ],
     "menus": {
@@ -120,14 +125,18 @@
         {
           "command": "command_dart_assert",
           "title": "Generate assert file from folder",
-          "when": "explorerResourceIsFolder"
+          "when": "explorerResourceIsFolder  && resourceFilename == 'images'"
         },
         {
           "command": "command_clean_architecture",
           "title": "Generate Clean Architecture feature",
-          "when": "explorerResourceIsFolder"
-
-        }
+          "when": "explorerResourceIsFolder && resourceFilename == 'features'"
+        },
+        {
+          "command": "graphql_code_gen_fragment_to_dart_type_def",
+          "title": "Graphql Fragment to dart typedef",
+          "when": "explorerResourceIsFolder && resourceFilename == '__generated'"
+        }        
       ]
     },
     "snippets": [

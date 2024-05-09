@@ -1,3 +1,9 @@
+# 0.0.120
+# 0.0.119
+- Assert image Generate  only show menu when right-click when folder name is 'images'
+- Generate Clean Architecture folder only show menu when right-click when folder name is 'features'
+
+
 # 0.0.114
 - Work with https://marketplace.visualstudio.com/items?itemName=jackFan.lazy-jack-flutter-logger-easy-life
 - https://pub.dev/packages/color_observer_logger 
