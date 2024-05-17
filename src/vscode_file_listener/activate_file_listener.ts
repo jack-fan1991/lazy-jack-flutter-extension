@@ -46,9 +46,9 @@ export class FileListenerManger extends FileListenerBase {
             if ( editor?.document.uri.path.endsWith('.arb')) {
                 startFileListener(arbFileListener)
             }
-            if ( editor?.document.uri.path.endsWith('.graphql')) {
-                shownGraphqlConvertMessage( editor.document)
-            }
+            // if ( editor?.document.uri.path.endsWith('.graphql')) {
+            //     shownGraphqlConvertMessage( editor.document)
+            // }
           
         })
     }

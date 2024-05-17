@@ -76,7 +76,7 @@ export class GraphqlToDartApiFixer implements EzCodeActionProviderInterface {
                 if (isQlLine) {
                     let idx = lines.indexOf(l)
                     let result = splitAction(l, lines[idx + 1])
-                    newText += createTemplate(result[0], result[1])
+                    newText += createTemplate(result[0], result[1].trim())
                 }
             }
             vscode.workspace.openTextDocument({ language: 'dart', content: newText }).then(document => {
@@ -103,7 +103,7 @@ function createTemplate(action: string, apiName: string) {
     if(action.toLowerCase() === 'mutation'){
         smallCamelAction ='mutate'
     }
-    if (bigCamelApiName.toLowerCase().startsWith('update') || bigCamelApiName.toLowerCase().startsWith('create') || bigCamelApiName.toLowerCase().startsWith('query') || bigCamelApiName.toLowerCase().startsWith('mutation') || bigCamelApiName.toLowerCase().startsWith('subscription')) {
+    if (bigCamelApiName.toLowerCase().startsWith('archive') || bigCamelApiName.toLowerCase().startsWith('update') || bigCamelApiName.toLowerCase().startsWith('create') || bigCamelApiName.toLowerCase().startsWith('query') || bigCamelApiName.toLowerCase().startsWith('mutation') || bigCamelApiName.toLowerCase().startsWith('subscription')) {
         methodName = smallCamelApiName
     } else {
         methodName = `${bigCamelApiName}`
