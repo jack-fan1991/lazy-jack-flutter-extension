@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.122",
+  "version": "0.0.123",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
