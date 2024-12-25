@@ -7,6 +7,7 @@ import * as changeCase from "change-case";
 import { openEditor } from '../../utils/src/vscode_utils/editor_utils';
 import { runCommand } from '../../utils/src/terminal_utils/terminal_utils';
 import { reFormat } from '../../utils/src/vscode_utils/activate_editor_utils';
+import { APP } from '../../extension';
 
 
 export function registerGenerateAssert(context: vscode.ExtensionContext) {
@@ -17,16 +18,21 @@ export function registerGenerateAssert(context: vscode.ExtensionContext) {
 }
 
 async function generatorSvg(folderUri: any) {
+    let hasVectorGraphics = APP.pubspecYaml["dependencies"]["vector_graphics"] !=undefined
+    const findPath = await vscode.workspace.findFiles('**/lib/**/*svg.lazy.dart');
+    let targetPath = "lib/assets"
     const cwd = vscode.workspace.rootPath ?? "";
-    const files = fs.readdirSync(folderUri.path).filter((x) => x.toLowerCase().includes('.svg'));
+    
+    const files = getFilesInDirectory(folderUri.path, '.svg');
+    if(files.length==0) return
     let svgFolder = folderUri.path.replace(cwd, '').split('/').filter((x: string) => x != "").join('/')
 
     let fileName = svgFolder.split('/').filter((x: string) => x != "").join('_')
-    const assertPath = path.join(cwd, `lib/const/${fileName}_svg.lazyjack.dart`);
+    const assertPath = path.join(cwd, `${targetPath}/${fileName}_svg.lazy.dart`);
     let isNew: boolean = false;
     if (!fs.existsSync(assertPath)) {
         isNew = true
-        runCommand('mkdir -p lib/const')
+        runCommand(`mkdir -p ${targetPath}`)
         fs.writeFileSync(assertPath, "enum SvgIcon{} ");
     }
     let editor: vscode.TextEditor | undefined = await openEditor(assertPath)
@@ -55,12 +61,18 @@ async function generatorSvg(folderUri: any) {
             if (currentName != null) {
                 return `${currentName[0]}('${currentName[1]}')`;
             }
-            // 获取文件名
-            const fileName = changeCase.snakeCase(item.split('.')[0])
+            let fileName = item.split("assets")[1].split('.')[0].replace(/\//g, "_").replace(/^_/, '')
+            let path =item.split("assets")[1]
             // 转换为驼峰命名
-            const funcName = changeCase.camelCase(fileName.replace('icon_', ''))
+            let funcName = changeCase.camelCase(fileName)
+            if(funcName.startsWith("svg")){
+                funcName= funcName.replace("svg","")
+            }
+            if(funcName.startsWith("images")){
+                funcName= funcName.replace("images","")
+            }
             // 返回格式化后的字符串
-            let result = `${funcName}('${svgFolder}/${item}')`;
+            let result = `${changeCase.camelCase(funcName)}('assets${path}')`;
             if (!enumContent.includes(result)) {
                 newIcon.push(result)
             }
@@ -68,36 +80,69 @@ async function generatorSvg(folderUri: any) {
         });
     } else {
         icon = files.map(item => {
-            // 获取文件名
-            const fileName = changeCase.snakeCase(item.split('.')[0])
+            let fileName = item.split("assets")[1].split('.')[0].replace(/\//g, "_").replace(/^_/, '')
+            let path =item.split("assets")[1]
+            // const fileName = changeCase.snakeCase(item.split('.')[0])
             // 转换为驼峰命名
-            const funcName = changeCase.camelCase(fileName.replace('icon_', ''))
-            // 返回格式化后的字符串
-            let result = `${funcName}('${svgFolder}/${item}')`;
+            let funcName = changeCase.camelCase(fileName.replace('icon_', ''))
+            if(funcName.startsWith("svg")){
+                funcName=  funcName.replace("svg","")
+            }
+            if(funcName.startsWith("images")){
+                funcName= funcName.replace("images","")
+            }
+            let result = `${changeCase.camelCase(funcName)}('assets${path}')`;
             newIcon.push(result)
             return result;
         });
     }
     vscode.window.showInformationMessage(``)
     vscode.window.showInformationMessage(`新增${newIcon.length}個svg\n${newIcon.join(',\n\t')}`)
-    fs.writeFileSync(assertPath, svgTemp(icon));
+    if(hasVectorGraphics){
+        fs.writeFileSync(assertPath, svgVectorTemp(icon));
+    }else{
+        fs.writeFileSync(assertPath, svgTemp(icon));
+    }
     if (newIcon.length > 0) {
         openEditor(assertPath)
     }
 }
 
+function getFilesInDirectory(directory: string, extension: string): string[] {
+    let result: string[] = [];
+
+    // 讀取目錄中的項目
+    const items = fs.readdirSync(directory);
+
+    for (const item of items) {
+        const fullPath = path.join(directory, item);
+        const stat = fs.lstatSync(fullPath);
+
+        if (stat.isDirectory()) {
+            // 如果是資料夾，則遞迴搜尋
+            result = result.concat(getFilesInDirectory(fullPath, extension));
+        } else if (stat.isFile() && fullPath.toLowerCase().endsWith(extension)) {
+            // 如果是檔案且符合副檔名條件，則加入結果
+            result.push(fullPath);
+        }
+    }
+
+    return result;
+}
 
 async function generatorPng(folderUri: any) {
+    const findPath = await vscode.workspace.findFiles('**/lib/**/*png.lazy.dart');
+    let targetPath = "lib/assets"
     const cwd = vscode.workspace.rootPath ?? "";
-    const files = fs.readdirSync(folderUri.path).filter((x) => x.toLowerCase().includes('.png'));
+    const files = getFilesInDirectory(folderUri.path, '.png');
+    if(files.length==0) return
     let svgFolder = folderUri.path.replace(cwd, '').split('/').filter((x: string) => x != "").join('/')
-
     let fileName = svgFolder.split('/').filter((x: string) => x != "").join('_')
-    const assertPath = path.join(cwd, `lib/const/${fileName}_png.lazyjack.dart`);
+    const assertPath = path.join(cwd, `${targetPath}/${fileName}_png.lazy.dart`);
     let isNew: boolean = false;
     if (!fs.existsSync(assertPath)) {
         isNew = true
-        runCommand('mkdir -p lib/const')
+        runCommand(`mkdir -p ${targetPath}`)
         fs.writeFileSync(assertPath, "enum PngImage{} ");
     }
     let editor: vscode.TextEditor | undefined = await openEditor(assertPath)
@@ -126,12 +171,14 @@ async function generatorPng(folderUri: any) {
             if (currentName != null) {
                 return `${currentName[0]}('${currentName[1]}')`;
             }
-            // 获取文件名
-            const fileName = changeCase.snakeCase(item.split('.')[0])
+            let fileName = item.split("assets")[1].split('.')[0].replace(/\//g, "_").replace(/^_/, '')
+            let path =item.split("assets")[1]
             // 转换为驼峰命名
-            const funcName = changeCase.camelCase(fileName)
-            // 返回格式化后的字符串
-            let result = `${funcName}('${svgFolder}/${item}')`;
+            let funcName = changeCase.camelCase(fileName)
+            if(funcName.startsWith("images")){
+                funcName= funcName.replace("images","")
+            }
+            let result = `${changeCase.camelCase(funcName)}('assets${path}')`;
             if (!enumContent.includes(result)) {
                 newIcon.push(result)
             }
@@ -139,12 +186,14 @@ async function generatorPng(folderUri: any) {
         });
     } else {
         icon = files.map(item => {
-            // 获取文件名
-            const fileName = changeCase.snakeCase(item.split('.')[0])
-            // 转换为驼峰命名
-            const funcName = changeCase.camelCase(fileName)
-            // 返回格式化后的字符串
-            let result = `${funcName}('${svgFolder}/${item}')`;
+            let fileName = item.split("assets")[1].split('.')[0].replace(/\//g, "_").replace(/^_/, '')
+            let path =item.split("assets")[1]
+         
+            let funcName = changeCase.camelCase(fileName)
+            if(funcName.startsWith("images")){
+                funcName= funcName.replace("images","")
+            }
+            let result = `${changeCase.camelCase(funcName)}('assets${path}')`;
             newIcon.push(result)
             return result;
         });
@@ -159,16 +208,86 @@ async function generatorPng(folderUri: any) {
 
 }
 
-function svgTemp(svgObj: string[]) {
-    return `import 'package:flutter/material.dart';
+function svgVectorTemp(svgObj: string[]) {
+    return `
+import 'package:flutter/material.dart';
+import 'package:vector_graphics/vector_graphics.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-enum SvgIcon {
+
+/// This file is auto-generated by Lazy Jack.
+/// Please do not edit this file directly, as it will be overwritten when regenerated.
+/// To make changes, use the right-click context menu in VSCode to regenerate this file.
+
+
+
+enum Svg {
   ${svgObj.join(',\n\t')};
 
   final String path;
-  const SvgIcon(this.path);
+  const Svg(this.path);
 
-  Widget toIcon({double? width, double? height, Color? color}) =>
+    Widget toSvgWidget({double? width, double? height, Color? color}) =>
+      SvgPicture.asset(
+        path,
+        width: width,
+        height: height,
+        colorFilter: color == null
+            ? null
+            : ColorFilter.mode(
+                color,
+                BlendMode.srcIn,
+        ),
+    );
+
+    Widget withVectorGraphics({
+        required String path, 
+        double? width,
+        double? height,
+        Color? color,
+        BoxFit fit = BoxFit.contain, 
+        Alignment alignment = Alignment.center,
+        Clip clipBehavior = Clip.hardEdge,
+        String? semanticsLabel, 
+    }) =>
+        VectorGraphic(
+            loader: AssetBytesLoader(path),
+            width: width,
+            height: height,
+            fit: fit,
+            alignment: alignment,
+            clipBehavior: clipBehavior,
+            semanticsLabel: semanticsLabel,
+            colorFilter: color == null
+                ? null
+                : ColorFilter.mode(
+                    color,
+                    BlendMode.srcIn,
+                ),
+        );
+
+}
+`
+}
+
+
+function svgTemp(svgObj: string[]) {
+    return `
+import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+
+
+/// This file is auto-generated by Lazy Jack.
+/// Please do not edit this file directly, as it will be overwritten when regenerated.
+/// To make changes, use the right-click context menu in VSCode to regenerate this file.
+
+
+enum Svg {
+  ${svgObj.join(',\n\t')};
+
+  final String path;
+  const Svg(this.path);
+
+    Widget toSvgWidget({double? width, double? height, Color? color}) =>
       SvgPicture.asset(
         path,
         width: width,
@@ -184,8 +303,15 @@ enum SvgIcon {
 `
 }
 
+
 function pngTemp(svgObj: string[]) {
-    return `import 'package:flutter/material.dart';
+    return ` 
+import 'package:flutter/material.dart';
+
+/// This file is auto-generated by Lazy Jack.
+/// Please do not edit this file directly, as it will be overwritten when regenerated.
+/// To make changes, use the right-click context menu in VSCode to regenerate this file.
+
   
 enum PngImage {
   ${svgObj.join(',\n\t')};

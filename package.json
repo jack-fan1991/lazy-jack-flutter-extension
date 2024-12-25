@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.124",
+  "version": "0.0.125",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -125,7 +125,7 @@
         {
           "command": "command_dart_assert",
           "title": "Generate assert file from folder",
-          "when": "explorerResourceIsFolder  && resourceFilename == 'images'"
+          "when": "explorerResourceIsFolder  && (resourceFilename =~ /.*(svg|image).*/)"
         },
         {
           "command": "command_clean_architecture",
