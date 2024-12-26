@@ -1,4 +1,6 @@
-# 0.0.120
+# 0.0.127
+- Refactor Assert image Generate to Dart Asset Transformer
+
 # 0.0.119
 - Assert image Generate  only show menu when right-click when folder name is 'images'
 - Generate Clean Architecture folder only show menu when right-click when folder name is 'features'

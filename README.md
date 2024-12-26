@@ -2,7 +2,138 @@
 ## Most of feature is support on MacOs
 ## New 
 
-  - Assert image Generate  only show menu when right-click when folder name is 'images'
+  #### Dart Asset Transformer
+  * Support png
+  
+  ![](./image/assets_creater/support_png.png)
+  
+  * Support svg
+  
+  ![](./image/assets_creater/support_svg.png)
+  
+  * Data sample
+
+ ![](./image/assets_creater/all_data.png)
+  
+  * Transformer path
+
+  ![](./image/assets_creater/create.png)
+  
+  
+  * Svg template
+    - Auto check lib support
+    
+  ```dart
+  enum SvgAssets {
+    ${svgObj.join(',\n\t')};
+  
+    final String path;
+    const SvgAssets(this.path);
+  
+      Widget toSvgWidget({double? width, double? height, Color? color}) =>
+        SvgPicture.asset(
+          path,
+          width: width,
+          height: height,
+          colorFilter: color == null
+              ? null
+              : ColorFilter.mode(
+                  color,
+                  BlendMode.srcIn,
+          ),
+      );
+      /// If depends on lib https://pub.dev/packages/vector_graphics 
+      Widget withVectorGraphics({
+          required String path, 
+          double? width,
+          double? height,
+          Color? color,
+          BoxFit fit = BoxFit.contain, 
+          Alignment alignment = Alignment.center,
+          Clip clipBehavior = Clip.hardEdge,
+          String? semanticsLabel, 
+      }) =>
+          VectorGraphic(
+              loader: AssetBytesLoader(path),
+              width: width,
+              height: height,
+              fit: fit,
+              alignment: alignment,
+              clipBehavior: clipBehavior,
+              semanticsLabel: semanticsLabel,
+              colorFilter: color == null
+                  ? null
+                  : ColorFilter.mode(
+                      color,
+                      BlendMode.srcIn,
+                  ),
+          );
+  
+  }
+  
+  
+  ```
+  
+  * Png template
+    
+  ```dart
+  enum PngImage {
+    ${svgObj.join(',\n\t')};
+  
+    final String path;
+    const PngImage(this.path);
+    
+    Widget toImage({
+      double? width,
+      double? height,
+      Color? color,
+      ImageFrameBuilder? frameBuilder,
+      ImageErrorWidgetBuilder? errorBuilder,
+      String? semanticLabel,
+      bool excludeFromSemantics = false,
+      double? scale,
+      BlendMode? colorBlendMode,
+      BoxFit? fit,
+      AlignmentGeometry alignment = Alignment.center,
+      ImageRepeat repeat = ImageRepeat.noRepeat,
+      Rect? centerSlice,
+      bool matchTextDirection = false,
+      bool gaplessPlayback = false,
+      bool isAntiAlias = false,
+      String? package,
+      FilterQuality filterQuality = FilterQuality.low,
+      int? cacheWidth,
+      int? cacheHeight,
+    }) =>
+        Image.asset(
+          path,
+          width: width,
+          height: height,
+          color: color,
+          frameBuilder: frameBuilder,
+          errorBuilder: errorBuilder,
+          semanticLabel: semanticLabel,
+          excludeFromSemantics: excludeFromSemantics,
+          scale: scale,
+          colorBlendMode: colorBlendMode,
+          fit: fit,
+          alignment: alignment,
+          repeat: repeat,
+          centerSlice: centerSlice,
+          matchTextDirection: matchTextDirection,
+          gaplessPlayback: gaplessPlayback,
+          isAntiAlias: isAntiAlias,
+          package: package,
+          filterQuality: filterQuality,
+          cacheWidth: cacheWidth,
+          cacheHeight: cacheHeight,
+        );
+  }
+  
+  
+  ```
+
+
   - Generate Clean Architecture folder only show menu when right-click when folder name is 'features'
 
 
@@ -12,7 +143,7 @@
   ![](./image/logger/color_looger_bad1.png)
   ![](./image/logger/color_looger_bad2.png)
 
-  * with you can tap absolute path to code line
+  * with extension you can tap absolute path to code line position
   ![](./image/logger/color_looger_good1.png)
   ![](./image/logger/color_looger_good2.png)
 
@@ -112,99 +243,6 @@
 
     ```
 
-#### Assert image Generate
-* !! Support only folder name is "images"
-* Right click on folder will show "Generate assert file from folder"
-  * support "png", "svg"
-  * Generate file in "lib/const/folderName_images_supportType.lazyjack.dart"
-
-    ![](./image/menu/assert_extension.png)
-* Svg template
-```dart
-import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
-enum SvgIcon {
-  applePay('assets/images/apple_pay.svg'),
-  final String path;
-  const SvgIcon(this.path);
-  
-  Widget toIcon({double? width, double? height,Color? color}) => SvgPicture.asset(
-    path,
-    width: width,
-    height: height,
-    color:color
-  );
-}
-```
-* How to Use 
-
-```dart
-SvgIcon.applePay.toIcon(width: 20,height: 20,color: Colors.red)
-```
-
-* Png template
-
-```dart
-import 'package:flutter/material.dart';
-  
-enum PngImage {
-  googlePay('assets/images/google_pay.png'),
-
-  final String path;
-  const PngImage(this.path);
-  
-  Widget toImage({
-    double? width,
-    double? height,
-    Color? color,
-    ImageFrameBuilder? frameBuilder,
-    ImageErrorWidgetBuilder? errorBuilder,
-    String? semanticLabel,
-    bool excludeFromSemantics = false,
-    double? scale,
-    BlendMode? colorBlendMode,
-    BoxFit? fit,
-    AlignmentGeometry alignment = Alignment.center,
-    ImageRepeat repeat = ImageRepeat.noRepeat,
-    Rect? centerSlice,
-    bool matchTextDirection = false,
-    bool gaplessPlayback = false,
-    bool isAntiAlias = false,
-    String? package,
-    FilterQuality filterQuality = FilterQuality.low,
-    int? cacheWidth,
-    int? cacheHeight,
-  }) =>
-      Image.asset(
-        path,
-        width: width,
-        height: height,
-        color: color,
-        frameBuilder: frameBuilder,
-        errorBuilder: errorBuilder,
-        semanticLabel: semanticLabel,
-        excludeFromSemantics: excludeFromSemantics,
-        scale: scale,
-        colorBlendMode: colorBlendMode,
-        fit: fit,
-        alignment: alignment,
-        repeat: repeat,
-        centerSlice: centerSlice,
-        matchTextDirection: matchTextDirection,
-        gaplessPlayback: gaplessPlayback,
-        isAntiAlias: isAntiAlias,
-        package: package,
-        filterQuality: filterQuality,
-        cacheWidth: cacheWidth,
-        cacheHeight: cacheHeight,
-      );
-}
-```
-* How to Use 
-
-```dart
-PngImage.googlePay.toImage(width: 20,height: 20,color: Colors.red)
-```
 
 #### QuickFix part of
 * Use quick fix to add "part of" or "part of "
