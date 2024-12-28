@@ -42,7 +42,7 @@ export class MyCompletionItemProvider implements CompletionItemProvider {
                         completionItems.push(cubitItem(text))
                     }
                 }
-                else if (lineText.includes("extends") && lineText.includes("extends Cubit")) {
+                else if ((lineText.includes("extends") && lineText.includes("extends Cubit")) || (lineText.includes("extends") && lineText.includes("extends Cubit<"))) {
                     let classDetails = await findClassesInCurrentFolder()
                     let classMatch: String[] = []
                     classDetails = classDetails.filter((e) => {
@@ -51,7 +51,7 @@ export class MyCompletionItemProvider implements CompletionItemProvider {
                             let find = changeCase.camelCase(className)
                             let target = changeCase.camelCase(typeName)
                             if (is80PercentMatch(find, target) && className != typeName)
-                                completionItems.push(cubitStateItem(text, className, typeName, e.file));
+                                completionItems.push(cubitStateItem(lineText, text, className, typeName, e.file));
                             // classMatch.push(classN)
                         }
                     })
@@ -123,18 +123,44 @@ function statelessItem(className: string, fromWidget: boolean = false): Completi
 }
 
 
-function cubitStateItem(text: String, className: String, typeName: String, filePath: String): CompletionItem {
+function cubitStateItem(lineText: String, text: String, className: String, typeName: String, filePath: String): CompletionItem {
     // let classDetails = (await findClassesInCurrentFolder()).filter((e) => e.classes.);
     let editor = vscode.window.activeTextEditor!
     let p = filePath.replace(getRootPath(), "")
 
     const position = editor.selection.active;
     const nameItem = new CompletionItem(`${typeName}`, CompletionItemKind.Class);
-    nameItem.insertText = new vscode.SnippetString(
-        `<${typeName}>{
+
+    if (lineText.includes("{") && lineText.includes(">")) {
+        if(lineText.includes("<")){
+            nameItem.insertText = new vscode.SnippetString(
+                `${typeName}`)
+        }else{
+            nameItem.insertText = new vscode.SnippetString(
+                `<${typeName}`)
+        }
+       
+
+    } else if (lineText.includes("{") && !lineText.includes(">")) {
+        if(lineText.includes("<")){
+            nameItem.insertText = new vscode.SnippetString(
+                `${typeName}>`)
+        }else{
+            nameItem.insertText = new vscode.SnippetString(
+                `<${typeName}>`)
+        }
+       
+    }
+   
+
+    else {
+        nameItem.insertText = new vscode.SnippetString(
+            `<${typeName}>{
 \t${className}(super.initialState);
 }`
-    );
+        );
+    }
+
 
     nameItem.range = new vscode.Range(
         new Position(position.line, position.character),  // 開始位置
@@ -153,12 +179,12 @@ class ${className} extends Cubit<${typeName}>{
             newText: "import 'package:bloc/bloc.dart';\n"
         })
     }
-    p =p.replace("/lib","")
+    p = p.replace("/lib", "")
     let packageImport = `package:${APP.flutterPackageName}${p}`
     if (!text.includes(packageImport)) {
         textEditList.push({
             range: new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 0)),
-            newText:`import "${packageImport}";\n`
+            newText: `import "${packageImport}";\n`
         })
     }
     nameItem.additionalTextEdits = textEditList

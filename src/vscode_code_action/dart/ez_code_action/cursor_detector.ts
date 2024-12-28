@@ -1,12 +1,13 @@
 import * as vscode from 'vscode';
 import { EzCodeActionProviderInterface } from '../../code_action';
 import { OpenCloseFinder, SmallerOpenCloseFinder } from '../../../utils/src/regex/open_close_finder';
-import { getActivateEditor, getActivateEditorFileName, getCursorLineText } from '../../../utils/src/vscode_utils/editor_utils';
+import { getActivateEditor, getActivateEditorFileName, getCursorLineText, getSelectedText } from '../../../utils/src/vscode_utils/editor_utils';
 import { logInfo } from '../../../utils/src/logger/logger';
 import { paramToRequireGenerator } from '../../../helper/dart/to_require_params';
 import path = require('path');
 import { getActivateText, insertToActivateEditor, reFormat } from '../../../utils/src/vscode_utils/activate_editor_utils';
 import { insertPartLine } from '../../../helper/dart/part_utils';
+import { ParamToRequiredFixer } from '../param_to_required_fixer';
 
 // let counter = new OpenCloseFinder()
 
@@ -19,12 +20,36 @@ export class DartCurserDetector implements EzCodeActionProviderInterface {
     // 編輯時對單行檢測
     public provideCodeActions(document: vscode.TextDocument, range: vscode.Range): vscode.CodeAction[] | undefined {
         let cursorLineText = getCursorLineText()
+        let actions: vscode.CodeAction[] = []
         if (cursorLineText == undefined) return undefined
         // let action = convertParamToRequireAction(document, range, cursorLineText)
-        autoSave(document,cursorLineText)
+        // autoSave(document,cursorLineText)
         // if (action != undefined) {
         //     return [action]
         // }
+        let action = this.requiredParamFix()
+        if (action != undefined) {
+            actions.push(action)
+        }
+        if (actions.length == 0) {
+            return undefined
+        } else {
+            return actions
+        }
+    }
+
+    requiredParamFix(): vscode.CodeAction | undefined {
+        let text = getSelectedText()
+        const hasNumbers = /\d/.test(text);
+        if (hasNumbers || text.includes("= true") || text.includes("= false")) {
+            return undefined
+        } else {
+            let data = "✨ Required Transformer"
+            const fix = new vscode.CodeAction(data, vscode.CodeActionKind.QuickFix);
+            fix.command = { command: "command_dart_2_require_param", title: data };
+            fix.isPreferred = true;
+            return fix;
+        }
 
     }
 
@@ -76,7 +101,7 @@ function autoImport() {
 // }
 
 
-function autoSave(document: vscode.TextDocument,cursorLineText: string) {
+function autoSave(document: vscode.TextDocument, cursorLineText: string) {
     let text = document.getText()
     if (cursorLineText.includes('@freezed')) {
         document.save()

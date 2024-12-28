@@ -1,4 +1,7 @@
-# 0.0.128
+# 0.0.130
+- Add cubit auto complete fit more case
+
+# 0.0.129
 - Add cubit auto complete
 
 # 0.0.127

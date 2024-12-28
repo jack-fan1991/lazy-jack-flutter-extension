@@ -4,6 +4,7 @@
 
 
 import * as vscode from 'vscode';
+import { reFormat } from '../../utils/src/vscode_utils/activate_editor_utils';
 const command_dart_2_require_param = "command_dart_2_require_param"
 let s;
 let setter;
@@ -44,6 +45,7 @@ export function paramToRequireGenerator() {
 
     e.replace(editor.document.uri, editor.selection, result)
     vscode.workspace.applyEdit(e)
+    reFormat()
 }
 
 

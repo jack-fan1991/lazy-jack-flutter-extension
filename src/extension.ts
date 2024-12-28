@@ -40,11 +40,14 @@ export async function activate(context: vscode.ExtensionContext) {
   updateGitSubModule(context)
   await checkGitExtensionInYamlIfDart(true).then(async (yaml) => {
     APP.pubspecYaml = yaml
-    APP.pubspecLockYaml =await getPubspecLockAsMap()
-    APP.depOnBloc = APP.pubspecYaml["dependencies"]["flutter_bloc"] !=undefined
-    APP.depOhive = APP.pubspecYaml["dependencies"]["hive"] !=undefined
-    APP.flutterPackageName = APP.pubspecYaml["name"]
-    log(APP.pubspecYaml)
+    if(yaml!=undefined){
+      APP.pubspecLockYaml =await getPubspecLockAsMap()
+      APP.depOnBloc = APP.pubspecYaml["dependencies"]["flutter_bloc"] !=undefined
+      APP.depOhive = APP.pubspecYaml["dependencies"]["hive"] !=undefined
+      APP.flutterPackageName = APP.pubspecYaml["name"]
+      log(APP.pubspecYaml)
+    }
+    
   })
   registerDartSnippet(context)
   registerGithubGuiCommand(context)

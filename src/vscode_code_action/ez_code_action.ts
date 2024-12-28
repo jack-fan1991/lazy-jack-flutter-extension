@@ -14,7 +14,7 @@ export function registerEzAction(context: vscode.ExtensionContext) {
     providers.push(new GraphqlToDartApiFixer())
 
     providers.push(new ClassQuickFix())
-    // providers.push(new DartCurserDetector())
+    providers.push(new DartCurserDetector())
     for (let p of providers) {
         // 註冊命令回調
         p.setOnActionCommandCallback(context)
