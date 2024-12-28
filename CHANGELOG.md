@@ -1,3 +1,6 @@
+# 0.0.128
+- Add cubit auto complete
+
 # 0.0.127
 - Refactor Assert image Generate to Dart Asset Transformer
 

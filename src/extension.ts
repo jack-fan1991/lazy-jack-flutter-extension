@@ -27,6 +27,10 @@ let sidebarManger = new SidebarManager()
 export class APP {
   public static pubspecYaml: any|undefined = undefined;
   public static pubspecLockYaml: any|undefined = undefined;
+  public static depOnBloc: any|undefined = undefined;
+  public static depOhive: any|undefined = undefined;
+  public static flutterPackageName : any|undefined = undefined;
+
 }
 
 export async function activate(context: vscode.ExtensionContext) {
@@ -37,6 +41,9 @@ export async function activate(context: vscode.ExtensionContext) {
   await checkGitExtensionInYamlIfDart(true).then(async (yaml) => {
     APP.pubspecYaml = yaml
     APP.pubspecLockYaml =await getPubspecLockAsMap()
+    APP.depOnBloc = APP.pubspecYaml["dependencies"]["flutter_bloc"] !=undefined
+    APP.depOhive = APP.pubspecYaml["dependencies"]["hive"] !=undefined
+    APP.flutterPackageName = APP.pubspecYaml["name"]
     log(APP.pubspecYaml)
   })
   registerDartSnippet(context)
