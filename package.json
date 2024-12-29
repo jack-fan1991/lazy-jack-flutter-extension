@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.129",
+  "version": "0.0.131",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -99,6 +99,11 @@
       },
       {
         "category": "lazy Jack",
+        "command": "command_add_clean_architecture_cubit",
+        "title": "✨ Add Clean Architecture cubit"
+      },
+      {
+        "category": "lazy Jack",
         "command": "graphql_code_gen_fragment_to_dart_type_def",
         "title": "✨ graphql to dart type def"
       }
@@ -130,13 +135,18 @@
         {
           "command": "command_clean_architecture",
           "title": "✨ Generate Clean Architecture feature",
-          "when": "explorerResourceIsFolder && resourceFilename == 'features'"
+          "when": "explorerResourceIsFolder && (resourceFilename =~ /.*(features|pages).*/)"
+        },
+        {
+          "command": "command_add_clean_architecture_cubit",
+          "title": "✨ Add Clean Architecture cubit",
+          "when": "explorerResourceIsFolder && (resourceFilename =~ /.*(presentation).*/)"
         },
         {
           "command": "graphql_code_gen_fragment_to_dart_type_def",
           "title": "✨ Graphql Fragment to dart typedef",
           "when": "explorerResourceIsFolder && resourceFilename == '__generated'"
-        }        
+        }
       ]
     },
     "snippets": [

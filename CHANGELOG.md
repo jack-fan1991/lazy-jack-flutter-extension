@@ -1,5 +1,9 @@
+# 0.0.131
+- Clean architecture with cubit
+
 # 0.0.130
 - Add cubit auto complete fit more case
+- Auto register route
 
 # 0.0.129
 - Add cubit auto complete

@@ -2,31 +2,28 @@ import * as vscode from 'vscode';
 
 import { CompletionItemProvider, TextDocument, Position, CompletionItem, CompletionItemKind, CancellationToken } from 'vscode';
 import { getActivateText } from '../utils/src/vscode_utils/activate_editor_utils';
-import { getActivateEditorFileName, getActivateEditorFilePath, getCursorLineText, removeFolderPath } from '../utils/src/vscode_utils/editor_utils';
+import { getActivateEditorFileName, getActivateEditorFilePath, getCursorLineText } from '../utils/src/vscode_utils/editor_utils';
 import { findClassRegex, toUpperCamelCase } from '../utils/src/regex/regex_utils';
 import { activeEditorIsDart } from '../utils/src/language_utils/language_utils';
 import path = require('path');
 import { APP } from '../extension';
 import * as changeCase from "change-case";
-import { getRootPath } from '../utils/src/vscode_utils/vscode_env_utils';
 
 const DART_MODE = { language: "dart", scheme: "file" };
 
 
 export class MyCompletionItemProvider implements CompletionItemProvider {
-
-
-
     async provideCompletionItems(document: TextDocument, position: Position, token: CancellationToken): Promise<CompletionItem[]> {
         const completionItems: CompletionItem[] = [];
         let text = getActivateText()
         let match = text.match(findClassRegex) ?? []
         let lineText = getCursorLineText();
-        let fileName = getActivateEditorFileName()
+
         if (lineText?.startsWith('class ') || lineText?.startsWith('abstract class ')) {
-            fileName = toUpperCamelCase(fileName)
-            if (!lineText.includes(fileName) && (match.length == 0 || !Array.from(match).includes(fileName))) {
-                completionItems.push(new CompletionItem(fileName, CompletionItemKind.Class));
+            if (match.length == 0) {
+                let fileName = getActivateEditorFileName()
+                let className = toUpperCamelCase(fileName)
+                completionItems.push(new CompletionItem(className, CompletionItemKind.Class));
             } else {
                 let match = lineText.match(findClassRegex) ?? []
                 let className = match[1]
@@ -37,22 +34,22 @@ export class MyCompletionItemProvider implements CompletionItemProvider {
                         completionItems.push(statefulWidgetItem(className))
                     }
                     completionItems.push(new CompletionItem('extends', CompletionItemKind.Class));
-                } else if (lineText.includes("extends") && !lineText.includes("extends Cubit")) {
+                } else if (lineText.includes("extends") &&!lineText.includes("extends Cubit") ) {
                     if (activeEditorIsDart() && APP.depOnBloc) {
-                        completionItems.push(cubitItem(text))
+                        completionItems.push(cubitItem())
+
                     }
                 }
-                else if ((lineText.includes("extends") && lineText.includes("extends Cubit")) || (lineText.includes("extends") && lineText.includes("extends Cubit<"))) {
+                else if (lineText.includes("extends") &&  lineText.includes("extends Cubit")  ) {
                     let classDetails = await findClassesInCurrentFolder()
-                    let classMatch: String[] = []
-                    classDetails = classDetails.filter((e) => {
-                        for (let i in e.classes) {
-                            let typeName = e.classes[i]
-                            let find = changeCase.camelCase(className)
-                            let target = changeCase.camelCase(typeName)
-                            if (is80PercentMatch(find, target) && className != typeName)
-                                completionItems.push(cubitStateItem(lineText, text, className, typeName, e.file));
-                            // classMatch.push(classN)
+                    let classMatch:String[] =[]
+                    classDetails=classDetails.filter((e) => {
+                        for (let c in e.classes) {
+                        let classN =   e.classes[c]
+                        let find=changeCase.camelCase(className)
+                        let target =changeCase.camelCase(classN)
+                        if(is80PercentMatch(find,target) &&  className!=classN)
+                            completionItems.push(cubitStateItem(classN));
                         }
                     })
                 } else if (!lineText.includes('State')) {
@@ -64,13 +61,13 @@ export class MyCompletionItemProvider implements CompletionItemProvider {
                 }
 
 
+                }
             }
+            return completionItems;
         }
-        return completionItems;
     }
-}
 
-function statefulWidgetItem(className: string, fromWidget: boolean = false): CompletionItem {
+        function statefulWidgetItem(className: string, fromWidget: boolean = false): CompletionItem {
     // 添加自动补全项
     const nameItem = new CompletionItem('StatefulWidget', CompletionItemKind.Class);
     let prefix = fromWidget ? "" : "extends "
@@ -123,99 +120,23 @@ function statelessItem(className: string, fromWidget: boolean = false): Completi
 }
 
 
-function cubitStateItem(lineText: String, text: String, className: String, typeName: String, filePath: String): CompletionItem {
+function cubitStateItem(className:String): CompletionItem {
     // let classDetails = (await findClassesInCurrentFolder()).filter((e) => e.classes.);
-    let editor = vscode.window.activeTextEditor!
-    let p = filePath.replace(getRootPath(), "")
 
-    const position = editor.selection.active;
-    const nameItem = new CompletionItem(`${typeName}`, CompletionItemKind.Class);
-
-    if (lineText.includes("{") && lineText.includes(">")) {
-        if(lineText.includes("<")){
-            nameItem.insertText = new vscode.SnippetString(
-                `${typeName}`)
-        }else{
-            nameItem.insertText = new vscode.SnippetString(
-                `<${typeName}`)
-        }
-       
-
-    } else if (lineText.includes("{") && !lineText.includes(">")) {
-        if(lineText.includes("<")){
-            nameItem.insertText = new vscode.SnippetString(
-                `${typeName}>`)
-        }else{
-            nameItem.insertText = new vscode.SnippetString(
-                `<${typeName}>`)
-        }
-       
-    }
-   
-
-    else {
-        nameItem.insertText = new vscode.SnippetString(
-            `<${typeName}>{
-\t${className}(super.initialState);
-}`
-        );
-    }
-
-
-    nameItem.range = new vscode.Range(
-        new Position(position.line, position.character),  // 開始位置
-        new Position(position.line, position.character - 1)   // 結束位置
+    const nameItem = new CompletionItem(`${className}`, CompletionItemKind.Class);
+    nameItem.insertText = new vscode.SnippetString(
+        `<${className}>`
     );
-    nameItem.detail = `${p}`
-    nameItem.documentation = `
-class ${className} extends Cubit<${typeName}>{
-    ${className}(super.initialState);
-}  
-`
-    let textEditList: vscode.TextEdit[] = [];
-    if (!text.includes("import 'package:bloc/bloc.dart';")) {
-        textEditList.push({
-            range: new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 0)),
-            newText: "import 'package:bloc/bloc.dart';\n"
-        })
-    }
-    p = p.replace("/lib", "")
-    let packageImport = `package:${APP.flutterPackageName}${p}`
-    if (!text.includes(packageImport)) {
-        textEditList.push({
-            range: new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 0)),
-            newText: `import "${packageImport}";\n`
-        })
-    }
-    nameItem.additionalTextEdits = textEditList
-    nameItem.label = `${typeName}`;
     return nameItem;
 }
 
-function cubitItem(text: String): CompletionItem {
+function cubitItem(): CompletionItem {
     // let classDetails = (await findClassesInCurrentFolder()).filter((e) => e.classes.);
 
     const nameItem = new CompletionItem('Cubit', CompletionItemKind.Class);
     nameItem.insertText = new vscode.SnippetString(
         "Cubit"
     );
-    if (!text.includes("import 'package:bloc/bloc.dart';")) {
-        nameItem.additionalTextEdits = [
-            {
-                range: new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 0)),
-                newText: "import 'package:bloc/bloc.dart';\n"
-            }
-        ];
-
-    }
-    // nameItem.additionalTextEdits = [
-    //     {
-    //         range: new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 0)),
-    //         newText: "import 'package:bloc/bloc.dart';\n"
-    //     }
-    // ];
-    // 增加額外的命令來插入下一個補全項目
-    // 假設 nextCubitItem 會創建下一個補全項目    
     return nameItem;
 }
 

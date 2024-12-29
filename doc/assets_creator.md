@@ -1,23 +1,18 @@
 #### Dart Asset Transformer
-* Support png
-  ![](../image/assets_creater/support_png.png)
 
-* Support svg
-  ![](../image/assets_creater/support_svg.png)
-
-* Data sample
-  ![](../image/assets_creater/all_data.png)
-
-* Transformer path
-  ![](../image/assets_creater/create.png)
+| Support Fold name  | Image                                           |
+|---------------|-------------------------------------------------|
+| **images** | ![](../image/assets_creater/support_png.png)    |
+| **svg** | ![](../image/assets_creater/support_svg.png)    |
+| **File Tree** | ![](../image/assets_creater/all_data.png)       |
+| **File Tree** | lib/asserts ![](../image/assets_creater/create.png)    
 
 
-* Svg template
-  - Auto check lib support
+* Svg template(dependencies auto detector)
+  - support [vector_graphics](https://pub.dev/packages/vector_graphics)
   
 ```dart
 enum SvgAssets {
-  ${svgObj.join(',\n\t')};
 
   final String path;
   const SvgAssets(this.path);
@@ -34,7 +29,7 @@ enum SvgAssets {
                 BlendMode.srcIn,
         ),
     );
-    /// If depends on lib https://pub.dev/packages/vector_graphics 
+    /// If depends on vector_graphics
     Widget withVectorGraphics({
         required String path, 
         double? width,

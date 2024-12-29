@@ -2,137 +2,32 @@
 ## Most of feature is support on MacOs
 ## New 
 
+  #### Clean architecture with cubit
+   * [ReadMore](./doc/clean_architecture.md)
+   
+  | Support Fold name  | Image                                           |
+  |---------------|-------------------------------------------------|
+  | **features** | ![](./image/clean_architecture/support_features.png)    |
+  | **pages** | ![](./image/clean_architecture/support_pages.png)    |
+  | **File tree** | ![](./image/clean_architecture/tree.png)       |
+  
+  | Feature | Image                                           |
+  |---------------|-------------------------------------------------|
+  | **Add cubit** | ![](./image/clean_architecture/add_cubit.png)    |
+  | **Register Route** | ![](./image/clean_architecture/auto_route.png)    |
+
+
   #### Dart Asset Transformer
-  * Support png
-  
-  ![](./image/assets_creater/support_png.png)
-  
-  * Support svg
-  
-  ![](./image/assets_creater/support_svg.png)
-  
-  * Data sample
-
- ![](./image/assets_creater/all_data.png)
-  
-  * Transformer path
-
-  ![](./image/assets_creater/create.png)
-  
-  
-  * Svg template
-    - Auto check lib support
-    
-  ```dart
-  enum SvgAssets {
-    ${svgObj.join(',\n\t')};
-  
-    final String path;
-    const SvgAssets(this.path);
-  
-      Widget toSvgWidget({double? width, double? height, Color? color}) =>
-        SvgPicture.asset(
-          path,
-          width: width,
-          height: height,
-          colorFilter: color == null
-              ? null
-              : ColorFilter.mode(
-                  color,
-                  BlendMode.srcIn,
-          ),
-      );
-      /// If depends on lib https://pub.dev/packages/vector_graphics 
-      Widget withVectorGraphics({
-          required String path, 
-          double? width,
-          double? height,
-          Color? color,
-          BoxFit fit = BoxFit.contain, 
-          Alignment alignment = Alignment.center,
-          Clip clipBehavior = Clip.hardEdge,
-          String? semanticsLabel, 
-      }) =>
-          VectorGraphic(
-              loader: AssetBytesLoader(path),
-              width: width,
-              height: height,
-              fit: fit,
-              alignment: alignment,
-              clipBehavior: clipBehavior,
-              semanticsLabel: semanticsLabel,
-              colorFilter: color == null
-                  ? null
-                  : ColorFilter.mode(
-                      color,
-                      BlendMode.srcIn,
-                  ),
-          );
-  
-  }
-  
-  
-  ```
-  
-  * Png template
-    
-  ```dart
-  enum PngImage {
-    ${svgObj.join(',\n\t')};
-  
-    final String path;
-    const PngImage(this.path);
-    
-    Widget toImage({
-      double? width,
-      double? height,
-      Color? color,
-      ImageFrameBuilder? frameBuilder,
-      ImageErrorWidgetBuilder? errorBuilder,
-      String? semanticLabel,
-      bool excludeFromSemantics = false,
-      double? scale,
-      BlendMode? colorBlendMode,
-      BoxFit? fit,
-      AlignmentGeometry alignment = Alignment.center,
-      ImageRepeat repeat = ImageRepeat.noRepeat,
-      Rect? centerSlice,
-      bool matchTextDirection = false,
-      bool gaplessPlayback = false,
-      bool isAntiAlias = false,
-      String? package,
-      FilterQuality filterQuality = FilterQuality.low,
-      int? cacheWidth,
-      int? cacheHeight,
-    }) =>
-        Image.asset(
-          path,
-          width: width,
-          height: height,
-          color: color,
-          frameBuilder: frameBuilder,
-          errorBuilder: errorBuilder,
-          semanticLabel: semanticLabel,
-          excludeFromSemantics: excludeFromSemantics,
-          scale: scale,
-          colorBlendMode: colorBlendMode,
-          fit: fit,
-          alignment: alignment,
-          repeat: repeat,
-          centerSlice: centerSlice,
-          matchTextDirection: matchTextDirection,
-          gaplessPlayback: gaplessPlayback,
-          isAntiAlias: isAntiAlias,
-          package: package,
-          filterQuality: filterQuality,
-          cacheWidth: cacheWidth,
-          cacheHeight: cacheHeight,
-        );
-  }
-  
-  
-  ```
-
+  * [ReadMore](./doc/assets_creator.md)
+ 
+ | Support Fold name  | Image                                           |
+ |---------------|-------------------------------------------------|
+ | **images** | ![](./image/assets_creator/support_png.png)    |
+ | **svg** | ![](./image/assets_creator/support_svg.png)    |
+ | **File Tree** | ![](./image/assets_creator/all_data.png)       |
+ | **File Tree** | lib/asserts ![](./image/assets_creator/create.png)    
+ 
+ 
 
   - Generate Clean Architecture folder only show menu when right-click when folder name is 'features'
 

@@ -23,13 +23,15 @@ import { registerCleanArchitectureGenerate } from './vscode_explorer/flutter/gen
 import { registerQuickFix } from './vscode_code_action/code_action';
 import { getPubspecLockAsMap } from './utils/src/language_utils/dart/pubspec/pubspec_utils';
 import { registerToGqlFragmentToDart } from './vscode_explore_menu/graphql_fragment_to_typedef';
+import { registerCreateRouteConfiguration } from './vscode_explorer/flutter/generate_route_temp';
+import { registerCleanArchitectureCubitGenerate } from './vscode_explorer/flutter/generate_clean_architecture_cubit';
 let sidebarManger = new SidebarManager()
 export class APP {
   public static pubspecYaml: any|undefined = undefined;
   public static pubspecLockYaml: any|undefined = undefined;
   public static depOnBloc: any|undefined = undefined;
   public static depOhive: any|undefined = undefined;
-  public static flutterPackageName : any|undefined = undefined;
+  public static flutterLibName : any|undefined = undefined;
 
 }
 
@@ -44,14 +46,17 @@ export async function activate(context: vscode.ExtensionContext) {
       APP.pubspecLockYaml =await getPubspecLockAsMap()
       APP.depOnBloc = APP.pubspecYaml["dependencies"]["flutter_bloc"] !=undefined
       APP.depOhive = APP.pubspecYaml["dependencies"]["hive"] !=undefined
-      APP.flutterPackageName = APP.pubspecYaml["name"]
+      APP.flutterLibName = APP.pubspecYaml["name"]
       log(APP.pubspecYaml)
+      registerCreateRouteConfiguration(context)
+      registerDartSnippet(context)
+      registerToRequireParams(context)
+
     }
     
   })
-  registerDartSnippet(context)
   registerGithubGuiCommand(context)
-  registerToRequireParams(context)
+ 
   // registerCommandDartSelectedToFactory(context)
   registerUpdateDependencyVersion(context)
   // codeAction.register(context)
@@ -64,6 +69,8 @@ export async function activate(context: vscode.ExtensionContext) {
   //側邊欄擴展
   registerGenerateSvg(context)
   registerCleanArchitectureGenerate(context)
+  registerCleanArchitectureCubitGenerate(context)
+
 
   
 
