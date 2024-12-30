@@ -2,6 +2,10 @@
 ## Most of feature is support on MacOs
 ## New 
 
+  ##### Export String to l10n resource
+  * [ReadMore](./doc/l10n.md)
+
+
   #### Clean architecture with cubit
    * [ReadMore](./doc/clean_architecture.md)
    

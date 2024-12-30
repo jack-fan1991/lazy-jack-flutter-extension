@@ -101,7 +101,7 @@ export function registerCreateRouteConfiguration(context: vscode.ExtensionContex
 }
 
 
-async function updateAndFormatFile(filePath: string, content: string) {
+export async function updateAndFormatFile(filePath: string, content: string) {
     try {
         // 嘗試打開文件
         let document: vscode.TextDocument;

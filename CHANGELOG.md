@@ -1,3 +1,7 @@
+
+# 0.0.133
+- [Feature] Export String to l10n resource
+
 # 0.0.132
 - [Refactor] more readable Clean architecture name
 

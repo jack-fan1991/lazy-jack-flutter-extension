@@ -32,6 +32,7 @@ export class APP {
   public static depOnBloc: any|undefined = undefined;
   public static depOhive: any|undefined = undefined;
   public static flutterLibName : any|undefined = undefined;
+  public static flutterLocalizations : any|undefined = undefined;
 
 }
 
@@ -47,6 +48,8 @@ export async function activate(context: vscode.ExtensionContext) {
       APP.depOnBloc = APP.pubspecYaml["dependencies"]["flutter_bloc"] !=undefined
       APP.depOhive = APP.pubspecYaml["dependencies"]["hive"] !=undefined
       APP.flutterLibName = APP.pubspecYaml["name"]
+      APP.flutterLocalizations = APP.pubspecYaml["dependencies"]["flutter_localizations"]
+  
       log(APP.pubspecYaml)
       registerCreateRouteConfiguration(context)
       registerDartSnippet(context)
