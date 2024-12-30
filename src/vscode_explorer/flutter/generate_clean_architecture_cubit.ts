@@ -31,6 +31,7 @@ export function registerCleanArchitectureCubitGenerate(context: vscode.Extension
             let currentDir = rootPath.split('/').pop() //"presentation"
           
             const featurePath = path.dirname(rootPath) ;
+            const isFolderPages = path.dirname(rootPath).endsWith('pages')
             try {
                 await createIfDoesNotExist(featurePath);
                 createIfDoesNotExist(path.join(featurePath, 'data'));
@@ -49,7 +50,7 @@ export function registerCleanArchitectureCubitGenerate(context: vscode.Extension
                 let replacePath = path.join(getRootPath(),"lib/")
                 let libPath =featurePath.replace(replacePath,"")
 
-                let widgets = getWidgetsTemplate(mainClass, libPath,currentDir);
+                let widgets = getWidgetsTemplate(isFolderPages,mainClass, libPath,currentDir);
                 fs.writeFileSync(mainScreenPath,widgets)
             
 
@@ -160,8 +161,8 @@ class ${upperCase}Cubit extends Cubit<${upperCase}State> {
 function getDataModelsTemplate(mainClass: string) {
     let upperCase = toUpperCamelCase(mainClass);
     return `
-class ${upperCase}Model {
-    ${upperCase}Model();
+class ${upperCase}UIModel {
+    ${upperCase}UIModel();
 }
 
 
@@ -178,8 +179,8 @@ import 'package:${APP.flutterLibName}/${libPath}/data/${name}_model.dart';
 class UseCase${upperCase} {
     UseCase${upperCase}();
 
-    Future<${upperCase}Model> call() async {
-        return ${upperCase}Model();
+    Future<${upperCase}UIModel> call() async {
+        return ${upperCase}UIModel();
     }
     
 }
@@ -189,23 +190,28 @@ class UseCase${upperCase} {
 
 }
 
-function getWidgetsTemplate(mainClass: string, libPath: string,dir :string) {
+function getWidgetsTemplate(isFolderPages:boolean, mainClass: string, libPath: string,dir :string) {
     let upperCase = toUpperCamelCase(mainClass);
     let name = changeCase.snakeCase(mainClass)
+    let bodyEndFix = 'ViewWidget'
+    if(isFolderPages){
+        bodyEndFix = 'ScreenWidget'
+    }
+    let widgetName = `${upperCase}${bodyEndFix}`
     return `
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:${APP.flutterLibName}/${libPath}/presentation/bloc/${name}_cubit.dart';
 
 
-class ${upperCase}Widget extends StatelessWidget {
-  const ${upperCase}Widget({super.key});
+class ${widgetName} extends StatelessWidget {
+  const ${widgetName}({super.key});
 
   @override
   Widget build(BuildContext context) {
     final state = context.watch<${upperCase}Cubit>().state;
     return const Center(
-      child: Text('${upperCase} Widget'),
+      child: Text('${widgetName}'),
     );
   }
 }

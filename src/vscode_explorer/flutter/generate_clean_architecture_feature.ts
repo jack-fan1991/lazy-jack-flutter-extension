@@ -37,7 +37,10 @@ export function registerCleanArchitectureGenerate(context: vscode.ExtensionConte
 
                 let name = changeCase.snakeCase(mainClass);
                 let mainScreenPath = path.join(featurePath, `${mainClass}_screen.dart`)
-                fs.writeFileSync(mainScreenPath, getMainTemplate(mainClass, featureName, dir));
+                if(isPages){
+                    mainScreenPath = path.join(featurePath, `${mainClass}_page.dart`)
+                }
+                fs.writeFileSync(mainScreenPath, getMainTemplate(isPages,mainClass, featureName, dir));
                 let cubit = path.join(featurePath, `presentation/bloc/${name}_cubit.dart`)
 
                 fs.writeFileSync(cubit, getCubitTemplate(mainClass, featureName, dir));
@@ -51,15 +54,20 @@ export function registerCleanArchitectureGenerate(context: vscode.ExtensionConte
                 let useCase = getUseCaseTemplate(mainClass, featureName, dir);
                 fs.writeFileSync(path.join(featurePath, `domain/${name}_useCase.dart`), useCase);
 
-                let widgets = getWidgetsTemplate(mainClass);
+                let widgets = getWidgetsTemplate(isPages,mainClass);
                 fs.writeFileSync(path.join(featurePath, `presentation/widgets/${name}_widget.dart`), widgets)
                 //open file
                 const uri = vscode.Uri.file(mainScreenPath);
                 await vscode.window.showTextDocument(uri);
                 reFormat();
+                let endFix = 'ScreenWidget'
+                if(isPages){
+                    endFix = 'PageWidget'
+                }
+                let mainWidget =`${upperCase}${endFix}`
                 vscode.window.showInformationMessage(`💡 Register ${upperCase}Screen as route ?`, 'Yes', 'No').then((value) => {
                     if (value === 'Yes') {
-                        vscode.commands.executeCommand("command_create_routeConfiguration", mainClass, `${upperCase}Screen.routeName`, `import 'package:${APP.flutterLibName}${mainScreenPath.replace(getRootPath() + "/lib", "")}';`, `${upperCase}Screen`);
+                        vscode.commands.executeCommand("command_create_routeConfiguration", mainClass, `${mainWidget}.routeName`, `import 'package:${APP.flutterLibName}${mainScreenPath.replace(getRootPath() + "/lib", "")}';`, `${mainWidget}`);
                     }
 
                 });
@@ -73,19 +81,27 @@ export function registerCleanArchitectureGenerate(context: vscode.ExtensionConte
 }
 
 
-function getMainTemplate(mainClass: string, featurePath: string, dir: string) {
+function getMainTemplate(isPages:boolean,mainClass: string, featurePath: string, dir: string) {
     let upperCase = toUpperCamelCase(mainClass);
+    let camel = changeCase.camelCase(mainClass);
     let name = changeCase.snakeCase(mainClass);
-
+    let endFix = 'ScreenWidget'
+    if(isPages){
+        endFix = 'PageWidget'
+    }
+    let bodyEndFix = 'ViewWidget'
+    if(isPages){
+        bodyEndFix = 'ScreenWidget'
+    }
     return `
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/bloc/${name}_cubit.dart';
 import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/widgets/${name}_widget.dart';
 
-class ${upperCase}Screen extends StatelessWidget {
-  static const routeName = '/${upperCase}';
-  const ${upperCase}Screen({super.key});
+class ${upperCase}${endFix} extends StatelessWidget {
+  static const routeName = '/${camel}';
+  const ${upperCase}${endFix}({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -94,7 +110,7 @@ class ${upperCase}Screen extends StatelessWidget {
       appBar: AppBar(
         title: Text('${upperCase}'),
       ),
-      body: ${upperCase}BodyWidget()
+      body: ${upperCase}${bodyEndFix}()
     );
   }
 }
@@ -155,8 +171,8 @@ class ${upperCase}Cubit extends Cubit<${upperCase}State> {
 function getDataModelsTemplate(mainClass: string) {
     let upperCase = toUpperCamelCase(mainClass);
     return `
-class ${upperCase}Model {
-    ${upperCase}Model();
+class ${upperCase}UIModel {
+    ${upperCase}UIModel();
 }
 
 
@@ -173,8 +189,8 @@ import 'package:${APP.flutterLibName}/${dir}/${featurePath}/data/${name}_model.d
 class UseCase${upperCase} {
     UseCase${upperCase}();
 
-    Future<${upperCase}Model> call() async {
-        return ${upperCase}Model();
+    Future<${upperCase}UIModel> call() async {
+        return ${upperCase}UIModel();
     }
     
 }
@@ -184,18 +200,21 @@ class UseCase${upperCase} {
 
 }
 
-function getWidgetsTemplate(mainClass: string) {
+function getWidgetsTemplate(isPages:boolean,mainClass: string) {
     let upperCase = toUpperCamelCase(mainClass);
-    return `
+    let bodyEndFix = 'ViewWidget'
+    if(isPages){
+        bodyEndFix = 'ScreenWidget'
+    }    return `
 import 'package:flutter/material.dart';
 
-class ${upperCase}BodyWidget extends StatelessWidget {
-  const ${upperCase}BodyWidget({super.key});
+class ${upperCase}${bodyEndFix} extends StatelessWidget {
+  const ${upperCase}${bodyEndFix}({super.key});
 
   @override
   Widget build(BuildContext context) {
     return const Center(
-      child: Text('${upperCase} Body'),
+      child: Text('${upperCase}${bodyEndFix}'),
     );
   }
 }
