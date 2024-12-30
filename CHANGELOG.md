@@ -1,3 +1,5 @@
+# 0.0.137
+- [Feature] Update clean architecture pattern,inject cubit with blocConsumer
 
 # 0.0.133
 - [Feature] Export String to l10n resource

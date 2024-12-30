@@ -54,7 +54,7 @@ export function registerCleanArchitectureGenerate(context: vscode.ExtensionConte
                 let useCase = getUseCaseTemplate(mainClass, featureName, dir);
                 fs.writeFileSync(path.join(featurePath, `domain/${name}_useCase.dart`), useCase);
 
-                let widgets = getWidgetsTemplate(isPages,mainClass);
+                let widgets = getWidgetsTemplate(isPages,mainClass, featureName, dir);
                 fs.writeFileSync(path.join(featurePath, `presentation/widgets/${name}_widget.dart`), widgets)
                 //open file
                 const uri = vscode.Uri.file(mainScreenPath);
@@ -93,24 +93,35 @@ function getMainTemplate(isPages:boolean,mainClass: string, featurePath: string,
     if(isPages){
         bodyEndFix = 'ScreenWidget'
     }
+    let className =`${upperCase}${endFix}`
+    let bodyClassName =`${upperCase}${bodyEndFix}`
+    let cubit=changeCase.camelCase(`${upperCase}Cubit` )
+    let useCase = changeCase.camelCase(`UseCase${upperCase}`); 
     return `
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/bloc/${name}_cubit.dart';
 import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/widgets/${name}_widget.dart';
+import 'package:${APP.flutterLibName}/${dir}/${featurePath}/domain/${name}_useCase.dart';
 
-class ${upperCase}${endFix} extends StatelessWidget {
+
+class ${className} extends StatefulWidget {
   static const routeName = '/${camel}';
-  const ${upperCase}${endFix}({super.key});
+  const ${className}({super.key});
+
+  @override
+  State<${className}> createState() => _${className}State();
+}
+
+class _${className}State extends State<${className}> {
+  final ${toUpperCamelCase(cubit)} _${cubit}= ${upperCase}Cubit(${useCase}:${toUpperCamelCase(useCase)}());
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<${upperCase}Cubit>().state;
     return Scaffold(
-      appBar: AppBar(
-        title: Text('${upperCase}'),
-      ),
-      body: ${upperCase}${bodyEndFix}()
+          appBar: AppBar(
+            title: Text("${className}"),
+          ),
+          body: ${bodyClassName}(${cubit}:_${cubit}),
     );
   }
 }
@@ -140,6 +151,7 @@ function getCubitTemplate(mainClass: string, featurePath: string, dir: string) {
     let upperCase = toUpperCamelCase(mainClass);
     let name = changeCase.snakeCase(mainClass)
     let camel = changeCase.camelCase(mainClass);
+    let useCase = changeCase.camelCase(`UseCase${upperCase}`); 
     return `
 import 'package:bloc/bloc.dart';
 import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/bloc/${name}_state.dart';
@@ -147,13 +159,13 @@ import 'package:${APP.flutterLibName}/${dir}/${featurePath}/domain/${name}_useCa
  
 
 class ${upperCase}Cubit extends Cubit<${upperCase}State> {
-    final UseCase${upperCase} ${camel}UseCase;
-    ${upperCase}Cubit(this.${camel}UseCase) : super(const ${upperCase}State.initial());
+    final UseCase${upperCase} ${useCase};
+    ${upperCase}Cubit({required this.${useCase}}) : super(const ${upperCase}State.initial());
 
-    Future<void> fetch${upperCase}Data() async {
+    Future<void> fetchData() async {
         try {
             /// emit(loadingState);
-            final ${camel}Model = await ${camel}UseCase.call();
+            final ${camel}Model = await ${useCase}.call();
             /// emit success state
         } catch (e) {
             /// emit error state
@@ -200,25 +212,63 @@ class UseCase${upperCase} {
 
 }
 
-function getWidgetsTemplate(isPages:boolean,mainClass: string) {
+function getWidgetsTemplate(isPages:boolean,mainClass: string, featurePath: string, dir: string) {
     let upperCase = toUpperCamelCase(mainClass);
+    let cubit=changeCase.camelCase(`${upperCase}Cubit` )
+    let state=changeCase.camelCase(`${upperCase}State` )
+    let name = changeCase.snakeCase(mainClass);
     let bodyEndFix = 'ViewWidget'
     if(isPages){
         bodyEndFix = 'ScreenWidget'
-    }    return `
-import 'package:flutter/material.dart';
+    }    
+    let className =`${upperCase}${bodyEndFix}`
+    return `import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/bloc/${name}_cubit.dart';
+import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/bloc/${name}_state.dart';
 
-class ${upperCase}${bodyEndFix} extends StatelessWidget {
-  const ${upperCase}${bodyEndFix}({super.key});
+class ${className} extends StatefulWidget {
+  final ${upperCase}Cubit ${cubit};
+  const ${className}({super.key, required this.${cubit}});
+
+  @override
+  State<${className}> createState() => _${className}State();
+}
+
+class _${className}State extends State<${className}> {
+  @override
+  void initState() {
+    super.initState();
+    widget.${cubit}.fetchData();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return const Center(
-      child: Text('${upperCase}${bodyEndFix}'),
+    return BlocConsumer<${toUpperCamelCase(cubit)}, ${toUpperCamelCase(state)}>(
+      bloc: widget.${cubit},
+      listener: (context, ${state}) => {
+        // show dialog
+      },
+      builder: (context, ttState) {
+        return Center(
+          child: _LoadedWidget(),
+        );
+      },
     );
   }
 }
 
+class _LoadedWidget extends StatelessWidget {
+  const _LoadedWidget({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final ${state} = context.watch<${toUpperCamelCase(cubit)}>().state;
+    return Text("TtScreenWidget state => \${${state}.runtimeType}");
+  }
+}
 
         `
 
