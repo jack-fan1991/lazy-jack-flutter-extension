@@ -244,16 +244,19 @@ class _${className}State extends State<${className}> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocConsumer<${toUpperCamelCase(cubit)}, ${toUpperCamelCase(state)}>(
-      bloc: widget.${cubit},
-      listener: (context, ${state}) => {
-        // show dialog
-      },
-      builder: (context, ttState) {
-        return Center(
-          child: _LoadedWidget(),
-        );
-      },
+    return BlocProvider(
+      create: (context) => widget.${cubit},
+      child: BlocConsumer<${toUpperCamelCase(cubit)}, ${toUpperCamelCase(state)}>(
+        bloc: widget.${cubit},
+        listener: (context, ${state}) => {
+          // show dialog
+        },
+        builder: (context, ttState) {
+          return Center(
+            child: _LoadedWidget(),
+          );
+        },
+      ),
     );
   }
 }

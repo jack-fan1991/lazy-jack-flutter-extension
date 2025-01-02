@@ -1,3 +1,6 @@
+# 0.0.139
+- [Bugfix]  Clean architecture pattern,add blocConsumer
+
 # 0.0.138
 - [Feature] Update Export String to l10n resource,more friendly
 
