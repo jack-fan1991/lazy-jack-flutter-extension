@@ -1,13 +1,8 @@
 import * as vscode from 'vscode';
 import { EzCodeActionProviderInterface } from '../../code_action';
-import { OpenCloseFinder, SmallerOpenCloseFinder } from '../../../utils/src/regex/open_close_finder';
-import { getActivateEditor, getActivateEditorFileName, getCursorLineText, getSelectedText, openEditor, replaceSelectionText } from '../../../utils/src/vscode_utils/editor_utils';
-import { logInfo } from '../../../utils/src/logger/logger';
-import { paramToRequireGenerator } from '../../../helper/dart/to_require_params';
+import { getActivateEditor, getCursorLineText, getSelectedText, openEditor, replaceSelectionText } from '../../../utils/src/vscode_utils/editor_utils';
 import path = require('path');
 import { getActivateText, insertToActivateEditor, reFormat } from '../../../utils/src/vscode_utils/activate_editor_utils';
-import { insertPartLine } from '../../../helper/dart/part_utils';
-import { ParamToRequiredFixer } from '../param_to_required_fixer';
 import { APP } from '../../../extension';
 import { getRootPath } from '../../../utils/src/vscode_utils/vscode_env_utils';
 import * as fs from 'fs';
@@ -120,7 +115,16 @@ function autoSave(document: vscode.TextDocument, cursorLineText: string) {
     }
 }
 
+const findWidgetClassRegex = /class\s+([a-zA-Z_][\w]*)\s*(<[\w\s<>,]*)?\s*extends\s+(?!State\b)[\w\s<>,]*/g;
 
+function getAllClassNames(text: string): string[] {
+    let matches;
+    const classNames = [];
+    while ((matches = findWidgetClassRegex.exec(text)) !== null) {
+        classNames.push(matches[1]);
+    }
+    return classNames;
+}
 
 
 function l18nFixAction(): vscode.CodeAction | undefined {
@@ -146,7 +150,6 @@ async function l18nFix() {
     let editor = getActivateEditor()
 
     let targetPath = `${root}/lib/l10n`;
-    OpenCloseFinder
     // 讀取所有 lib/l18n/*.arb 檔案
     let files = fs.readdirSync(targetPath).filter(file => file.endsWith('.arb'));
     if (files.length === 0) {
@@ -157,18 +160,32 @@ async function l18nFix() {
 
     // 向前搜尋最近的 class 名稱
     let nearestClassName = findNearestClassName(fullText, position);
-    if (nearestClassName == undefined) {
-        nearestClassName = ""
-    }
-    nearestClassName = changeCase.camelCase(nearestClassName)
+    nearestClassName = nearestClassName
     let firstKey = files[0];
     let firstFilePath = path.join(targetPath, firstKey);
+    // 彈出選單或輸入框讓使用者選擇 key
+    let totalContent=getActivateText()
+    let classMatch =getAllClassNames(totalContent).filter(e => e !== undefined && !e.includes(nearestClassName));
+    let options = [
+        "✨ Enter custom key..." ,
+        ...(nearestClassName ? [nearestClassName] : []), // 最近 class 名稱
+        ...new Set(classMatch.map(key => key)), // 所有已存在的 key
+        
+    ];
+    let selectedKey = await vscode.window.showQuickPick(options, { placeHolder: "Select l10n key or Custom." });
+    if (selectedKey ==undefined ) return
+    if(selectedKey ==="Enter custom key..."){
+        selectedKey = ""
+    }
+    selectedKey= changeCase.snakeCase(selectedKey)
     // 彈出輸入框讓使用者輸入 key
-    let key = await vscode.window.showInputBox({ prompt: 'Enter the key for the selected text', value: nearestClassName });
+    let key = await vscode.window.showInputBox({ prompt: 'Enter the key for l10n', value: selectedKey });
     if (!key) {
         return undefined;
     }
     key=key.replace(`"`,"")
+    key = changeCase.camelCase(key)
+    key=changeCase.snakeCase(key)
     // 將選取的文字作為 value，並將 key-value 加入每個 .arb 檔案的末端
     files.forEach(file => {
         let filePath = path.join(targetPath, file);
@@ -225,7 +242,7 @@ async function l18nFix() {
 
 }
 
-function findNearestClassName(text: string, position: number): string | undefined {
+function findNearestClassName(text: string, position: number): string  {
     let classRegex = /class\s+(\w+)/g;
     let match;
     let lastMatch;
@@ -236,5 +253,5 @@ function findNearestClassName(text: string, position: number): string | undefine
             break;
         }
     }
-    return lastMatch ? lastMatch[1] : undefined;
+    return lastMatch ? lastMatch[1] :"";
 }
