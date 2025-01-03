@@ -269,7 +269,7 @@ class _LoadedWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final ${state} = context.watch<${toUpperCamelCase(cubit)}>().state;
-    return Text("TtScreenWidget state => \${${state}.runtimeType}");
+    return Text("${className} state => \${${state}.runtimeType}");
   }
 }
 

@@ -148,6 +148,7 @@ async function l18nFix() {
     let text = getSelectedText();
     let root = getRootPath();
     let editor = getActivateEditor()
+    let fileName = editor.document.fileName.split('/').pop();
 
     let targetPath = `${root}/lib/l10n`;
     // 讀取所有 lib/l18n/*.arb 檔案
@@ -161,31 +162,67 @@ async function l18nFix() {
     // 向前搜尋最近的 class 名稱
     let nearestClassName = findNearestClassName(fullText, position);
     nearestClassName = nearestClassName
+    let nearestClassDescription = changeCase.snakeCase(nearestClassName)
+    if (nearestClassDescription.endsWith("_widget")) {
+        nearestClassDescription = nearestClassDescription.replace("_widget", "")
+    }
+    let nearestClassNameOption = { label: `[Class] ${nearestClassName}`, description: `🔑 ${nearestClassDescription}` }
+
+    let fileNameDescription = changeCase.snakeCase(fileName!.replace(".dart", ""))
+    if (fileNameDescription.endsWith("_widget")) {
+        fileNameDescription = fileNameDescription.replace("_widget", "")
+    }
+    let fileNameOption = { label: `[File] ${fileName!}`, description: `🔑 ${fileNameDescription}` }
     let firstKey = files[0];
     let firstFilePath = path.join(targetPath, firstKey);
     // 彈出選單或輸入框讓使用者選擇 key
-    let totalContent=getActivateText()
-    let classMatch =getAllClassNames(totalContent).filter(e => e !== undefined && !e.includes(nearestClassName));
-    let options = [
-        "✨ Enter custom key..." ,
-        ...(nearestClassName ? [nearestClassName] : []), // 最近 class 名稱
-        ...new Set(classMatch.map(key => key)), // 所有已存在的 key
-        
+    let totalContent = getActivateText()
+    let classMatch = getAllClassNames(totalContent).filter(e => e !== undefined && !e.includes(nearestClassName));
+    let quickPickItems: vscode.QuickPickItem[] = [
+        { label: "✨ Enter custom key...", description: "Enter a custom key for l10n" },
+        ...(nearestClassName ? [nearestClassNameOption] : []), // 最近 class 名稱
+        ...new Set(
+            classMatch.filter((key) => {
+                changeCase.snakeCase(key) != changeCase.snakeCase(fileName!.replace(".dart", "")) ||
+                    changeCase.snakeCase(key) != changeCase.snakeCase(nearestClassName)
+            })
+                .map(key => {
+                    // 處理 description: 使用 snake_case 並移除 "_widget"（如果存在）
+                    let description = changeCase.snakeCase(key);
+
+                    if (description.endsWith("_widget")) {
+                        description = description.replace("_widget", "");
+                    }
+                    return { label: `[Class] ${key}`, description: `🔑 ${description}` };
+                })
+        ), // 所有已存在的 key
+        ...(fileName ? [fileNameOption] : [])
     ];
-    let selectedKey = await vscode.window.showQuickPick(options, { placeHolder: "Select l10n key or Custom." });
-    if (selectedKey ==undefined ) return
-    if(selectedKey ==="Enter custom key..."){
-        selectedKey = ""
+    let selectedKey = await vscode.window.showQuickPick(quickPickItems, { placeHolder: "Select l10n key or Custom." }); if (selectedKey == undefined) return
+    let outputKey = selectedKey.label
+    if(outputKey.includes("]")){
+        outputKey = selectedKey.label.split("]")[1].trim()
     }
-    selectedKey= changeCase.snakeCase(selectedKey)
+    if (selectedKey.label === "Enter custom key...") {
+        outputKey = ""
+    }
+    outputKey = changeCase.snakeCase(outputKey)
+    if (outputKey.endsWith("_dart")) {
+        outputKey = outputKey.replace("_dart", "")
+    }
+    if (outputKey.endsWith("_widget")) {
+        outputKey = outputKey.replace("_widget", "")
+    }
     // 彈出輸入框讓使用者輸入 key
-    let key = await vscode.window.showInputBox({ prompt: 'Enter the key for l10n', value: selectedKey });
+    let key = await vscode.window.showInputBox({ prompt: 'Enter the key for l10n', value: outputKey });
     if (!key) {
         return undefined;
     }
-    key=key.replace(`"`,"")
+    key = key.replace(`"`, "")
+    key = key.replace(".dart", "")
     key = changeCase.camelCase(key)
-    key=changeCase.snakeCase(key)
+    key = changeCase.snakeCase(key)
+
     // 將選取的文字作為 value，並將 key-value 加入每個 .arb 檔案的末端
     files.forEach(file => {
         let filePath = path.join(targetPath, file);
@@ -201,12 +238,17 @@ async function l18nFix() {
         editBuilder.replace(editor.selection, newText);
     });
     await editor.document.save();
+    vscode.window.showInformationMessage(`View l10n file `, 'Confirm', 'Cancel').then(async (option) => {
+        if (option == 'Confirm') {
+            openEditor(firstFilePath)
+        }
+    })
     runTerminal('flutter gen-l10n');
-
-    // //insert String in active editor
-    editor.edit(editBuilder => {
-        editBuilder.insert(new vscode.Position(0, 0), `import 'package:${APP.flutterLibName}/main.dart';\n`);
-    });
+    if(!totalContent.includes(`import 'package:${APP.flutterLibName}/main.dart';`)){
+        editor.edit(editBuilder => {
+            editBuilder.insert(new vscode.Position(0, 0), `import 'package:${APP.flutterLibName}/main.dart';\n`);
+        });
+    } 
     await editor.document.save();
 
     // 定義正則表達式，匹配 "ASD", 'ASD', '''ASD'''
@@ -226,32 +268,27 @@ async function l18nFix() {
 
     }
 
-        // Apply the edit and save
-        const editSuccess = await vscode.workspace.applyEdit(edit);
-        if (editSuccess) {
-            await editor.document.save();
-            vscode.window.showInformationMessage('Changes saved successfully');
-        } else {
-            throw new Error('Failed to apply edits');
-        }
-   
-
-    openEditor(firstFilePath)
-
-
-
+    // Apply the edit and save
+    const editSuccess = await vscode.workspace.applyEdit(edit);
+    if (editSuccess) {
+        await editor.document.save();
+       
+    } else {
+        throw new Error('Failed to apply edits');
+    }
+    
 }
 
-function findNearestClassName(text: string, position: number): string  {
+function findNearestClassName(text: string, position: number): string {
     let classRegex = /class\s+(\w+)/g;
     let match;
     let lastMatch;
-    while ((match = classRegex.exec(text)) !== null) {
+    while ((match = findWidgetClassRegex.exec(text)) !== null) {
         if (match.index < position) {
             lastMatch = match;
         } else {
             break;
         }
     }
-    return lastMatch ? lastMatch[1] :"";
+    return lastMatch ? lastMatch[1] : "";
 }

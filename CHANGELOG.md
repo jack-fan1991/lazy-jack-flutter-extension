@@ -1,8 +1,11 @@
+# 0.0.142
+- [Update] Make Export String to l10n resource more useful
+
 # 0.0.139
-- [Bugfix]  Clean architecture pattern,add blocConsumer
+- [Bugfix]  Clean architecture pattern,add blocProvider
 
 # 0.0.138
-- [Feature] Update Export String to l10n resource,more friendly
+- [Update] Make Export String to l10n resource more useful
 
 # 0.0.137
 - [Feature] Update clean architecture pattern,inject cubit with blocConsumer
