@@ -253,7 +253,7 @@ class _${className}State extends State<${className}> {
         listener: (context, ${state}) => {
           // show dialog
         },
-        builder: (context, ttState) {
+        builder: (context, ${state}) {
           return Center(
             child: _LoadedWidget(),
           );

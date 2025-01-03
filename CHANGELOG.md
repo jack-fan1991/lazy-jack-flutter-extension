@@ -1,3 +1,6 @@
+# 0.0.144
+- [Bugfix] Clean architecture pattern,rename state name in "widget.dart"
+
 # 0.0.143
 - [Update] Clean architecture pattern,add safe area in "page.dart"
 
