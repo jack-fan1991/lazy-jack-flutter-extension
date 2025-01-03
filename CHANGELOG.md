@@ -1,8 +1,11 @@
+# 0.0.143
+- [Update] Clean architecture pattern,add safe area in "page.dart"
+
 # 0.0.142
 - [Update] Make Export String to l10n resource more useful
 
 # 0.0.139
-- [Bugfix]  Clean architecture pattern,add blocProvider
+- [Bugfix] Clean architecture pattern,add blocProvider
 
 # 0.0.138
 - [Update] Make Export String to l10n resource more useful

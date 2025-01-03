@@ -121,7 +121,9 @@ class _${className}State extends State<${className}> {
           appBar: AppBar(
             title: Text("${className}"),
           ),
-          body: ${bodyClassName}(${cubit}:_${cubit}),
+          body: SafeArea(
+            child: ${bodyClassName}(${cubit}:_${cubit}),
+      ),
     );
   }
 }
