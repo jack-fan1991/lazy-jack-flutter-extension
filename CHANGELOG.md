@@ -1,3 +1,6 @@
+# 0.0.145
+- [Bugfix] generate_route_temp
+
 # 0.0.144
 - [Bugfix] Clean architecture pattern,rename state name in "widget.dart"
 

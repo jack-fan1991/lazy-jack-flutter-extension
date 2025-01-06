@@ -44,7 +44,13 @@ export function registerCreateRouteConfiguration(context: vscode.ExtensionContex
         let routeDone = false
         let screenDone = false
 
-
+        for (let i = 0; i < lines.length; i++) {
+            if (lines[i].trim().startsWith('const String') && lines[i].trim().endsWith('=')) {
+                lines[i] = lines[i] + ' ' + lines[i + 1].trim();
+                lines.splice(i + 1, 1);
+            }
+        }
+        
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i];
             if(line.startsWith("///")){
@@ -68,7 +74,7 @@ export function registerCreateRouteConfiguration(context: vscode.ExtensionContex
                 linesTemp.push("// ===== WARNING =====\n")
                 linesTemp.push("\n")
             }
-            if (!line.startsWith("const String") && !routeDone && importDone) {
+            if (!line.startsWith("const String")  && !routeDone && importDone) {
 
                 linesTemp.push(`const String ROUTE_${changeCase.constantCase(routName)} = ${routeParam};\n
 `)

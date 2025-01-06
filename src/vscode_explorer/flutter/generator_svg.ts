@@ -243,7 +243,6 @@ enum SvgAssets {
     );
 
     Widget withVectorGraphics({
-        required String path, 
         double? width,
         double? height,
         Color? color,
