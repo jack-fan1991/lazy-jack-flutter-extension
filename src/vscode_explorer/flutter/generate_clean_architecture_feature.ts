@@ -46,9 +46,9 @@ export function registerCleanArchitectureGenerate(context: vscode.ExtensionConte
                 fs.writeFileSync(cubit, getCubitTemplate(mainClass, featureName, dir));
 
                 let cubitState = path.join(featurePath, `presentation/bloc/${name}_state.dart`)
-                fs.writeFileSync(cubitState, getCubitStateTemplate(mainClass, featureName));
+                fs.writeFileSync(cubitState, getCubitStateTemplate(mainClass, featureName,dir));
 
-                let dataModel = path.join(featurePath, `data/${name}_model.dart`)
+                let dataModel = path.join(featurePath, `data/${name}_ui_model.dart`)
                 fs.writeFileSync(dataModel, getDataModelsTemplate(mainClass));
 
                 let useCase = getUseCaseTemplate(mainClass, featureName, dir);
@@ -113,7 +113,7 @@ class ${className} extends StatefulWidget {
 }
 
 class _${className}State extends State<${className}> {
-  final ${toUpperCamelCase(cubit)} _${cubit}= ${upperCase}Cubit(${useCase}:${toUpperCamelCase(useCase)}());
+  final ${toUpperCamelCase(cubit)} _${cubit}= ${upperCase}Cubit();
 
   @override
   Widget build(BuildContext context) {
@@ -132,16 +132,16 @@ class _${className}State extends State<${className}> {
 
 }
 
-function getCubitStateTemplate(mainClass: string, featurePath: string) {
+function getCubitStateTemplate(mainClass: string, featurePath: string, dir: string) {
     let upperCase = toUpperCamelCase(mainClass);
     let name = changeCase.snakeCase(mainClass)
-    return `
-import 'package:freezed_annotation/freezed_annotation.dart';
+    return `import 'package:freezed_annotation/freezed_annotation.dart';
+import 'package:${APP.flutterLibName}/${dir}/${featurePath}/data/${name}_ui_model.dart';
 part '${name}_state.freezed.dart';
 
 @freezed
 class ${upperCase}State with _$${upperCase}State {
-    const factory ${upperCase}State.initial() = _Initial;
+  const factory ${upperCase}State.initial({required ${upperCase}UI ${name}UI}) = _Initial;
 }
 
     
@@ -154,62 +154,67 @@ function getCubitTemplate(mainClass: string, featurePath: string, dir: string) {
     let name = changeCase.snakeCase(mainClass)
     let camel = changeCase.camelCase(mainClass);
     let useCase = changeCase.camelCase(`UseCase${upperCase}`); 
-    return `
-import 'package:bloc/bloc.dart';
+    return `import 'package:bloc/bloc.dart';
 import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/bloc/${name}_state.dart';
 import 'package:${APP.flutterLibName}/${dir}/${featurePath}/domain/${name}_useCase.dart';
- 
+import 'package:${APP.flutterLibName}/${dir}/${featurePath}/data/${name}_ui_model.dart';
 
 class ${upperCase}Cubit extends Cubit<${upperCase}State> {
-    final UseCase${upperCase} ${useCase};
-    ${upperCase}Cubit({required this.${useCase}}) : super(const ${upperCase}State.initial());
+  final UseCase${upperCase} ${useCase} = UseCase${upperCase}();
+  ${upperCase}Cubit() : super(${upperCase}State.initial(${name}UI: ${upperCase}UI()));
 
-    Future<void> fetchData() async {
-        try {
-            /// emit(loadingState);
-            final ${camel}Model = await ${useCase}.call();
-            /// emit success state
-        } catch (e) {
-            /// emit error state
-        }
+  Future<void> fetchData() async {
+    try {
+      /// emit(loadingState);
+      final ${camel}Model = await ${useCase}.call();
+
+      /// emit success state
+      emit(${upperCase}State.initial(${name}UI: ${camel}Model));
+    } catch (e) {
+      /// emit error state
     }
+  }
 }
 
         `
 
 }
-
-
 
 
 function getDataModelsTemplate(mainClass: string) {
-    let upperCase = toUpperCamelCase(mainClass);
-    return `
-class ${upperCase}UIModel {
-    ${upperCase}UIModel();
+  let upperCase = toUpperCamelCase(mainClass);
+  return `class ${upperCase}UI {
+  ${upperCase}UI();
+}
+      `
+
 }
 
+// function getDataModelsTemplate(mainClass: string) {
+//     let upperCase = toUpperCamelCase(mainClass);
+//     return `
+// class ${upperCase}UIModel {
+//     ${upperCase}UIModel();
+// }
 
-        `
 
-}
+//         `
+
+// }
 
 function getUseCaseTemplate(mainClass: string, featurePath: string, dir: string) {
     let upperCase = toUpperCamelCase(mainClass);
     let name = changeCase.snakeCase(mainClass);
-    return `
-import 'package:${APP.flutterLibName}/${dir}/${featurePath}/data/${name}_model.dart';
+    return `import 'package:${APP.flutterLibName}/${dir}/${featurePath}/data/${name}_ui_model.dart';
  
 class UseCase${upperCase} {
-    UseCase${upperCase}();
+  UseCase${upperCase}();
 
-    Future<${upperCase}UIModel> call() async {
-        return ${upperCase}UIModel();
-    }
-    
+  Future<${upperCase}UI> call() async {
+    await Future.delayed(const Duration(seconds: 1));
+    return ${upperCase}UI();
+  }  
 }
-
-
         `
 
 }

@@ -34,7 +34,7 @@ export class MyCompletionItemProvider implements CompletionItemProvider {
                         completionItems.push(statefulWidgetItem(className))
                     }
                     completionItems.push(new CompletionItem('extends', CompletionItemKind.Class));
-                } else if (lineText.includes("extends") &&!lineText.includes("extends Cubit") ) {
+                } else if (lineText.includes("extends") &&!lineText.includes("extends Cubit") &&   toUpperCamelCase(lineText).includes( toUpperCamelCase("Cubit"))) {
                     if (activeEditorIsDart() && APP.depOnBloc) {
                         completionItems.push(cubitItem())
 
@@ -46,10 +46,10 @@ export class MyCompletionItemProvider implements CompletionItemProvider {
                     classDetails=classDetails.filter((e) => {
                         for (let c in e.classes) {
                         let classN =   e.classes[c]
-                        let find=changeCase.camelCase(className)
+                        let find=changeCase.camelCase(className).replace("Cubit","")
                         let target =changeCase.camelCase(classN)
-                        if(is80PercentMatch(find,target) &&  className!=classN)
-                            completionItems.push(cubitStateItem(classN));
+                        if(is80PercentMatch(target,find) &&  className!=classN)
+                            completionItems.push(cubitStateItem(className,classN));
                         }
                     })
                 } else if (!lineText.includes('State')) {
@@ -120,12 +120,14 @@ function statelessItem(className: string, fromWidget: boolean = false): Completi
 }
 
 
-function cubitStateItem(className:String): CompletionItem {
+function cubitStateItem(cubitName:string,className:string): CompletionItem {
     // let classDetails = (await findClassesInCurrentFolder()).filter((e) => e.classes.);
-
+    let upper = toUpperCamelCase(cubitName)
     const nameItem = new CompletionItem(`${className}`, CompletionItemKind.Class);
     nameItem.insertText = new vscode.SnippetString(
-        `<${className}>`
+        `<${className}>{
+    ${upper}(super.initialState);
+}`
     );
     return nameItem;
 }

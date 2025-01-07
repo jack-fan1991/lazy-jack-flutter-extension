@@ -1,3 +1,6 @@
+# 0.0.147
+- [Update] Clean architecture pattern,more easy to use
+
 # 0.0.145
 - [Bugfix] generate_route_temp
 
