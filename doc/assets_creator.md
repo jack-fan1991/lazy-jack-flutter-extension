@@ -30,7 +30,7 @@ enum SvgAssets {
         ),
     );
     /// If depends on vector_graphics
-    Widget withVectorGraphics({
+    Widget toVectorGraphicsWidget({
         required String path, 
         double? width,
         double? height,

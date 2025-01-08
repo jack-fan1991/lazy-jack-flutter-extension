@@ -209,8 +209,7 @@ async function generatorPng(folderUri: any) {
 }
 
 function svgVectorTemp(svgObj: string[]) {
-    return `
-import 'package:flutter/material.dart';
+    return `import 'package:flutter/material.dart';
 import 'package:vector_graphics/vector_graphics.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -242,7 +241,7 @@ enum SvgAssets {
         ),
     );
 
-    Widget withVectorGraphics({
+    Widget toVectorGraphicsWidget({
         double? width,
         double? height,
         Color? color,
@@ -273,8 +272,7 @@ enum SvgAssets {
 
 
 function svgTemp(svgObj: string[]) {
-    return `
-import 'package:flutter/material.dart';
+    return `import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 
@@ -311,8 +309,7 @@ enum Svg {
 
 
 function pngTemp(svgObj: string[]) {
-    return ` 
-import 'package:flutter/material.dart';
+    return `import 'package:flutter/material.dart';
 
 /// # Auto-Generated File
 /// 

@@ -1,3 +1,6 @@
+# 0.0.149
+- [Update] Dart Asset Transformer rename  "withVectorGraphics" => "toVectorGraphicsWidget"
+
 # 0.0.148
 - [Feature] Auto complete "final log" => "final log = Logger($name)"
 
