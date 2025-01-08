@@ -2,12 +2,13 @@ import * as vscode from 'vscode';
 
 import { CompletionItemProvider, TextDocument, Position, CompletionItem, CompletionItemKind, CancellationToken } from 'vscode';
 import { getActivateText } from '../utils/src/vscode_utils/activate_editor_utils';
-import { getActivateEditorFileName, getActivateEditorFilePath, getCursorLineText } from '../utils/src/vscode_utils/editor_utils';
+import { getActivateEditor, getActivateEditorFileName, getActivateEditorFilePath, getCursorLineText } from '../utils/src/vscode_utils/editor_utils';
 import { findClassRegex, toUpperCamelCase } from '../utils/src/regex/regex_utils';
 import { activeEditorIsDart } from '../utils/src/language_utils/language_utils';
 import path = require('path');
 import { APP } from '../extension';
 import * as changeCase from "change-case";
+import { findNearestClassName } from '../vscode_code_action/dart/ez_code_action/cursor_detector';
 
 const DART_MODE = { language: "dart", scheme: "file" };
 
@@ -34,22 +35,22 @@ export class MyCompletionItemProvider implements CompletionItemProvider {
                         completionItems.push(statefulWidgetItem(className))
                     }
                     completionItems.push(new CompletionItem('extends', CompletionItemKind.Class));
-                } else if (lineText.includes("extends") &&!lineText.includes("extends Cubit") &&   toUpperCamelCase(lineText).includes( toUpperCamelCase("Cubit"))) {
+                } else if (lineText.includes("extends") && !lineText.includes("extends Cubit") && toUpperCamelCase(lineText).includes(toUpperCamelCase("Cubit"))) {
                     if (activeEditorIsDart() && APP.depOnBloc) {
                         completionItems.push(cubitItem())
 
                     }
                 }
-                else if (lineText.includes("extends") &&  lineText.includes("extends Cubit")  ) {
+                else if (lineText.includes("extends") && lineText.includes("extends Cubit")) {
                     let classDetails = await findClassesInCurrentFolder()
-                    let classMatch:String[] =[]
-                    classDetails=classDetails.filter((e) => {
+                    let classMatch: String[] = []
+                    classDetails = classDetails.filter((e) => {
                         for (let c in e.classes) {
-                        let classN =   e.classes[c]
-                        let find=changeCase.camelCase(className).replace("Cubit","")
-                        let target =changeCase.camelCase(classN)
-                        if(is80PercentMatch(target,find) &&  className!=classN)
-                            completionItems.push(cubitStateItem(className,classN));
+                            let classN = e.classes[c]
+                            let find = changeCase.camelCase(className).replace("Cubit", "")
+                            let target = changeCase.camelCase(classN)
+                            if (is80PercentMatch(target, find) && className != classN)
+                                completionItems.push(cubitStateItem(className, classN));
                         }
                     })
                 } else if (!lineText.includes('State')) {
@@ -58,16 +59,23 @@ export class MyCompletionItemProvider implements CompletionItemProvider {
                         completionItems.push(statefulWidgetItem(className, true))
                     }
 
-                }
+                } 
 
 
-                }
             }
-            return completionItems;
         }
+        if (APP.depOnLogging !=undefined && lineText!.includes("final log")) {
+            // 向前搜尋最近的 class 名稱
+             let editor = getActivateEditor()
+            let position = editor.document.offsetAt(editor.selection.start);
+            let nearestClassName = findNearestClassName(text, position);
+            completionItems.push(loggerItem( text,nearestClassName,lineText!));
+        }
+        return completionItems;
     }
+}
 
-        function statefulWidgetItem(className: string, fromWidget: boolean = false): CompletionItem {
+function statefulWidgetItem(className: string, fromWidget: boolean = false): CompletionItem {
     // 添加自动补全项
     const nameItem = new CompletionItem('StatefulWidget', CompletionItemKind.Class);
     let prefix = fromWidget ? "" : "extends "
@@ -120,7 +128,31 @@ function statelessItem(className: string, fromWidget: boolean = false): Completi
 }
 
 
-function cubitStateItem(cubitName:string,className:string): CompletionItem {
+function loggerItem( text :string,className: string,lineText:string): CompletionItem {
+    // let classDetails = (await findClassesInCurrentFolder()).filter((e) => e.classes.);
+    let upper = toUpperCamelCase(className)
+    const nameItem = new CompletionItem(`Logger`, CompletionItemKind.Class);
+    let prefix = ""
+    if(!lineText.includes("=")){
+        prefix = "= "
+    }
+    nameItem.insertText = new vscode.SnippetString(
+        `${prefix}Logger("${className}");`
+    );
+    let s = "import 'package:logging/logging.dart';"
+    if(!text.includes(s)){
+        nameItem.additionalTextEdits = [
+            {
+                range: new vscode.Range(new vscode.Position(0, 0), new vscode.Position(0, 0)),
+                newText: `${s}\n`
+            }
+        ]
+    }   
+    return nameItem;
+}
+
+
+function cubitStateItem(cubitName: string, className: string): CompletionItem {
     // let classDetails = (await findClassesInCurrentFolder()).filter((e) => e.classes.);
     let upper = toUpperCamelCase(cubitName)
     const nameItem = new CompletionItem(`${className}`, CompletionItemKind.Class);

@@ -279,7 +279,7 @@ async function l18nFix() {
     
 }
 
-function findNearestClassName(text: string, position: number): string {
+export function findNearestClassName(text: string, position: number): string {
     let classRegex = /class\s+(\w+)/g;
     let match;
     let lastMatch;
