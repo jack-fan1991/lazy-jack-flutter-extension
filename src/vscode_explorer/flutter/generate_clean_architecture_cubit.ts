@@ -180,12 +180,12 @@ function getUseCaseTemplate(mainClass: string, libPath: string) {
     return `import 'package:${APP.flutterLibName}/${libPath}/data/${name}_ui_model.dart';
  
 class UseCase${upperCase} {
-    UseCase${upperCase}();
+  UseCase${upperCase}();
 
-    Future<${upperCase}UI> call() async {
-        return ${upperCase}UI();
-    }
-    
+  Future<${upperCase}UI> call() async {
+    await Future.delayed(const Duration(seconds: 1));
+    return ${upperCase}UI();
+  }  
 }
         `
 

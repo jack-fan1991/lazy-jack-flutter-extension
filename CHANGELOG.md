@@ -1,3 +1,6 @@
+# 0.0.150
+- [Update] Clean architecture pattern add "await Future.delayed(const Duration(seconds: 1));" in pattern
+
 # 0.0.149
 - [Update] Dart Asset Transformer rename  "withVectorGraphics" => "toVectorGraphicsWidget"
 
