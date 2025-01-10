@@ -1,3 +1,6 @@
+# 0.0.151
+- [Update] Renamed `PngImage`/`SvgIcon` enums to `PngAssets`/`SvgAssets` in 
+
 # 0.0.150
 - [Update] Clean architecture pattern add "await Future.delayed(const Duration(seconds: 1));" in pattern
 
@@ -48,10 +51,10 @@
 - Add cubit auto complete
 
 # 0.0.127
-- Refactor Assert image Generate to Dart Asset Transformer
+- Refactor Asset image Generate to Dart Asset Transformer
 
 # 0.0.119
-- Assert image Generate  only show menu when right-click when folder name is 'images'
+- Asset image Generate  only show menu when right-click when folder name is 'images'
 - Generate Clean Architecture folder only show menu when right-click when folder name is 'features'
 
 

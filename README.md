@@ -29,7 +29,7 @@
  | **images** | ![](./image/assets_creator/support_png.png)    |
  | **svg** | ![](./image/assets_creator/support_svg.png)    |
  | **File Tree** | ![](./image/assets_creator/all_data.png)       |
- | **File Tree** | lib/asserts ![](./image/assets_creator/create.png)    
+ | **File Tree** | lib/assets ![](./image/assets_creator/create.png)    
  
  
 
