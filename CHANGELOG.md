@@ -1,3 +1,6 @@
+# 0.0.152
+- [Update] update doc
+
 # 0.0.151
 - [Update] Renamed `PngImage`/`SvgIcon` enums to `PngAssets`/`SvgAssets` in 
 
