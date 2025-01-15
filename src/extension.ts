@@ -25,6 +25,7 @@ import { getPubspecLockAsMap } from './utils/src/language_utils/dart/pubspec/pub
 import { registerToGqlFragmentToDart } from './vscode_explore_menu/graphql_fragment_to_typedef';
 import { registerCreateRouteConfiguration } from './vscode_explorer/flutter/generate_route_temp';
 import { registerCleanArchitectureCubitGenerate } from './vscode_explorer/flutter/generate_clean_architecture_cubit';
+import { registerFlutterPageGenerate } from './vscode_explorer/flutter/generate_flutter_page';
 let sidebarManger = new SidebarManager()
 export class APP {
   public static pubspecYaml: any|undefined = undefined;
@@ -77,7 +78,7 @@ export async function activate(context: vscode.ExtensionContext) {
   registerGenerateSvg(context)
   registerCleanArchitectureGenerate(context)
   registerCleanArchitectureCubitGenerate(context)
-
+  registerFlutterPageGenerate(context)
 
   
 

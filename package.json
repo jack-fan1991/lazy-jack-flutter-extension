@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.151",
+  "version": "0.0.152",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -104,6 +104,11 @@
       },
       {
         "category": "lazy Jack",
+        "command": "command_generate_flutter_page",
+        "title": "✨ Generate Flutter Page"
+      },
+      {
+        "category": "lazy Jack",
         "command": "graphql_code_gen_fragment_to_dart_type_def",
         "title": "✨ graphql to dart type def"
       }
@@ -141,6 +146,11 @@
           "command": "command_add_clean_architecture_cubit",
           "title": "✨ Add Clean Architecture cubit",
           "when": "explorerResourceIsFolder && (resourceFilename =~ /.*(presentation).*/)"
+        },
+        {
+          "command": "command_generate_flutter_page",
+          "title": "✨  Generate Flutter Page",
+          "when": "explorerResourceIsFolder"
         },
         {
           "command": "graphql_code_gen_fragment_to_dart_type_def",
