@@ -19,12 +19,12 @@ const gitScripts: TreeScriptModel[] = [
         script: 'git reflog',
         itemAction: ()=>  createReflogOptionsInput('git reflog')
     },
-    {
-        scriptsType: ScriptsType.customer,
-        label: "git merge --no-ff",
-        script: 'git merge',
-        itemAction: ()=>  createMergeNoFFInput('git merge')
-    },
+    // {
+    //     scriptsType: ScriptsType.customer,
+    //     label: "git merge --no-ff",
+    //     script: 'git merge',
+    //     itemAction: ()=>  createMergeNoFFInput('git merge')
+    // },
     {
         scriptsType: ScriptsType.customer,
         label: "git checkout",

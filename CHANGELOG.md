@@ -1,4 +1,10 @@
 # 0.0.152
+- [Feature]  Sidebar
+- add create branch => [CMD] : git branch feature/$user/$featureName 
+- support  [ feature | bugfix | refactor | patch | chore ]
+
+
+# 0.0.152
 - [Update] Create flutter page with auto Route
 
 # 0.0.151

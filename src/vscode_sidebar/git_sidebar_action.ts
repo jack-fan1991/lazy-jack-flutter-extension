@@ -4,6 +4,9 @@ import { TreeScriptModel } from "../utils/src/vscode_feature/sidebar/sidebar_mod
 import { getRootPath, getWorkspace, getWorkspacePath, isWindows } from "../utils/src/vscode_utils/vscode_env_utils";
 import * as vscode from 'vscode';
 import { showPicker } from "../utils/src/vscode_utils/vscode_utils";
+import { APP } from "../extension";
+import * as changeCase from "change-case";
+
 
 export async function createReflogOptionsInput(script: string) {
     logInfo(`createReflogOptionsInput : ${script}`, false)
@@ -83,13 +86,13 @@ export async function createMergeNoFFInput(script: string) {
                     // rebase
                     vscode.window.showInformationMessage(`Rebase  ${currentBranch} onto ${checkoutBranch}`, 'Confirm').then(async (result) => {
                         if (result == 'Confirm') {
-                             runTerminal(
+                            runTerminal(
                                 `git checkout ${currentBranch}`
                             )
-                             runTerminal(
+                            runTerminal(
                                 `git rebase ${checkoutBranch}`
                             )
-                              runTerminal(
+                            runTerminal(
                                 'git status'
                             )
                             logInfo("Rebase done")
@@ -172,26 +175,64 @@ export async function createCheckout(script: string) {
 
 
 export async function createBranch(script: string) {
-    vscode.window.showInputBox({ prompt: `Enter branch name"`, value: '' }).then(async (name) => {
-        if (name === '' || name == undefined) return
-        let cmd = `git branch ${name}`
-        showInfo(cmd)
-        runCommand(
-            cmd,
-        ).then((r) => {
-            if (r != "") {
-                showInfo(`${r}`)
-            }
-            runTerminal(
-                `git checkout ${name} && git status`
-            )
 
-        },
-            (f) => {
-                showErrorMessage(`Error: ${f}`)
-            }
-        )
-    })
+    // 顯示主菜單
+    const branchType = await vscode.window.showQuickPick(
+        ['Feature', 'Bugfix', 'Refactor','Patch' ,'Chore'], // 第一層選單
+        { placeHolder: 'Select a branch type' }
+    );
+
+    if (!branchType) return; // 如果取消選擇則退出
+
+    // 顯示次級菜單
+    const userName = await vscode.window.showInputBox({
+        prompt: `Enter your user name for the ${branchType} branch`,
+        placeHolder: 'Enter your name',
+        value :changeCase.snakeCase(APP.myName) 
+        
+    });
+
+    if (!userName) return; // 如果用戶名為空則退出
+
+    const branchName = await vscode.window.showInputBox({
+        prompt: `Enter branch name for ${branchType}`,
+        placeHolder: 'Enter branch name',
+    });
+
+    if (!branchName) return; // 如果分支名稱為空則退出
+
+    // 拼接完整分支名稱
+    const fullBranchName = `${branchType.toLowerCase()}/${userName}/${branchName}`;
+
+    // 執行 Git 命令
+    const terminal = vscode.window.createTerminal('Git Branch Creator');
+    terminal.show();
+    terminal.sendText(`git branch ${fullBranchName}`);
+    terminal.sendText(`git checkout ${fullBranchName}`);
+    terminal.sendText('git status');
+
+    vscode.window.showInformationMessage(`Branch "${fullBranchName}" created and checked out!`);
+
+    // vscode.window.showInputBox({ prompt: `Enter branch name"`, value: '' }).then(async (name) => {
+    //     if (name === '' || name == undefined) return
+    //     let cmd = `git branch ${name}`
+    //     showInfo(cmd)
+    //     runCommand(
+    //         cmd,
+    //     ).then((r) => {
+    //         if (r != "") {
+    //             showInfo(`${r}`)
+    //         }
+    //         runTerminal(
+    //             `git checkout ${name} && git status`
+    //         )
+
+    //     },
+    //         (f) => {
+    //             showErrorMessage(`Error: ${f}`)
+    //         }
+    //     )
+    // })
 
 }
 
