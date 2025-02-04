@@ -178,7 +178,7 @@ export async function createBranch(script: string) {
 
     // 顯示主菜單
     const branchType = await vscode.window.showQuickPick(
-        ['Feature', 'Bugfix', 'Refactor','Patch' ,'Chore'], // 第一層選單
+        ['Feature', 'Bugfix', 'Refactor','Patch' ,'Chore',"CI"], // 第一層選單
         { placeHolder: 'Select a branch type' }
     );
 

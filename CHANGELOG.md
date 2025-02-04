@@ -1,3 +1,9 @@
+
+# 0.0.154
+- [Feature]  Sidebar create branch
+- add CI 
+- support  [ feature | bugfix | refactor | patch | chore | ci]
+
 # 0.0.154
 - [Feature]  Sidebar
 - add create branch => [CMD] : git branch feature/$user/$featureName 
