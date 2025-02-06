@@ -33,6 +33,7 @@ export class ClassQuickFix implements EzCodeActionProviderInterface {
         let upLineText = document.lineAt(range.start.line - 1).text
         let nextLineText = document.lineAt(range.start.line + 1).text
         if (classRange != undefined) {
+            cursorLineText =cursorLineText.replace("class _", "class ")
             let className = cursorLineText.match(findClassRegex)![1]
             actions.push(this.createExtractClassAction(getActivateEditor()!, classRange,className))
             return actions
@@ -41,8 +42,8 @@ export class ClassQuickFix implements EzCodeActionProviderInterface {
     }
 
     createExtractClassAction(editor: vscode.TextEditor, range: vscode.Range,className:string): vscode.CodeAction {
-        let data = `Move "Class ${className}" to other file`
-        const fix = new vscode.CodeAction(data, vscode.CodeActionKind.RefactorExtract);
+        let data = `Make "Class ${className}" as part of file`
+        const fix = new vscode.CodeAction(data, vscode.CodeActionKind.RefactorMove);
         fix.command = { command: ClassQuickFix.commandExtractClass, title: data, arguments: [editor, range] };
         fix.isPreferred = true;
         return fix;
@@ -52,6 +53,7 @@ export class ClassQuickFix implements EzCodeActionProviderInterface {
     setOnActionCommandCallback(context: vscode.ExtensionContext) {
         context.subscriptions.push(vscode.commands.registerCommand(ClassQuickFix.commandExtractClass, async (editor: vscode.TextEditor, range: vscode.Range) => {
             let text = getActivateText(range)
+            text =text.replace("class _", "class ")
             let match = text.match(findClassRegex)
 
             createFileInPicker(editor, undefined, match == null ? undefined : match[1], range)

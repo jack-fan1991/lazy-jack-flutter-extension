@@ -1,5 +1,9 @@
 
-# 0.0.154
+# 0.0.157
+- [Feature]  dart file part fixer
+- move "class FOO" as "part of" file and auto import
+
+# 0.0.156
 - [Feature]  Sidebar create branch
 - add CI 
 - support  [ feature | bugfix | refactor | patch | chore | ci]
