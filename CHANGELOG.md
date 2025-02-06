@@ -1,4 +1,7 @@
 
+# 0.0.155
+- [Bugfix] flutter logging auto completion, when enter "final log =" ,auto completion will auto import package and  complete with final log = Logger($NearestClassName):
+
 # 0.0.154
 - [Feature]  Sidebar create branch
 - add CI 

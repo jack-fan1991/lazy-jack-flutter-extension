@@ -283,7 +283,7 @@ export function findNearestClassName(text: string, position: number): string {
     let classRegex = /class\s+(\w+)/g;
     let match;
     let lastMatch;
-    while ((match = findWidgetClassRegex.exec(text)) !== null) {
+    while ((match = classRegex.exec(text)) !== null) {
         if (match.index < position) {
             lastMatch = match;
         } else {
