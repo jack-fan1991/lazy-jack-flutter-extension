@@ -1,4 +1,8 @@
 
+# 0.0.158
+- [Bugfix] dart file part fixer
+- fix part insert index error
+
 # 0.0.157
 - [Feature]  dart file part fixer
 - move "class FOO" as "part of" file and auto import

@@ -72,6 +72,7 @@ export async function activate(context: vscode.ExtensionContext) {
   // codeAction.register(context)
   registerEzAction(context)
   registerFileListener(context)
+  registerQuickFix(context)
   // 自動補全
   registerCompletionItemProvider(context)
   setupSideBar(context)

@@ -3,6 +3,7 @@ import { DiagnosticsErrorCodeHandler } from './dart/diagnostics_error_code_handl
 import { subscribeToDocumentChanges } from './dart/diagnostics';
 import { StatusCode } from './error_code';
 import { GraphqlToDartApiFixer } from './qraphql/graphql_to_dart_api_fixer';
+import { DartPartFixer } from './dart/dart_part_fixer';
 // import { FreezedFixer } from './dart/freezed_import_fixer';
 
 // import { StringConvertFixer } from './dart/string_convert_fixer';
@@ -15,7 +16,7 @@ export const diagnostics = vscode.languages.createDiagnosticCollection("DartPart
 // 啟動擴充套件
 export function registerQuickFix(context: vscode.ExtensionContext) {
     let providers: CodeActionProviderInterface<any>[] = []
-    
+    providers.push(new DartPartFixer())
 
     // providers.push(new FreezedFixer())
     // providers.push(new ParamToRequiredFixer())
