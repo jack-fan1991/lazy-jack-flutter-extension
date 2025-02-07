@@ -63,10 +63,12 @@ export class DartPartFixer implements CodeActionProviderInterface<PartFixInfo> {
                     let partOfEditor = await openEditor(document!.uri.path, true)
                     let partFileText  = partEditor.document.getText()
                     if (!partFileText.includes(importText)) {
-                        let importLinesInPartFile = partFileText.match(/^import\s+['"][^'"]+['"];/gm) ?? []
-                        let partLinesInPartFile = partFileText.match(/^part\s+['"][^'"]+['"];/gm) ?? []
-                        let lastImportString = importLinesInPartFile.pop() ?? ''
-                        let lastPartFileImportLineIdx = partFileText.split('\n').indexOf(lastImportString)
+                        let importLinesInPartFile =  partFileText
+                        .split("\n")
+                        .filter((line) => line.trim().startsWith("import "));
+                        let partLinesInPartFile = partFileText
+                        .split("\n")
+                        .filter((line) => line.trim().startsWith("part "));
                         let moveFromPartOfFile = partOfFileText.match(/^import\s+['"][^'"]+['"];/gm) ?? []
                         let needMove = moveFromPartOfFile.filter((string) => { return !partFileText.includes(string) })
                         /// 把現有的加上新的從第一行取代到最後一個import
@@ -85,7 +87,7 @@ export class DartPartFixer implements CodeActionProviderInterface<PartFixInfo> {
                         //     break
                         // }
                         let index = await findLastImportIdx(importText,partEditor.document)
-                        let replaceRange = new vscode.Range(new vscode.Position(0, 0), new vscode.Position(index, lastImportString.length))
+                        let replaceRange = new vscode.Range(new vscode.Position(0, 0), new vscode.Position(index, importLinesInPartFile[importLinesInPartFile.length-1].length))
                         if (partEditor) {
                             await partEditor.edit((editBuilder) => {
                                 editBuilder.replace(replaceRange, result)
