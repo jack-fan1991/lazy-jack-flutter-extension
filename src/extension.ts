@@ -82,7 +82,6 @@ export async function activate(context: vscode.ExtensionContext) {
   registerCleanArchitectureGenerate(context)
   registerCleanArchitectureCubitGenerate(context)
   registerFlutterPageGenerate(context)
-
   
 
 

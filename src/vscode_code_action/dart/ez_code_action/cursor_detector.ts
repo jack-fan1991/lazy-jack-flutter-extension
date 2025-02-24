@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { EzCodeActionProviderInterface } from '../../code_action';
-import { getActivateEditor, getCursorLineText, getSelectedText, openEditor, replaceSelectionText } from '../../../utils/src/vscode_utils/editor_utils';
+import { getActivateEditor, getCursorLineText, getDocument, getSelectedText, openEditor, replaceSelectionText } from '../../../utils/src/vscode_utils/editor_utils';
 import path = require('path');
 import { getActivateText, insertToActivateEditor, reFormat } from '../../../utils/src/vscode_utils/activate_editor_utils';
 import { APP } from '../../../extension';
@@ -9,6 +9,7 @@ import * as fs from 'fs';
 import { runTerminal } from '../../../utils/src/terminal_utils/terminal_utils';
 // let counter = new OpenCloseFinder()
 import * as changeCase from "change-case";
+import { sortArbKeys } from '../../../vscode_file_listener/arb_file_listener';
 
 export class DartCurserDetector implements EzCodeActionProviderInterface {
 
@@ -193,14 +194,27 @@ async function l18nFix() {
                     if (description.endsWith("_widget")) {
                         description = description.replace("_widget", "");
                     }
+
                     return { label: `[Class] ${key}`, description: `🔑 ${description}` };
                 })
         ), // 所有已存在的 key
         ...(fileName ? [fileNameOption] : [])
     ];
-    let selectedKey = await vscode.window.showQuickPick(quickPickItems, { placeHolder: "Select l10n key or Custom." }); if (selectedKey == undefined) return
+    let selectText = getSelectedText()
+
+    selectText = changeCase.snakeCase(selectText)
+    let quickPickItemsResult: vscode.QuickPickItem[] =[]
+    for (let item in quickPickItems) {
+        if (!quickPickItems[item].label.includes("✨ Enter custom key...")) {
+            quickPickItemsResult.push({ label: `${quickPickItems[item].label}`, description: `${quickPickItems[item].description}_${selectText}` })
+        }
+        quickPickItemsResult.push(quickPickItems[item])
+    }
+    let selectedKey = await vscode.window.showQuickPick(quickPickItemsResult, { placeHolder: "Select l10n key or Custom." }); if (selectedKey == undefined) return
     let outputKey = selectedKey.label
-    if(outputKey.includes("]")){
+    let withName = selectedKey.description?.includes(selectText)
+
+    if (outputKey.includes("]")) {
         outputKey = selectedKey.label.split("]")[1].trim()
     }
     if (selectedKey.label === "Enter custom key...") {
@@ -212,6 +226,9 @@ async function l18nFix() {
     }
     if (outputKey.endsWith("_widget")) {
         outputKey = outputKey.replace("_widget", "")
+    }
+    if(withName){
+        outputKey = `${outputKey}_${selectText}`
     }
     // 彈出輸入框讓使用者輸入 key
     let key = await vscode.window.showInputBox({ prompt: 'Enter the key for l10n', value: outputKey });
@@ -243,12 +260,18 @@ async function l18nFix() {
             openEditor(firstFilePath)
         }
     })
+    files.forEach(async file => {
+        let document =  await getDocument(file)
+        sortArbKeys(document)
+       
+    });
+   
     runTerminal('flutter gen-l10n');
-    if(!totalContent.includes(`import 'package:${APP.flutterLibName}/main.dart';`)){
+    if (!totalContent.includes(`import 'package:${APP.flutterLibName}/main.dart';`)) {
         editor.edit(editBuilder => {
             editBuilder.insert(new vscode.Position(0, 0), `import 'package:${APP.flutterLibName}/main.dart';\n`);
         });
-    } 
+    }
     await editor.document.save();
 
     // 定義正則表達式，匹配 "ASD", 'ASD', '''ASD'''
@@ -272,11 +295,11 @@ async function l18nFix() {
     const editSuccess = await vscode.workspace.applyEdit(edit);
     if (editSuccess) {
         await editor.document.save();
-       
+
     } else {
         throw new Error('Failed to apply edits');
     }
-    
+
 }
 
 export function findNearestClassName(text: string, position: number): string {

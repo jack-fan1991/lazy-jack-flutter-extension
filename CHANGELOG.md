@@ -1,4 +1,8 @@
 
+
+# 0.0.160
+- [Feature] .arb key auto sort
+
 # 0.0.159
 - [Bugfix] dart file part fixer
 - fix part insert index error
