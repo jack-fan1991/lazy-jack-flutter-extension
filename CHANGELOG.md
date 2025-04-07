@@ -1,5 +1,16 @@
 
-# 0.0.158
+# 0.0.168
+- [Bugfix] Sidebar
+- Register Copilot Commit setting
+
+
+# 0.0.165
+- [Bugfix] Fix Dart assert transformer
+
+# 0.0.160
+- [Feature] .arb key auto sort
+
+# 0.0.159
 - [Bugfix] dart file part fixer
 - fix part insert index error
 
