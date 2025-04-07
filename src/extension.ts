@@ -13,6 +13,7 @@ import { FlutterDataProvider } from './vscode_sidebar/flutter_sidebar';
 import { ScriptsType, TreeScriptModel } from './utils/src/vscode_feature/sidebar/sidebar_model';
 import { openBrowser } from './utils/src/vscode_utils/vscode_utils';
 import { TypescriptDataProvider } from './vscode_sidebar/typescript_sidebar';
+import { VscodeDataProvider } from './vscode_sidebar/vscode_sidebar';
 import { SidebarManager } from './utils/src/vscode_feature/sidebar/sidebar_manger';
 import { registerDartSnippet } from './snippet/register_dart_snippet';
 import { registerUpdateDependencyVersion } from './utils/src/language_utils/dart/pubspec/update_git_dependency';
@@ -94,6 +95,7 @@ function setupSideBar(context: vscode.ExtensionContext) {
   sidebarManger.addSideBar(new TypescriptDataProvider())
     .addSideBar(new GitDataProvider())
     .addSideBar(new FlutterDataProvider())
+    .addSideBar(new VscodeDataProvider())
     .registerSideBarCommands(context, "lazy-jack.sidebar_command_onselect")
     .registerSideBar(context)
 }

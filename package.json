@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.166",
+  "version": "0.0.167",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -53,6 +53,10 @@
         {
           "id": "TypescriptDataProvider",
           "name": "Typescript"
+        },
+        {
+          "id": "VscodeDataProvider",
+          "name": "VS Code"
         }
       ]
     },
