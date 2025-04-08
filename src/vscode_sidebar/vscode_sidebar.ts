@@ -114,6 +114,7 @@ const newInstructions = `# Git 提交訊息產生指示
        
        ### 2. 標題 (Subject)
        
+       -   開頭以類型圖標及類型名稱做分類。
        -   簡要描述變更內容。
        -   最多 50 個字元。
        -   使用祈使句、現在式 (例如：\`新增\` 而不是 \`新增了\`)。
@@ -134,6 +135,7 @@ const newInstructions = `# Git 提交訊息產生指示
        ### 4. 註腳 (Footer) - 可選
        
        -   用於標示重大變更 (Breaking Changes) 或關聯的議題 (Issue)。
+       -   如無關聯則不顯示
        -   例如：\`BREAKING CHANGE: ...\` 或 \`Refs: #123\`
        -   與正文之間需空一行。
        
