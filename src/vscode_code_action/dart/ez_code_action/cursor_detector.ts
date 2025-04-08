@@ -260,8 +260,9 @@ async function l18nFix() {
             openEditor(firstFilePath)
         }
     })
-    files.forEach(async file => {
-        let document =  await getDocument(file)
+     files.forEach(async file => {
+        let filePath = path.join(targetPath, file);
+        let document =  await getDocument(filePath)
         sortArbKeys(document)
        
     });
