@@ -1,4 +1,9 @@
 
+
+# 0.0.171
+- [Bugfix] l18nFix
+- support l18n keys auto sort
+
 # 0.0.168
 - [Bugfix] Sidebar
 - Register Copilot Commit setting
