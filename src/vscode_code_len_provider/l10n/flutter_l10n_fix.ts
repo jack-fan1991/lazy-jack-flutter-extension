@@ -36,10 +36,16 @@ class DartI18nCodeLensProvider implements vscode.CodeLensProvider {
                 const innerText = fullMatch.slice(1, -1);
                 const colStart = match.index;
                 const colEnd = match.index + fullMatch.length;
-                const contextStart = Math.max(0, colStart - 4);
-                const beforeString = line.substring(contextStart, colStart);
+                let contextStart = Math.max(0, colStart - 4);
+                let beforeString = line.substring(contextStart, colStart);
                 const isKey = beforeString.includes('Key(');
-                if (isKey ||innerText ==="") {
+                if (isKey ||innerText ==="" ||innerText.startsWith("/")) {
+                    return
+                }
+                contextStart = Math.max(0, colStart - 11);
+                beforeString = line.substring(contextStart, colStart);
+                const isDateTime = beforeString.includes('DateFormat(');
+                if(isDateTime){
                     return
                 }
                 if (!this.isTranslated(innerText)) {

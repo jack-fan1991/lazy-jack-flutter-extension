@@ -96,7 +96,7 @@ export class DartI18nListener extends FileListenerBase {
         const lines = text.split('\n');
 
         lines.forEach((line, lineIndex) => {
-            if (line.trim().startsWith('part') || line.trim().startsWith(`import`) || line.trim() === "") return;
+            if (line.trim().startsWith('part') || line.trim().startsWith(`import`) || line.trim() === "" ) return;
             // 移除所有空格
             let cleanLine = line.replace(/\s+/g, '');
             let isLog = cleanLine.startsWith('log') || cleanLine.startsWith('_log') || cleanLine.includes("=Logger(");
@@ -110,13 +110,22 @@ export class DartI18nListener extends FileListenerBase {
                 if(innerText==="") continue;
                 const colStart = match.index;
                 const colEnd = match.index + fullMatch.length;
-                const contextStart = Math.max(0, colStart - 4);
-                const beforeString = line.substring(contextStart, colStart);
+                let contextStart = Math.max(0, colStart - 4);
+                let beforeString = line.substring(contextStart, colStart);
                 const isKey = beforeString.includes('Key(');
                 if(isKey){
                     tag ='other';
                     displayTag ='key';
                 }
+                contextStart = Math.max(0, colStart - 11);
+                beforeString = line.substring(contextStart, colStart);
+                const isDateTime = beforeString.includes('DateFormat(');
+                const isRouteName = innerText.startsWith('/');
+                if(isDateTime|| isRouteName){
+                    tag ='other';
+                    displayTag ='other';
+                }
+
                 displayTag = toUpperCamelCase(displayTag)
 
                 if (!this.isTranslated(innerText)) {
