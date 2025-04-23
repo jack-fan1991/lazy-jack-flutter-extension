@@ -64,7 +64,12 @@ export class DartCurserDetector implements EzCodeActionProviderInterface {
         // context.subscriptions.push(vscode.commands.registerCommand(DartCurserDetector.command_to_require, async (range: vscode.Range) => {
         //     paramToRequireGenerator(range)
         // }));
-        context.subscriptions.push(vscode.commands.registerCommand(DartCurserDetector.command_l10n_fix, async (range: vscode.Range) => {
+        context.subscriptions.push(vscode.commands.registerCommand(DartCurserDetector.command_l10n_fix, async (uri: vscode.Uri,range: vscode.Range) => {
+            if(uri!=undefined){
+                const editor = await vscode.window.showTextDocument(uri, { preview: false });
+                editor.selection = new vscode.Selection(range.start, range.end);
+                editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+            }
             l18nFix()
         }));
     }

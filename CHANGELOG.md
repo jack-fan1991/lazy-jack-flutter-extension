@@ -1,7 +1,9 @@
 
+# 0.0.173
+- [Feature] l10n tree view
 
 # 0.0.171
-- [Bugfix] l18nFix
+- [Bugfix] l10nFix
 - support l18n keys auto sort
 
 # 0.0.168

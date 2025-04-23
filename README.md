@@ -2,6 +2,9 @@
 ## Most of feature is support on MacOs
 ## New 
 
+  ##### Export String to tree view and fix action
+  * [ReadMore](./doc/l10n_tree.md)
+
   ##### Export String to l10n resource
   * [ReadMore](./doc/l10n.md)
 

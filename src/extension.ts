@@ -28,16 +28,18 @@ import { registerCreateRouteConfiguration } from './vscode_explorer/flutter/gene
 import { registerCleanArchitectureCubitGenerate } from './vscode_explorer/flutter/generate_clean_architecture_cubit';
 import { registerFlutterPageGenerate } from './vscode_explorer/flutter/generate_flutter_page';
 import { runCommand } from './utils/src/terminal_utils/terminal_utils';
+import { registerDartL10nStringFix } from './vscode_code_len_provider/l10n/flutter_l10n_fix';
+import { registerDartL10nStringTreeProvider } from './vscode_code_len_provider/l10n/dart_i10n_fix_listener';
 let sidebarManger = new SidebarManager()
 export class APP {
-  public static pubspecYaml: any|undefined = undefined;
-  public static pubspecLockYaml: any|undefined = undefined;
-  public static depOnBloc: any|undefined = undefined;
-  public static depOhive: any|undefined = undefined;
-  public static flutterLibName : any|undefined = undefined;
-  public static flutterLocalizations : any|undefined = undefined;
+  public static pubspecYaml: any | undefined = undefined;
+  public static pubspecLockYaml: any | undefined = undefined;
+  public static depOnBloc: any | undefined = undefined;
+  public static depOhive: any | undefined = undefined;
+  public static flutterLibName: any | undefined = undefined;
+  public static flutterLocalizations: any | undefined = undefined;
   public static myName = "";
-  public static depOnLogging : any|undefined = undefined;
+  public static depOnLogging: any | undefined = undefined;
 
 }
 
@@ -49,25 +51,25 @@ export async function activate(context: vscode.ExtensionContext) {
   await checkGitExtensionInYamlIfDart(true).then(async (yaml) => {
     APP.pubspecYaml = yaml
     APP.myName = await runCommand("whoami")
-    APP.myName = APP.myName.replace("\n","")
-    if(yaml!=undefined){
-      APP.pubspecLockYaml =await getPubspecLockAsMap()
-      APP.depOnBloc = APP.pubspecYaml["dependencies"]["flutter_bloc"] !=undefined
-      APP.depOhive = APP.pubspecYaml["dependencies"]["hive"] !=undefined
+    APP.myName = APP.myName.replace("\n", "")
+    if (yaml != undefined) {
+      APP.pubspecLockYaml = await getPubspecLockAsMap()
+      APP.depOnBloc = APP.pubspecYaml["dependencies"]["flutter_bloc"] != undefined
+      APP.depOhive = APP.pubspecYaml["dependencies"]["hive"] != undefined
       APP.flutterLibName = APP.pubspecYaml["name"]
       APP.flutterLocalizations = APP.pubspecYaml["dependencies"]["flutter_localizations"]
       APP.depOnLogging = APP.pubspecYaml["dependencies"]["color_logging"]
-  
+
       log(APP.pubspecYaml)
       registerCreateRouteConfiguration(context)
       registerDartSnippet(context)
       registerToRequireParams(context)
 
     }
-    
+
   })
   registerGithubGuiCommand(context)
- 
+
   // registerCommandDartSelectedToFactory(context)
   registerUpdateDependencyVersion(context)
   // codeAction.register(context)
@@ -83,9 +85,10 @@ export async function activate(context: vscode.ExtensionContext) {
   registerCleanArchitectureGenerate(context)
   registerCleanArchitectureCubitGenerate(context)
   registerFlutterPageGenerate(context)
+  // 列出為多國的字串
+  registerDartL10nStringFix(context)
+  registerDartL10nStringTreeProvider(context)
   
-
-
 }
 
 

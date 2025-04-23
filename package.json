@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.171",
+  "version": "0.0.173",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -21,6 +21,7 @@
     "*"
   ],
   "contributes": {
+    
     "viewsContainers": {
       "activitybar": [
         {
@@ -37,6 +38,12 @@
       }
     ],
     "views": {
+      "explorer": [
+      {
+        "id": "dartL10nFixView",
+        "name": "Flutter Strings "
+      }
+    ],
       "lazy-sidebar": [
         {
           "id": "fast-repo-gui",
@@ -61,6 +68,10 @@
       ]
     },
     "commands": [
+      {
+        "command": "dartL10n.showTagFilter",
+        "title": "Filter tag"
+      },
       {
         "category": "lazy Jack",
         "command": "command_create_freezed_class_by_base_fileName",
@@ -118,6 +129,13 @@
       }
     ],
     "menus": {
+      "view/title": [
+        {
+          "command": "dartL10n.showTagFilter",
+          "when": "view == dartL10nFixView",
+          "group": "navigation"
+        }
+      ],
       "editor/context": [
         {
           "when": "editorFocus && resourceLangId == dart",
