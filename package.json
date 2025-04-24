@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.173",
+  "version": "0.0.174",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -42,6 +42,10 @@
       {
         "id": "dartL10nFixView",
         "name": "Flutter Strings "
+      },
+      {
+        "id": "dartL10nFixViewAllFiles",
+        "name": "i10n To-Do Files"
       }
     ],
       "lazy-sidebar": [
@@ -71,6 +75,10 @@
       {
         "command": "dartL10n.showTagFilter",
         "title": "Filter tag"
+      },
+      {
+        "command": "dartL10n.findAllFiles",
+        "title": "🔄"
       },
       {
         "category": "lazy Jack",
@@ -133,6 +141,11 @@
         {
           "command": "dartL10n.showTagFilter",
           "when": "view == dartL10nFixView",
+          "group": "navigation"
+        },
+        {
+          "command": "dartL10n.findAllFiles",
+          "when": "view == dartL10nFixViewAllFiles",
           "group": "navigation"
         }
       ],

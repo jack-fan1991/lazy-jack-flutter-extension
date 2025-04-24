@@ -1,3 +1,6 @@
+# 0.0.174
+- [Feature] l10n 
+- support find all unlocated strings
 
 # 0.0.173
 - [Feature] l10n tree view

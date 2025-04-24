@@ -23,9 +23,10 @@ class DartI18nCodeLensProvider implements vscode.CodeLensProvider {
             if (line.trim().startsWith('part') || line.trim().startsWith(`import`) || line.trim() === "") return;
             // 移除所有空格
             let cleanLine = line.replace(/\s+/g, '');
-            let isLog = cleanLine.startsWith('log') || cleanLine.startsWith('_log') || cleanLine.includes("=Logger(");
+            let isLog = cleanLine.startsWith('log') || cleanLine.startsWith('_log') || cleanLine.includes("Logger(");
             let isPrint = cleanLine.startsWith('print');
-            if (isLog || isPrint) {
+            let skip = cleanLine.startsWith("/@") ||line.includes("@JsonKey(name:")||line.includes("@Default(") || line.includes("RegExp(")|| cleanLine.includes("case")|| cleanLine.startsWith("//");
+            if (isLog || isPrint||skip) {
                 return
             }
             // let regex = /(["'])(?:(?!\1).)*?\1/g;
@@ -39,7 +40,8 @@ class DartI18nCodeLensProvider implements vscode.CodeLensProvider {
                 let contextStart = Math.max(0, colStart - 4);
                 let beforeString = line.substring(contextStart, colStart);
                 const isKey = beforeString.includes('Key(');
-                if (isKey ||innerText ==="" ||innerText.startsWith("/")) {
+                let cleanInnerText = innerText.replace(/\s+/g, '');
+                if (isKey ||cleanInnerText ==="" ||innerText.startsWith("/")) {
                     return
                 }
                 contextStart = Math.max(0, colStart - 11);
@@ -49,8 +51,8 @@ class DartI18nCodeLensProvider implements vscode.CodeLensProvider {
                     return
                 }
                 if (!this.isTranslated(innerText)) {
-                    const start = new vscode.Position(lineIndex, match.index);
-                    const end = new vscode.Position(lineIndex, match.index + fullMatch.length);
+                    const start = new vscode.Position(lineIndex, match.index+1);
+                    const end = new vscode.Position(lineIndex, (match.index + fullMatch.length)-1);
                     const range = new vscode.Range(start, end);
                     const displayLabel = innerText.length >20 ? innerText.slice(0, 20) + '...' : innerText;
                     codeLenses.push(new vscode.CodeLens(range, {

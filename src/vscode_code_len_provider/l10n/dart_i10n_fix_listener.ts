@@ -99,7 +99,12 @@ export class DartI18nListener extends FileListenerBase {
             if (line.trim().startsWith('part') || line.trim().startsWith(`import`) || line.trim() === "" ) return;
             // 移除所有空格
             let cleanLine = line.replace(/\s+/g, '');
-            let isLog = cleanLine.startsWith('log') || cleanLine.startsWith('_log') || cleanLine.includes("=Logger(");
+            let isLog = cleanLine.startsWith('log') || cleanLine.startsWith('_log') || cleanLine.includes("Logger(") ;
+            let isComment = cleanLine.startsWith("//");
+            let skip = cleanLine.startsWith("/@")||line.includes("@JsonKey(name:")||line.includes("@Default(")|| line.includes("RegExp(")|| cleanLine.includes("case") ;
+            if (isComment||skip) {
+                return
+            }
             let isPrint = cleanLine.startsWith('print');
             let tag: 'log' | 'print' | 'other'| 'fix' = isLog ? 'log' : isPrint ? 'print' : 'fix';
             let displayTag = tag as string
@@ -107,7 +112,8 @@ export class DartI18nListener extends FileListenerBase {
             while ((match = regex.exec(line)) !== null) {
                 const fullMatch = match[0];
                 const innerText = fullMatch.slice(1, -1);
-                if(innerText==="") continue;
+                let cleanInnerText = innerText.replace(/\s+/g, '');
+                if(cleanInnerText==="") continue;
                 const colStart = match.index;
                 const colEnd = match.index + fullMatch.length;
                 let contextStart = Math.max(0, colStart - 4);
@@ -130,8 +136,8 @@ export class DartI18nListener extends FileListenerBase {
 
                 if (!this.isTranslated(innerText)) {
                     const range = new vscode.Range(
-                        new vscode.Position(lineIndex, colStart),
-                        new vscode.Position(lineIndex, colEnd)
+                        new vscode.Position(lineIndex, colStart+1),
+                        new vscode.Position(lineIndex, colEnd-1)
                     );
 
                     items.push(

@@ -64,8 +64,8 @@ export class DartCurserDetector implements EzCodeActionProviderInterface {
         // context.subscriptions.push(vscode.commands.registerCommand(DartCurserDetector.command_to_require, async (range: vscode.Range) => {
         //     paramToRequireGenerator(range)
         // }));
-        context.subscriptions.push(vscode.commands.registerCommand(DartCurserDetector.command_l10n_fix, async (uri: vscode.Uri,range: vscode.Range) => {
-            if(uri!=undefined){
+        context.subscriptions.push(vscode.commands.registerCommand(DartCurserDetector.command_l10n_fix, async (uri: vscode.Uri, range: vscode.Range) => {
+            if (uri != undefined) {
                 const editor = await vscode.window.showTextDocument(uri, { preview: false });
                 editor.selection = new vscode.Selection(range.start, range.end);
                 editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
@@ -150,6 +150,79 @@ function l18nFixAction(): vscode.CodeAction | undefined {
     return fix;
 }
 
+
+// 添加检测字符串参数的函数
+function detectParameters(text: string): string[] {
+    const simpleParamRegex = /\$(\w+)/g; // 匹配 $param 形式
+    const bracketParamRegex = /\$\{(\w+)\}/g; // 匹配 ${param} 形式
+
+    const params = new Set<string>();
+    let match;
+
+    // 匹配 $param 形式
+    while ((match = simpleParamRegex.exec(text)) !== null) {
+        // 排除已经是 ${param} 形式的一部分
+        const fullMatch = match[0];
+        if (fullMatch.charAt(0) === '$' && fullMatch.charAt(1) !== '{') {
+            params.add(match[1]);
+        }
+    }
+
+    // 匹配 ${param} 形式
+    while ((match = bracketParamRegex.exec(text)) !== null) {
+        params.add(match[1]);
+    }
+
+    return Array.from(params);
+}
+
+
+/**
+ * 将带参数的字符串转换为Flutter多国语言模板
+ * @param text 原始文本
+ * @param key 多语言键名
+ * @returns 处理后的多语言对象
+ */
+async function processL10nWithParams(text: string, key: string): Promise<{ [key: string]: any }> {
+    // 提取所有参数
+    const params = detectParameters(text);
+
+    if (params.length === 0) {
+        // 没有参数，返回普通格式
+        return {
+            [key]: text
+        };
+    }
+
+    // 准备存储参数类型的对象
+    const placeholders: { [param: string]: { type: string } } = {};
+    let processedText = text;
+
+    // 为每个参数询问类型
+    for (const param of params) {
+        const paramType = await vscode.window.showQuickPick(
+            ['String', 'num'],
+            { placeHolder: `Select "${param}" type` }
+        );
+
+        if (!paramType) {
+            return {}; // 用户取消了选择，中止处理
+        }
+
+        placeholders[param] = { type: paramType };
+
+        // 替换文本中的参数格式为 Flutter 的 {param} 格式
+        processedText = processedText.replace(new RegExp(`\\$\\{${param}\\}|\\$${param}(?!\\w)`, 'g'), `{${param}}`);
+    }
+
+
+    return {
+        [key]: processedText,
+        [`@${key}`]: {
+            placeholders
+        }
+    };
+}
 async function l18nFix() {
     let text = getSelectedText();
     let root = getRootPath();
@@ -208,7 +281,7 @@ async function l18nFix() {
     let selectText = getSelectedText()
 
     selectText = changeCase.snakeCase(selectText)
-    let quickPickItemsResult: vscode.QuickPickItem[] =[]
+    let quickPickItemsResult: vscode.QuickPickItem[] = []
     for (let item in quickPickItems) {
         if (!quickPickItems[item].label.includes("✨ Enter custom key...")) {
             quickPickItemsResult.push({ label: `${quickPickItems[item].label}`, description: `${quickPickItems[item].description}_${selectText}` })
@@ -232,7 +305,7 @@ async function l18nFix() {
     if (outputKey.endsWith("_widget")) {
         outputKey = outputKey.replace("_widget", "")
     }
-    if(withName){
+    if (withName) {
         outputKey = `${outputKey}_${selectText}`
     }
     // 彈出輸入框讓使用者輸入 key
@@ -245,19 +318,43 @@ async function l18nFix() {
     key = changeCase.camelCase(key)
     key = changeCase.snakeCase(key)
 
-    // 將選取的文字作為 value，並將 key-value 加入每個 .arb 檔案的末端
-    files.forEach(file => {
-        let filePath = path.join(targetPath, file);
-        let content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-        content[key as string] = text;
-        let jsonString = JSON.stringify(content, null, 2);
-        fs.writeFileSync(filePath, jsonString, 'utf8');
-    });
-    let newText = `App.l10n.${key as string}`
+    let l10nObject = await processL10nWithParams(text, key as string);
+    let newText =""
+    if (Object.keys(l10nObject).length === 0) {
+        // 將選取的文字作為 value，並將 key-value 加入每個 .arb 檔案的末端
+        files.forEach(file => {
+            let filePath = path.join(targetPath, file);
+            let content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+            content[key as string] = text;
+            let jsonString = JSON.stringify(content, null, 2);
+            fs.writeFileSync(filePath, jsonString, 'utf8');
+        });
+        newText  = `App.l10n.${key as string}`
+    } else {
+        // 將選取的文字作為 value，並將 key-value 加入每個 .arb 檔案的末端
+        files.forEach(file => {
+            let filePath = path.join(targetPath, file);
+            let content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+            // 將所有 key-value 從 l10nObject 放進 content
+            Object.entries(l10nObject).forEach(([k, v]) => {
+                content[k] = v;
+            });
+            let jsonString = JSON.stringify(content, null, 2);
+            let params = detectParameters(text).join(",");
+
+            fs.writeFileSync(filePath, jsonString, 'utf8');
+             newText  = `App.l10n.${key as string}(${params})`
+        });
+    }
+
+
+
 
     // 替換選取範圍的文字為輸入的 key
     editor.edit(editBuilder => {
-        editBuilder.replace(editor.selection, newText);
+        let replaceSelect = editor.selection
+            replaceSelect = new vscode.Selection(new vscode.Position(replaceSelect.start.line, replaceSelect.start.character-1), new vscode.Position(replaceSelect.end.line, replaceSelect.end.character+1))
+        editBuilder.replace(replaceSelect, newText);
     });
     await editor.document.save();
     vscode.window.showInformationMessage(`View l10n file `, 'Confirm', 'Cancel').then(async (option) => {
@@ -265,13 +362,13 @@ async function l18nFix() {
             openEditor(firstFilePath)
         }
     })
-     files.forEach(async file => {
+    files.forEach(async file => {
         let filePath = path.join(targetPath, file);
-        let document =  await getDocument(filePath)
+        let document = await getDocument(filePath)
         sortArbKeys(document)
-       
+
     });
-   
+
     runTerminal('flutter gen-l10n');
     if (!totalContent.includes(`import 'package:${APP.flutterLibName}/main.dart';`)) {
         editor.edit(editBuilder => {
@@ -313,6 +410,13 @@ export function findNearestClassName(text: string, position: number): string {
     let match;
     let lastMatch;
     while ((match = findWidgetClassRegex.exec(text)) !== null) {
+        if (match.index < position) {
+            lastMatch = match;
+        } else {
+            break;
+        }
+    }
+    while ((match = classRegex.exec(text)) !== null) {
         if (match.index < position) {
             lastMatch = match;
         } else {
