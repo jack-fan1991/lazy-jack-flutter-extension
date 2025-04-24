@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { EzCodeActionProviderInterface } from '../../code_action';
-import { getActivateEditor, getCursorLineText, getDocument, getSelectedText, openEditor, replaceSelectionText } from '../../../utils/src/vscode_utils/editor_utils';
+import { getActivateEditor, getCursorLineText, getSelectedText, openEditor, replaceSelectionText } from '../../../utils/src/vscode_utils/editor_utils';
 import path = require('path');
 import { getActivateText, insertToActivateEditor, reFormat } from '../../../utils/src/vscode_utils/activate_editor_utils';
 import { APP } from '../../../extension';
@@ -364,7 +364,7 @@ async function l18nFix() {
     })
     files.forEach(async file => {
         let filePath = path.join(targetPath, file);
-        let document = await getDocument(filePath)
+        let document = await  vscode.workspace.openTextDocument(filePath)
         sortArbKeys(document)
 
     });

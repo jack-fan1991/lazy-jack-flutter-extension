@@ -29,8 +29,10 @@ export class DartFileTreeProvider implements vscode.TreeDataProvider<DartFileIte
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
     private items: DartFileItem[] = [];
     public ignoredFiles = new Set<string>();
-    refresh() {
+    public filterDir:string = "";
+    refresh(filterDir:string = "") {
         DartI18nCodeLensProvider.enable = true
+        this.filterDir=filterDir
         this.scanDartFiles();
         /// remove duplicate
         this.items = this.items.filter((item, index, self) => {
@@ -49,7 +51,8 @@ export class DartFileTreeProvider implements vscode.TreeDataProvider<DartFileIte
 
     private async scanDartFiles() {
         this.items = []
-        const files = await vscode.workspace.findFiles('lib/**/*.dart');
+        const pattern = this.filterDir!="" ?`${this.filterDir}/**/*.dart` : 'lib/**/*.dart';
+        const files = await vscode.workspace.findFiles(pattern);
         const validFiles = files.filter(uri => {
             const name = uri.path.split('/').pop() || '';
             const dotCount = (name.match(/\./g) || []).length;
@@ -128,7 +131,7 @@ const fileTreeProvider = new DartFileTreeProvider();
 export function registerDartL10nStringAllFileTreeProvider(context: vscode.ExtensionContext) {
     vscode.window.registerTreeDataProvider('dartL10nFixViewAllFiles', fileTreeProvider); // ✅ 註冊新的 view
 
-    vscode.commands.registerCommand('dartL10n.findAllFiles', () => {
+    vscode.commands.registerCommand('dartL10n.refresh', () => {
         fileTreeProvider.refresh(); // ✅ 重新掃描檔案
     });
 
@@ -146,6 +149,75 @@ export function registerDartL10nStringAllFileTreeProvider(context: vscode.Extens
     vscode.commands.registerCommand('dartL10n.ignoreFile', (item: DartFileItem) => {
         fileTreeProvider.ignoredFiles.add(item.uri.fsPath);
         vscode.window.showInformationMessage(`Ignored: ${item.uri.fsPath}`);
+        fileTreeProvider.refresh(fileTreeProvider.filterDir);
+    });
+
+    vscode.commands.registerCommand('dartL10n.clean', (item: DartFileItem) => {
+        fileTreeProvider.ignoredFiles.clear();
         fileTreeProvider.refresh();
+    });
+
+    vscode.commands.registerCommand('dartL10n.filterDir', async () => {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders) return;
+
+        const libUri = vscode.Uri.joinPath(workspaceFolders[0].uri, 'lib');
+        try {
+            const libStat = await vscode.workspace.fs.stat(libUri);
+            if (!libStat) return;
+
+            let currentPath = 'lib';
+            let keepSelecting = true;
+
+            while (keepSelecting) {
+                const currentUri = vscode.Uri.joinPath(workspaceFolders[0].uri, currentPath);
+                const dirs = await vscode.workspace.fs.readDirectory(currentUri);
+                const subDirs = dirs
+                    .filter(([name, type]) => type === vscode.FileType.Directory)
+                    .map(([name]) => name);
+
+                if (subDirs.length === 0) {
+                    fileTreeProvider.filterDir = currentPath;
+                    vscode.window.showInformationMessage(`Filter: ${currentPath}`);
+                    fileTreeProvider.refresh(currentPath);
+                    return;
+                }
+
+                const options = [
+                    { label: '$(check) Use Current Directory', description: currentPath },
+                    { label: '$(folder) Select Subdirectory...', description: 'Continue to select subdirectory' },
+                    ...subDirs.map(dir => ({
+                        label: dir,
+                        description: `${currentPath}/${dir}`
+                    }))
+                ];
+
+                const selected = await vscode.window.showQuickPick(options, {
+                    placeHolder: `Select Directory (Current: ${currentPath})`,
+                    canPickMany: false
+                });
+
+                if (!selected) {
+                    return; // User cancelled selection
+                }
+
+                if (selected.label === '$(check) Use Current Directory') {
+                    fileTreeProvider.filterDir = currentPath;
+                    keepSelecting = false;
+                } else if (selected.label === '$(folder) Select Subdirectory...') {
+                    // Continue to next selection
+                    continue;
+                } else {
+                    currentPath = `${currentPath}/${selected.label}`;
+                }
+            }
+
+            if (fileTreeProvider.filterDir) {
+                vscode.window.showInformationMessage(`Filtering directory: ${fileTreeProvider.filterDir}`);
+                fileTreeProvider.refresh(fileTreeProvider.filterDir);
+            }
+        } catch (error) {
+            vscode.window.showErrorMessage('Error accessing lib directory');
+        }
     });
 }

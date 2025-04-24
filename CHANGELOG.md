@@ -1,4 +1,9 @@
-# 0.0.174
+# 0.0.176
+- [Feature] l10n 
+- Rename Flutter l10n Helper
+- Support clear, dir filter
+
+# 0.0.175
 - [Feature] l10n 
 - Use l10n todo refresh to enable Autofix
 

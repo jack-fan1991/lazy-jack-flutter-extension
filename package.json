@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.175",
+  "version": "0.0.176",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -40,11 +40,12 @@
     "views": {
       "explorer": [ {
         "id": "dartL10nFixViewAllFiles",
-        "name": "i10n To-Do Files (Refresh to enable Fix helper)"
+        "name": "Flutter l10n Helper"
       },
       {
+        
         "id": "dartL10nFixView",
-        "name": "Flutter Strings "
+        "name": "Flutter Strings detector"
       }
      
     ],
@@ -74,15 +75,23 @@
     "commands": [
       {
         "command": "dartL10n.ignoreFile",
-        "title": "Ignore This File"
+        "title": "ignore"
       },
       {
         "command": "dartL10n.showTagFilter",
         "title": "Filter tag"
       },
       {
-        "command": "dartL10n.findAllFiles",
+        "command": "dartL10n.clean",
+        "title": "🗑️"
+      },
+      {
+        "command": "dartL10n.refresh",
         "title": "🔄"
+      },
+      {
+        "command": "dartL10n.filterDir",
+        "title": "🔍"
       },
       {
         "category": "lazy Jack",
@@ -148,7 +157,17 @@
           "group": "navigation"
         },
         {
-          "command": "dartL10n.findAllFiles",
+          "command": "dartL10n.clean",
+          "when": "view == dartL10nFixViewAllFiles",
+          "group": "navigation"
+        },
+        {
+          "command": "dartL10n.refresh",
+          "when": "view == dartL10nFixViewAllFiles",
+          "group": "navigation"
+        },
+        {
+          "command": "dartL10n.filterDir",
           "when": "view == dartL10nFixViewAllFiles",
           "group": "navigation"
         }
