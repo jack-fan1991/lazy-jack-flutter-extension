@@ -12,7 +12,7 @@ class UntranslatedStringItem extends vscode.TreeItem {
         public readonly label: string,
         public readonly range: vscode.Range,
         public readonly uri: vscode.Uri,
-        public readonly tag: 'log'|'fix' | 'print' | 'other'  // 新增 tag 欄位
+        public readonly tag: 'log' | 'fix' | 'print' | 'other'  // 新增 tag 欄位
     ) {
         super(`[${tag}] ${label}`);
         this.command = {
@@ -25,7 +25,7 @@ class UntranslatedStringItem extends vscode.TreeItem {
 export class DartL10nStringFixProvider implements vscode.TreeDataProvider<UntranslatedStringItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<void> = new vscode.EventEmitter<void>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
-    private filterTag: 'all' |'fix' | 'log' | 'print' | 'other' = 'all';
+    private filterTag: 'all' | 'fix' | 'log' | 'print' | 'other' = 'all';
     private items: UntranslatedStringItem[] = [];
 
     refresh(items: UntranslatedStringItem[]) {
@@ -36,11 +36,11 @@ export class DartL10nStringFixProvider implements vscode.TreeDataProvider<Untran
             print: 2,
             other: 3
         };
-    
+
         this.items = items.sort((a, b) => {
             return tagPriority[a.tag] - tagPriority[b.tag];
         });
-    
+
         this._onDidChangeTreeData.fire();
     }
 
@@ -96,48 +96,59 @@ export class DartI18nListener extends FileListenerBase {
         const lines = text.split('\n');
 
         lines.forEach((line, lineIndex) => {
-            if (line.trim().startsWith('part') || line.trim().startsWith(`import`) || line.trim() === "" ) return;
+            if (line.trim().startsWith('part') || line.trim().startsWith(`import`) || line.trim().startsWith(`export`) || line.trim() === "") return;
             // 移除所有空格
             let cleanLine = line.replace(/\s+/g, '');
-            let isLog = cleanLine.startsWith('log') || cleanLine.startsWith('_log') || cleanLine.includes("Logger(") ;
+            let isLog = cleanLine.startsWith('log') || cleanLine.startsWith('_log') || cleanLine.includes("Logger(");
             let isComment = cleanLine.startsWith("//");
-            let skip = cleanLine.startsWith("/@")||line.includes("@JsonKey(name:")||line.includes("@Default(")|| line.includes("RegExp(")|| cleanLine.includes("case") ;
-            if (isComment||skip) {
+            let skip = cleanLine.startsWith("/@") || line.includes("@JsonKey(name:") || line.includes("@Default(") || line.includes("RegExp(") || cleanLine.includes("case");
+            if (isComment || skip) {
                 return
             }
             let isPrint = cleanLine.startsWith('print');
-            let tag: 'log' | 'print' | 'other'| 'fix' = isLog ? 'log' : isPrint ? 'print' : 'fix';
+            let tag: 'log' | 'print' | 'other' | 'fix' = isLog ? 'log' : isPrint ? 'print' : 'fix';
             let displayTag = tag as string
             let match: RegExpExecArray | null;
             while ((match = regex.exec(line)) !== null) {
                 const fullMatch = match[0];
                 const innerText = fullMatch.slice(1, -1);
                 let cleanInnerText = innerText.replace(/\s+/g, '');
-                if(cleanInnerText==="") continue;
+                if (cleanInnerText === "") continue;
                 const colStart = match.index;
                 const colEnd = match.index + fullMatch.length;
-                let contextStart = Math.max(0, colStart - 4);
-                let beforeString = line.substring(contextStart, colStart);
-                const isKey = beforeString.includes('Key(');
-                if(isKey){
-                    tag ='other';
-                    displayTag ='key';
-                }
-                contextStart = Math.max(0, colStart - 11);
-                beforeString = line.substring(contextStart, colStart);
-                const isDateTime = beforeString.includes('DateFormat(');
+                let isOther = false
                 const isRouteName = innerText.startsWith('/');
-                if(isDateTime|| isRouteName){
-                    tag ='other';
-                    displayTag ='other';
+                const isPreFixOtherPattern = [`Key(`, `DateFormat(`, `fontFamily: `];
+                const isEndFixOtherPattern = [` =>`, `:`];
+                for (let pattern of isPreFixOtherPattern) {
+                    let len = pattern.length
+                    let contextStart = Math.max(0, colStart - len);
+                    let beforeString = line.substring(contextStart, colStart);
+                    if (beforeString == pattern) {
+                        isOther = true
+                    }
                 }
+                for (let pattern of isEndFixOtherPattern) {
+                    let len = pattern.length
+                    let contextEnd = Math.max(0, colEnd + len);
+                    let endString = line.substring(colEnd, contextEnd);
+                    if (endString == pattern) {
+                        return
+                    }
+
+                }
+                if (isOther || isRouteName) {
+                    tag = 'other';
+                    displayTag = 'other';
+                }
+
 
                 displayTag = toUpperCamelCase(displayTag)
 
                 if (!this.isTranslated(innerText)) {
                     const range = new vscode.Range(
-                        new vscode.Position(lineIndex, colStart+1),
-                        new vscode.Position(lineIndex, colEnd-1)
+                        new vscode.Position(lineIndex, colStart + 1),
+                        new vscode.Position(lineIndex, colEnd - 1)
                     );
 
                     items.push(

@@ -1,5 +1,9 @@
 # 0.0.174
 - [Feature] l10n 
+- Use l10n todo refresh to enable Autofix
+
+# 0.0.174
+- [Feature] l10n 
 - support find all unlocated strings
 
 # 0.0.173

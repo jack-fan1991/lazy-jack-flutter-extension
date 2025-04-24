@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.174",
+  "version": "0.0.175",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -38,15 +38,15 @@
       }
     ],
     "views": {
-      "explorer": [
+      "explorer": [ {
+        "id": "dartL10nFixViewAllFiles",
+        "name": "i10n To-Do Files (Refresh to enable Fix helper)"
+      },
       {
         "id": "dartL10nFixView",
         "name": "Flutter Strings "
-      },
-      {
-        "id": "dartL10nFixViewAllFiles",
-        "name": "i10n To-Do Files"
       }
+     
     ],
       "lazy-sidebar": [
         {
@@ -72,6 +72,10 @@
       ]
     },
     "commands": [
+      {
+        "command": "dartL10n.ignoreFile",
+        "title": "Ignore This File"
+      },
       {
         "command": "dartL10n.showTagFilter",
         "title": "Filter tag"
@@ -147,6 +151,14 @@
           "command": "dartL10n.findAllFiles",
           "when": "view == dartL10nFixViewAllFiles",
           "group": "navigation"
+        }
+        
+      ],
+      "view/item/context": [
+        {
+          "command": "dartL10n.ignoreFile",
+          "when": "viewItem == dartFileItem",
+          "group": "inline"
         }
       ],
       "editor/context": [
