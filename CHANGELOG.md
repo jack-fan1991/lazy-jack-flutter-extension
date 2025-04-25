@@ -1,3 +1,8 @@
+# 0.0.177
+- [Feature] l10n 
+- Rename Flutter l10n Helper
+- Support clear, dir filter
+
 # 0.0.176
 - [Feature] l10n 
 - Rename Flutter l10n Helper
