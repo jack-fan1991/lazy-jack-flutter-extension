@@ -335,7 +335,7 @@ async function l18nFix() {
             let filePath = path.join(targetPath, file);
             let content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
             // 將所有 key-value 從 l10nObject 放進 content
-            Object.entries(l10nObject).forEach(([k, v]) => {
+            Object.entries(l10nObject!).forEach(([k, v]) => {
                 content[k] = v;
             });
             let jsonString = JSON.stringify(content, null, 2);

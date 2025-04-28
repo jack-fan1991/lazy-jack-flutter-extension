@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.180",
+  "version": "0.0.181",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -21,7 +21,6 @@
     "*"
   ],
   "contributes": {
-    
     "viewsContainers": {
       "activitybar": [
         {
@@ -38,17 +37,16 @@
       }
     ],
     "views": {
-      "explorer": [ {
-        "id": "dartL10nFixViewAllFiles",
-        "name": "Flutter l10n Helper"
-      },
-      {
-        
-        "id": "dartL10nFixView",
-        "name": "Flutter Strings detector"
-      }
-     
-    ],
+      "explorer": [
+        {
+          "id": "dartL10nFixViewAllFiles",
+          "name": "Flutter l10n Helper"
+        },
+        {
+          "id": "dartL10nFixView",
+          "name": "Flutter Strings detector"
+        }
+      ],
       "lazy-sidebar": [
         {
           "id": "fast-repo-gui",
@@ -92,6 +90,10 @@
       {
         "command": "dartL10n.filterDir",
         "title": "🔍"
+      },
+      {
+        "command": "dartL10n.disable",
+        "title": "🚫"
       },
       {
         "category": "lazy Jack",
@@ -170,8 +172,12 @@
           "command": "dartL10n.filterDir",
           "when": "view == dartL10nFixViewAllFiles",
           "group": "navigation"
+        },
+        {
+          "command": "dartL10n.disable",
+          "when": "view == dartL10nFixViewAllFiles",
+          "group": "navigation"
         }
-        
       ],
       "view/item/context": [
         {

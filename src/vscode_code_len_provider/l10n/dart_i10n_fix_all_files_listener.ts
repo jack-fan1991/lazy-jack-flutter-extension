@@ -3,6 +3,7 @@ import { FileListenerBase } from '../../vscode_file_listener/base_file_listener'
 import { upperCase } from 'lodash';
 import { toUpperCamelCase } from '../../utils/src/regex/regex_utils';
 import { DartI18nCodeLensProvider, dartI18nCodeLensProvider } from './flutter_l10n_fix';
+import { showInfo } from '../../utils/src/logger/logger';
 
 
 
@@ -32,10 +33,28 @@ export class DartFileTreeProvider implements vscode.TreeDataProvider<DartFileIte
     public ignoredDir = new Set<string>();
     public filterDir: string = "";
     refresh() {
+        if(DartI18nCodeLensProvider.enable==false){
+            showInfo("Enable l10n helper")
+        }
         DartI18nCodeLensProvider.enable = true
         this.scanDartFiles();
         this._onDidChangeTreeData.fire();
     }
+
+    disable() {
+        DartI18nCodeLensProvider.enable = false
+        // show toast
+        showInfo("Disable l10n helper")
+        this.items = [];
+        this._onDidChangeTreeData.fire();
+    }
+
+    setFilterDir(dir: string) {
+        this.filterDir = dir;
+        this.scanDartFiles();
+        this._onDidChangeTreeData.fire();
+    }
+
 
     getTreeItem(element: DartFileItem): vscode.TreeItem {
         return element;
@@ -178,6 +197,10 @@ export function registerDartL10nStringAllFileTreeProvider(context: vscode.Extens
         fileTreeProvider.ignoredDir.clear();
         fileTreeProvider.filterDir = "";
         fileTreeProvider.refresh();
+    });
+
+    vscode.commands.registerCommand('dartL10n.disable', (item: DartFileItem) => {
+        fileTreeProvider.disable()
     });
 
     vscode.commands.registerCommand('dartL10n.filterDir', async () => {
