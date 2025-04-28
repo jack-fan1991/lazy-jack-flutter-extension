@@ -319,7 +319,7 @@ async function l18nFix() {
     key = changeCase.snakeCase(key)
 
     let l10nObject = await processL10nWithParams(text, key as string);
-    let newText =""
+    let newText = ""
     if (Object.keys(l10nObject).length === 0) {
         // 將選取的文字作為 value，並將 key-value 加入每個 .arb 檔案的末端
         files.forEach(file => {
@@ -329,7 +329,7 @@ async function l18nFix() {
             let jsonString = JSON.stringify(content, null, 2);
             fs.writeFileSync(filePath, jsonString, 'utf8');
         });
-        newText  = `App.l10n.${key as string}`
+        newText = `App.l10n.${key as string}`
     } else {
         // 將選取的文字作為 value，並將 key-value 加入每個 .arb 檔案的末端
         files.forEach(file => {
@@ -343,7 +343,11 @@ async function l18nFix() {
             let params = detectParameters(text).join(",");
 
             fs.writeFileSync(filePath, jsonString, 'utf8');
-             newText  = `App.l10n.${key as string}(${params})`
+            if (params === "") {
+                newText = `App.l10n.${key as string}`
+            } else {
+                newText = `App.l10n.${key as string}(${params})`
+            }
         });
     }
 
@@ -353,7 +357,7 @@ async function l18nFix() {
     // 替換選取範圍的文字為輸入的 key
     editor.edit(editBuilder => {
         let replaceSelect = editor.selection
-            replaceSelect = new vscode.Selection(new vscode.Position(replaceSelect.start.line, replaceSelect.start.character-1), new vscode.Position(replaceSelect.end.line, replaceSelect.end.character+1))
+        replaceSelect = new vscode.Selection(new vscode.Position(replaceSelect.start.line, replaceSelect.start.character - 1), new vscode.Position(replaceSelect.end.line, replaceSelect.end.character + 1))
         editBuilder.replace(replaceSelect, newText);
     });
     await editor.document.save();
@@ -364,7 +368,7 @@ async function l18nFix() {
     })
     files.forEach(async file => {
         let filePath = path.join(targetPath, file);
-        let document = await  vscode.workspace.openTextDocument(filePath)
+        let document = await vscode.workspace.openTextDocument(filePath)
         sortArbKeys(document)
 
     });

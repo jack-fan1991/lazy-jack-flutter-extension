@@ -1,3 +1,6 @@
+# 0.0.178
+- [Feature] Git submodule auto fetch detector
+
 # 0.0.177
 - [Feature] l10n 
 - Rename Flutter l10n Helper
