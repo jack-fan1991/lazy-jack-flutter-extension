@@ -183,15 +183,13 @@ function detectParameters(text: string): string[] {
  * @param key 多语言键名
  * @returns 处理后的多语言对象
  */
-async function processL10nWithParams(text: string, key: string): Promise<{ [key: string]: any }> {
+async function processL10nWithParams(text: string, key: string): Promise<{ [key: string]: any } | undefined> {
     // 提取所有参数
     const params = detectParameters(text);
 
     if (params.length === 0) {
-        // 没有参数，返回普通格式
-        return {
-            [key]: text
-        };
+        // 没有参数
+        return {};
     }
 
     // 准备存储参数类型的对象
@@ -206,7 +204,7 @@ async function processL10nWithParams(text: string, key: string): Promise<{ [key:
         );
 
         if (!paramType) {
-            return {}; // 用户取消了选择，中止处理
+            return undefined; // 用户取消了选择，中止处理
         }
 
         placeholders[param] = { type: paramType };
@@ -319,6 +317,7 @@ async function l18nFix() {
     key = changeCase.snakeCase(key)
 
     let l10nObject = await processL10nWithParams(text, key as string);
+    if(l10nObject ==undefined) return
     let newText = ""
     if (Object.keys(l10nObject).length === 0) {
         // 將選取的文字作為 value，並將 key-value 加入每個 .arb 檔案的末端
@@ -343,11 +342,7 @@ async function l18nFix() {
             let params = detectParameters(text).join(",");
 
             fs.writeFileSync(filePath, jsonString, 'utf8');
-            if (params === "") {
-                newText = `App.l10n.${key as string}`
-            } else {
-                newText = `App.l10n.${key as string}(${params})`
-            }
+            newText = `App.l10n.${key as string}(${params})`
         });
     }
 
