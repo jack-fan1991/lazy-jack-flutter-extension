@@ -59,12 +59,30 @@ const gitScripts: TreeScriptModel[] = [
 
 export class GitDataProvider extends BaseTreeDataProvider {
     supportScripts(): TreeScriptModel[] {
+        const userHome = process.env.HOME || process.env.USERPROFILE;
+        const aiGitScriptPath = `${userHome}/.ai_git_script`;
+        const devAiGitScriptPath = `${userHome}/jackgit/ai_git_script`;
+        const fs = require('fs')
+
+        if ( fs.existsSync(aiGitScriptPath) || fs.existsSync(devAiGitScriptPath)) {
+            gitScripts.push({
+                scriptsType: ScriptsType.customer,
+                label: "Ai commit",
+                script: 'Ai commit',
+                itemAction: () =>{
+                    const newTerminal = vscode.window.createTerminal( 'AI Commit');
+                    newTerminal.sendText('aiCommit')
+
+                }
+            });
+        }
         return [...gitScripts];
 
     }
     getChildren(element?: SideBarEntryItem): vscode.ProviderResult<SideBarEntryItem[]> {
         return Promise.resolve(onGit(() => super.getChildren(), () => []));
     }
+   
 }
 
 
