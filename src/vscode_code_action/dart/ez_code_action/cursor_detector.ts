@@ -138,11 +138,32 @@ function l18nFixAction(): vscode.CodeAction | undefined {
         return undefined;
     }
 
-    let text = getSelectedText();
-    // let selectIsString = (text.startsWith(`'''`) || text.endsWith(`'''`)) || (text.startsWith(`"`) || text.endsWith(`"`)) || (text.startsWith(`'`) || text.endsWith(`'`));
-    // if (!selectIsString) {
-    //     return undefined;
-    // }
+    let editor = getActivateEditor();
+    let document = editor.document;
+    let selection = editor.selection;
+    
+    // 獲取選取區域的前後位置
+    const startPos = selection.start;
+    const endPos = selection.end;
+    
+    // 檢查前後字元是否為引號
+    const startChar = startPos.character > 0 ? 
+        document.getText(new vscode.Range(
+            new vscode.Position(startPos.line, startPos.character - 1),
+            startPos
+        )) : '';
+    
+    const endChar = endPos.character < document.lineAt(endPos.line).text.length ?
+        document.getText(new vscode.Range(
+            endPos,
+            new vscode.Position(endPos.line, endPos.character + 1)
+        )) : '';
+    
+    // 確認前後字元是否匹配且為引號
+    if (!((startChar === '"' && endChar === '"') || (startChar === "'" && endChar === "'"))) {
+        return undefined;
+    }
+
     let data = "🌐 Export String to l10n resource";
     const fix = new vscode.CodeAction(data, vscode.CodeActionKind.QuickFix);
     fix.command = { command: DartCurserDetector.command_l10n_fix, title: data };
