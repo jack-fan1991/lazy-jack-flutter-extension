@@ -1,69 +1,87 @@
-
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { get, template } from 'lodash';
 import { toUpperCamelCase } from '../../utils/src/regex/regex_utils';
 import { reFormat } from '../../utils/src/vscode_utils/activate_editor_utils';
 import * as changeCase from "change-case";
 import { APP } from '../../extension';
 import { getRootPath } from '../../utils/src/vscode_utils/vscode_env_utils';
-import { showInfo } from '../../utils/src/logger/logger';
+import { runTerminal } from '../../utils/src/terminal_utils/terminal_utils';
 
-const command_clean_architecture = "command_generate_flutter_page"
+const command_clean_architecture = "command_generate_flutter_page";
 
 export function registerFlutterPageGenerate(context: vscode.ExtensionContext) {
-    context.subscriptions.push(vscode.commands.registerCommand(command_clean_architecture, async (folderUri) => {
+  context.subscriptions.push(
+    vscode.commands.registerCommand(command_clean_architecture, async (folderUri) => {
+      let featureName = await vscode.window.showInputBox({
+        placeHolder: 'Enter Page name',
+      });
 
-        let featureName = await vscode.window.showInputBox({
-            placeHolder: 'Enter Page name',
-        });
-        featureName = changeCase.snakeCase(featureName!)
-        if (featureName) {
-            const rootPath = folderUri.path;
-            try {
-         
-                let mainClass = `${featureName}`;
-                let upperCase = toUpperCamelCase(mainClass);
+      featureName = changeCase.snakeCase(featureName || "");
+      if (!featureName) return;
 
-                let name = changeCase.snakeCase(mainClass);
-                let mainScreenPath = path.join(rootPath, `${mainClass}_screen.dart`)
-                
-                fs.writeFileSync(mainScreenPath, getMainTemplate(mainClass));
-                let cubit = path.join(mainScreenPath, `presentation/bloc/${name}_cubit.dart`)
-         //open file
-                const uri = vscode.Uri.file(mainScreenPath);
-                await vscode.window.showTextDocument(uri);
+      const rootPath = folderUri.path;
+      const upperCase = toUpperCamelCase(featureName);
+      const mainClass = featureName;
+      const className = `${upperCase}PageWidget`;
+      const screenFileName = `${mainClass}_screen.dart`;
+      const mainScreenPath = path.join(rootPath, screenFileName);
+
+      try {
+        // 建立主畫面
+        fs.writeFileSync(mainScreenPath, getMainTemplate(mainClass));
+
+        const uri = vscode.Uri.file(mainScreenPath);
+        await vscode.window.showTextDocument(uri);
+        reFormat();
+
+        const prefix = APP.goRouter ? "GoRouter" : "Router";
+        const mainWidget = `${className}`;
+        const routeImportPath = `import 'package:${APP.flutterLibName}${mainScreenPath.replace(getRootPath() + "/lib", "")}';`;
+        const routeFileName = `${mainClass}_route`;
+        vscode.window
+          .showInformationMessage(`💡 Register ${upperCase}Screen as ${prefix}?`, 'Yes', 'No')
+          .then(async (value) => {
+            if (value === 'Yes') {
+              if (APP.goRouter) {
+                // 建立 go_route 檔案
+                const goRoutePath = path.join(rootPath, `${mainClass}_route.dart`);
+                fs.writeFileSync(goRoutePath, getGoRouteTemplate(upperCase, mainWidget,routeFileName));
+                runBuildRunnerForFolder(goRoutePath);
+                const routeUri = vscode.Uri.file(goRoutePath);
+                await vscode.window.showTextDocument(routeUri);
                 reFormat();
-                let endFix = 'PageWidget'
-                let mainWidget =`${upperCase}${endFix}`
-                vscode.window.showInformationMessage(`💡 Register ${upperCase}Screen as route ?`, 'Yes', 'No').then((value) => {
-                    if (value === 'Yes') {
-                        vscode.commands.executeCommand("command_create_routeConfiguration", mainClass, `${mainWidget}.routeName`, `import 'package:${APP.flutterLibName}${mainScreenPath.replace(getRootPath() + "/lib", "")}';`, `${mainWidget}`);
-                    }
-
-                });
-
-
-            } catch (err) {
-                vscode.window.showErrorMessage('Failed to create feature');
+                vscode.commands.executeCommand(
+                  "command_create_go_route_configuration",
+                  mainClass,
+                  `${mainWidget}.routeName`,
+                  routeImportPath,
+                  mainWidget
+                );
+              } else {
+                vscode.commands.executeCommand(
+                  "command_create_routeConfiguration",
+                  mainClass,
+                  `${mainWidget}.routeName`,
+                  routeImportPath,
+                  mainWidget
+                );
+              }
             }
-        }
-    }));
+          });
+      } catch (err) {
+        vscode.window.showErrorMessage('❌ Failed to create page: ' + (err as any).message);
+      }
+    })
+  );
 }
 
+function getMainTemplate(mainClass: string): string {
+  const upperCase = toUpperCamelCase(mainClass);
+  const camel = changeCase.camelCase(mainClass);
+  const className = `${upperCase}PageWidget`;
 
-function getMainTemplate(mainClass: string) {
-    let upperCase = toUpperCamelCase(mainClass);
-    let camel = changeCase.camelCase(mainClass);
-    let name = changeCase.snakeCase(mainClass);
-    let endFix = 'PageWidget'
-   
-    let className =`${upperCase}${endFix}`
-    let cubit=changeCase.camelCase(`${upperCase}Cubit` )
-    return `
-import 'package:flutter/material.dart';
-
+  return `import 'package:flutter/material.dart';
 
 class ${className} extends StatefulWidget {
   static const routeName = '/${camel}';
@@ -74,172 +92,49 @@ class ${className} extends StatefulWidget {
 }
 
 class _${className}State extends State<${className}> {
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-          appBar: AppBar(
-            title: Text("${className}"),
-          ),
-          body: SafeArea(
-            child: Container(),
+      appBar: AppBar(
+        title: const Text("${className}"),
+      ),
+      body: const SafeArea(
+        child: Center(
+          child: Text("TODO: Implement ${className}"),
+        ),
       ),
     );
   }
 }
-
-`
-
+`;
 }
+function getGoRouteTemplate(upperCase: string, widgetName: string, fileName: string): string {
+  const routeClass = `${upperCase}Route`;
+  const screenClass = widgetName;
 
-function getCubitStateTemplate(mainClass: string, featurePath: string, dir: string) {
-    let upperCase = toUpperCamelCase(mainClass);
-    let name = changeCase.snakeCase(mainClass)
-    return `import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:${APP.flutterLibName}/${dir}/${featurePath}/data/${name}_ui_model.dart';
-part '${name}_state.freezed.dart';
+  return `import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import '${changeCase.snakeCase(upperCase)}_screen.dart';
 
-@freezed
-class ${upperCase}State with _$${upperCase}State {
-  const factory ${upperCase}State.initial({required ${upperCase}UI ${name}UI}) = _Initial;
-}
+part '${fileName}.g.dart';
 
-    
-    `
-
-}
-
-function getCubitTemplate(mainClass: string, featurePath: string, dir: string) {
-    let upperCase = toUpperCamelCase(mainClass);
-    let name = changeCase.snakeCase(mainClass)
-    let camel = changeCase.camelCase(mainClass);
-    let useCase = changeCase.camelCase(`UseCase${upperCase}`); 
-    return `import 'package:bloc/bloc.dart';
-import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/bloc/${name}_state.dart';
-import 'package:${APP.flutterLibName}/${dir}/${featurePath}/domain/${name}_useCase.dart';
-import 'package:${APP.flutterLibName}/${dir}/${featurePath}/data/${name}_ui_model.dart';
-
-class ${upperCase}Cubit extends Cubit<${upperCase}State> {
-  final UseCase${upperCase} ${useCase} = UseCase${upperCase}();
-  ${upperCase}Cubit() : super(${upperCase}State.initial(${name}UI: ${upperCase}UI()));
-
-  Future<void> fetchData() async {
-    try {
-      /// emit(loadingState);
-      final ${camel}Model = await ${useCase}.call();
-
-      /// emit success state
-      emit(${upperCase}State.initial(${name}UI: ${camel}Model));
-    } catch (e) {
-      /// emit error state
-    }
-  }
-}
-
-        `
-
-}
-
-
-function getDataModelsTemplate(mainClass: string) {
-  let upperCase = toUpperCamelCase(mainClass);
-  return `class ${upperCase}UI {
-  ${upperCase}UI();
-}
-      `
-
-}
-
-// function getDataModelsTemplate(mainClass: string) {
-//     let upperCase = toUpperCamelCase(mainClass);
-//     return `
-// class ${upperCase}UIModel {
-//     ${upperCase}UIModel();
-// }
-
-
-//         `
-
-// }
-
-function getUseCaseTemplate(mainClass: string, featurePath: string, dir: string) {
-    let upperCase = toUpperCamelCase(mainClass);
-    let name = changeCase.snakeCase(mainClass);
-    return `import 'package:${APP.flutterLibName}/${dir}/${featurePath}/data/${name}_ui_model.dart';
- 
-class UseCase${upperCase} {
-  UseCase${upperCase}();
-
-  Future<${upperCase}UI> call() async {
-    await Future.delayed(const Duration(seconds: 1));
-    return ${upperCase}UI();
-  }  
-}
-        `
-
-}
-
-function getWidgetsTemplate(isPages:boolean,mainClass: string, featurePath: string, dir: string) {
-    let upperCase = toUpperCamelCase(mainClass);
-    let cubit=changeCase.camelCase(`${upperCase}Cubit` )
-    let state=changeCase.camelCase(`${upperCase}State` )
-    let name = changeCase.snakeCase(mainClass);
-    let bodyEndFix = 'ViewWidget'
-    if(isPages){
-        bodyEndFix = 'ScreenWidget'
-    }    
-    let className =`${upperCase}${bodyEndFix}`
-    return `import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/bloc/${name}_cubit.dart';
-import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/bloc/${name}_state.dart';
-
-class ${className} extends StatefulWidget {
-  final ${upperCase}Cubit ${cubit};
-  const ${className}({super.key, required this.${cubit}});
+@TypedGoRoute<${routeClass}>(
+  path: ${screenClass}.routeName,
+)
+@immutable
+class ${routeClass} extends GoRouteData {
+  const ${routeClass}();
 
   @override
-  State<${className}> createState() => _${className}State();
-}
-
-class _${className}State extends State<${className}> {
-  @override
-  void initState() {
-    super.initState();
-    widget.${cubit}.fetchData();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => widget.${cubit},
-      child: BlocConsumer<${toUpperCamelCase(cubit)}, ${toUpperCamelCase(state)}>(
-        bloc: widget.${cubit},
-        listener: (context, ${state}) => {
-          // show dialog
-        },
-        builder: (context, ${state}) {
-          return Center(
-            child: _LoadedWidget(),
-          );
-        },
-      ),
-    );
+  Widget build(BuildContext context, GoRouterState state) {
+    return const ${screenClass}();
   }
 }
-
-class _LoadedWidget extends StatelessWidget {
-  const _LoadedWidget({
-    super.key,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final ${state} = context.watch<${toUpperCamelCase(cubit)}>().state;
-    return Text("${className} state => \${${state}.runtimeType}");
-  }
+`;
 }
 
-        `
-
+function runBuildRunnerForFolder(folderPath: string) {
+  const fileDir = path.dirname(folderPath);
+  const relativePath = fileDir.replace(getRootPath() + '/', ''); // 例如 lib/route
+  runTerminal(`dart run build_runner build --build-filter="${relativePath}/*.dart" --delete-conflicting-outputs`);
 }

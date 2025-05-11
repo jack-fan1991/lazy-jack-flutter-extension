@@ -31,6 +31,7 @@ import { runCommand } from './utils/src/terminal_utils/terminal_utils';
 import { registerDartL10nStringFix } from './vscode_code_len_provider/l10n/flutter_l10n_fix';
 import { registerDartL10nStringTreeProvider } from './vscode_code_len_provider/l10n/dart_i10n_fix_listener';
 import { registerDartL10nStringAllFileTreeProvider } from './vscode_code_len_provider/l10n/dart_i10n_fix_all_files_listener';
+import { registerCreateGoRouteConfiguration } from './vscode_explorer/flutter/go_route/go_router_config_generator';
 let sidebarManger = new SidebarManager()
 export class APP {
   public static pubspecYaml: any | undefined = undefined;
@@ -41,6 +42,8 @@ export class APP {
   public static flutterLocalizations: any | undefined = undefined;
   public static myName = "";
   public static depOnLogging: any | undefined = undefined;
+  public static goRouter =false;
+  
 
 }
 
@@ -60,7 +63,7 @@ export async function activate(context: vscode.ExtensionContext) {
       APP.flutterLibName = APP.pubspecYaml["name"]
       APP.flutterLocalizations = APP.pubspecYaml["dependencies"]["flutter_localizations"]
       APP.depOnLogging = APP.pubspecYaml["dependencies"]["color_logging"]
-
+      APP.goRouter = APP.pubspecYaml["dependencies"]["go_router"] 
       log(APP.pubspecYaml)
       registerCreateRouteConfiguration(context)
       registerDartSnippet(context)
@@ -86,6 +89,7 @@ export async function activate(context: vscode.ExtensionContext) {
   registerCleanArchitectureGenerate(context)
   registerCleanArchitectureCubitGenerate(context)
   registerFlutterPageGenerate(context)
+  registerCreateGoRouteConfiguration(context)
   // 列出為多國的字串
   registerDartL10nStringFix(context)
   registerDartL10nStringTreeProvider(context)
