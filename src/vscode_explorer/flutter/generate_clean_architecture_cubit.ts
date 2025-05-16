@@ -28,7 +28,7 @@ export function registerCleanArchitectureCubitGenerate(context: vscode.Extension
         featureName = changeCase.snakeCase(featureName!)
         if (featureName) {
             const rootPath = folderUri.path;
-            let currentDir = rootPath.split('/').pop() //"presentation"
+            let currentDir = rootPath.split('lib/').pop() //"presentation"
           
             const featurePath = path.dirname(rootPath) ;
             const isFolderPages = path.dirname(rootPath).endsWith('pages')

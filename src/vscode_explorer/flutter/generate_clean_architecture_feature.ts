@@ -9,6 +9,7 @@ import * as changeCase from "change-case";
 import { APP } from '../../extension';
 import { getRootPath } from '../../utils/src/vscode_utils/vscode_env_utils';
 import { showInfo } from '../../utils/src/logger/logger';
+import { route_configuration_file_name } from './generate_route_temp';
 
 const command_clean_architecture = "command_clean_architecture"
 
@@ -22,7 +23,7 @@ export function registerCleanArchitectureGenerate(context: vscode.ExtensionConte
         if (featureName) {
             const rootPath = folderUri.path;
             let isPages = rootPath.endsWith('pages');
-            let dir = rootPath.split('/').pop()
+            let dir = rootPath.split('lib/').pop()
 
             const featurePath = path.join(rootPath, featureName);
             try {
@@ -67,7 +68,7 @@ export function registerCleanArchitectureGenerate(context: vscode.ExtensionConte
                 let mainWidget =`${upperCase}${endFix}`
                 vscode.window.showInformationMessage(`💡 Register ${upperCase}Screen as route ?`, 'Yes', 'No').then((value) => {
                     if (value === 'Yes') {
-                        vscode.commands.executeCommand("command_create_routeConfiguration", mainClass, `${mainWidget}.routeName`, `import 'package:${APP.flutterLibName}${mainScreenPath.replace(getRootPath() + "/lib", "")}';`, `${mainWidget}`);
+                        vscode.commands.executeCommand("command_create_routeConfiguration", mainClass, `${mainWidget}.routeName`, `import 'package:${APP.flutterLibName}${mainScreenPath.replace(getRootPath() + "/lib", "")}';`,mainWidget, toUpperCamelCase(mainClass));
                     }
 
                 });
@@ -80,56 +81,66 @@ export function registerCleanArchitectureGenerate(context: vscode.ExtensionConte
     }));
 }
 
+function getMainTemplate(isPages: boolean, mainClass: string, featurePath: string, dir: string) {
+  let upperCase = toUpperCamelCase(mainClass);
+  let camel = changeCase.camelCase(mainClass);
+  let name = changeCase.snakeCase(mainClass);
+  let endFix = isPages ? 'PageWidget' : 'ScreenWidget';
+  let bodyEndFix = isPages ? 'ScreenWidget' : 'ViewWidget';
 
-function getMainTemplate(isPages:boolean,mainClass: string, featurePath: string, dir: string) {
-    let upperCase = toUpperCamelCase(mainClass);
-    let camel = changeCase.camelCase(mainClass);
-    let name = changeCase.snakeCase(mainClass);
-    let endFix = 'ScreenWidget'
-    if(isPages){
-        endFix = 'PageWidget'
-    }
-    let bodyEndFix = 'ViewWidget'
-    if(isPages){
-        bodyEndFix = 'ScreenWidget'
-    }
-    let className =`${upperCase}${endFix}`
-    let bodyClassName =`${upperCase}${bodyEndFix}`
-    let cubit=changeCase.camelCase(`${upperCase}Cubit` )
-    let useCase = changeCase.camelCase(`UseCase${upperCase}`); 
-    return `
+  let className = `${upperCase}${endFix}`;
+  let bodyClassName = `${upperCase}${bodyEndFix}`;
+  let cubit = changeCase.camelCase(`${upperCase}Cubit`);
+  let useCase = changeCase.camelCase(`UseCase${upperCase}`);
+  let argType = `Route${upperCase}Args`;
+
+  return `
 import 'package:flutter/material.dart';
 import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/bloc/${name}_cubit.dart';
 import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/widgets/${name}_widget.dart';
 import 'package:${APP.flutterLibName}/${dir}/${featurePath}/domain/${name}_useCase.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:${APP.flutterLibName}/route/${route_configuration_file_name}';
 
+class ${argType} extends PageArgs {
+  const ${argType}() : super(
+          routeName: ${className}.routeName,
+        );
+}  
 
 class ${className} extends StatefulWidget {
   static const routeName = '/${camel}';
-  const ${className}({super.key});
+  final ${argType} args;
+
+  const ${className}({super.key, required this.args});
 
   @override
   State<${className}> createState() => _${className}State();
 }
 
 class _${className}State extends State<${className}> {
-  final ${toUpperCamelCase(cubit)} _${cubit}= ${upperCase}Cubit();
+  final ${upperCase}Cubit _${cubit} = ${upperCase}Cubit();
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-          appBar: AppBar(
-            title: Text("${className}"),
-          ),
-          body: SafeArea(
-            child: ${bodyClassName}(${cubit}:_${cubit}),
+    return MultiBlocProvider(
+      providers: [],
+      child: Builder(
+        builder: (context) {
+          return Scaffold(
+            appBar: AppBar(
+              title: Text("${className}"),
+            ),
+            body: SafeArea(
+              child: ${bodyClassName}(${cubit}: _${cubit}),
+            ),
+          );
+        },
       ),
     );
   }
 }
-
-`
-
+`;
 }
 
 function getCubitStateTemplate(mainClass: string, featurePath: string, dir: string) {
@@ -229,7 +240,7 @@ function getWidgetsTemplate(isPages:boolean,mainClass: string, featurePath: stri
         bodyEndFix = 'ScreenWidget'
     }    
     let className =`${upperCase}${bodyEndFix}`
-    return `import 'package:flutter/material.dart';
+      return `import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/bloc/${name}_cubit.dart';
 import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/bloc/${name}_state.dart';
@@ -251,19 +262,16 @@ class _${className}State extends State<${className}> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocProvider(
-      create: (context) => widget.${cubit},
-      child: BlocConsumer<${toUpperCamelCase(cubit)}, ${toUpperCamelCase(state)}>(
-        bloc: widget.${cubit},
-        listener: (context, ${state}) => {
-          // show dialog
-        },
-        builder: (context, ${state}) {
-          return Center(
-            child: _LoadedWidget(),
-          );
-        },
-      ),
+    return BlocConsumer<${upperCase}Cubit, ${upperCase}State>(
+      bloc: widget.${cubit},
+      listener: (context, ${state}) {
+        // show dialog
+      },
+      builder: (context, ${state}) {
+        return Center(
+          child: _LoadedWidget(),
+        );
+      },
     );
   }
 }

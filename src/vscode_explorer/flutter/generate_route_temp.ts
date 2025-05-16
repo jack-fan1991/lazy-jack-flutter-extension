@@ -10,19 +10,20 @@ import { getRootPath } from '../../utils/src/vscode_utils/vscode_env_utils';
 import { openEditor, readFileToText } from '../../utils/src/vscode_utils/editor_utils';
 
 const command_create_routeConfiguration = "command_create_routeConfiguration"
+export const route_configuration_file_name = "route_configuration2.dart"
 
 export function registerCreateRouteConfiguration(context: vscode.ExtensionContext) {
-    context.subscriptions.push(vscode.commands.registerCommand(command_create_routeConfiguration, async (routName: string, routeParam: string, importText: string, widgetName: string) => {
+    context.subscriptions.push(vscode.commands.registerCommand(command_create_routeConfiguration, async (routName: string, routeParam: string, importText: string, widgetName: string,mainClass :string) => {
         let root = getRootPath()
         const routeDir = `${root}/lib/route`;  // 指向 lib/route 目錄
-        const filePath = `${routeDir}/route_configuration.dart`;  // 路徑: lib/route/route_configuration.dart
+        const filePath = `${routeDir}/${route_configuration_file_name}`;  // 路徑: lib/route/route_configuration.dart
 
         // 檢查目錄是否存在，如果不存在則創建它
         if (!fs.existsSync(routeDir)) {
             fs.mkdirSync(routeDir, { recursive: true });
         }
         if (!fs.existsSync(filePath)) {
-            fs.writeFileSync(filePath, createRouteConfiguration(routName, routeParam, importText, widgetName));
+            fs.writeFileSync(filePath, createRouteConfiguration(routName, routeParam, importText, widgetName,mainClass));
             reFormat();
             openEditor(filePath)
             return
@@ -88,7 +89,7 @@ export function registerCreateRouteConfiguration(context: vscode.ExtensionContex
 
             }
             if (line.includes("default:") && !screenDone && routeDone && importDone) {
-                let temp = temScreen(routName, routeParam, importText, widgetName).split('\n');
+                let temp = temScreen(routName, routeParam, importText, widgetName,mainClass).split('\n');
                 temp.forEach(element => {
                     linesTemp.push(element + "\n")
                 });
@@ -170,15 +171,16 @@ export async function ensureRouteConfigurationUpdated(
     await updateAndFormatFile(filePath, content);
 }
 
-function temScreen(routName: string, routeParam: string, importText: string, widgetName: string): string {
+function temScreen(routName: string, routeParam: string, importText: string, widgetName: string, mainClass:string): string {
     // 假設我們將這兩個參數用於路由配置的生成
     let constantCase = changeCase.constantCase(routName);
-
+    let upperCase = toUpperCamelCase(mainClass);
+    let argType = `Route${upperCase}Args`;
     // 使用這些參數來創建路由配置
     const routeTemplate = `
       case ROUTE_${constantCase}:
         return CupertinoPageRoute(
-          builder: (context) => ${widgetName}(),
+          builder: (context) => ${widgetName}(args: settings.arguments as ${argType}),
           settings: RouteSettings(name: settings.name),
         );
 `;
@@ -187,10 +189,11 @@ function temScreen(routName: string, routeParam: string, importText: string, wid
 }
 
 
-function createRouteConfiguration(routName: string, routeParam: string, importText: string, widgetName: string): string {
+function createRouteConfiguration(routName: string, routeParam: string, importText: string, widgetName: string, mainClass:string): string {
     // 假設我們將這兩個參數用於路由配置的生成
     let constantCase = changeCase.constantCase(routName);
-
+    let upperCase = toUpperCamelCase(mainClass);
+    let argType = `Page${upperCase}Args`;
     // 使用這些參數來創建路由配置
     const routeTemplate = `
 //  Auto-Generated File
@@ -219,7 +222,7 @@ class RouteConfiguration {
   
   /// \`\`\`dart
   /// import 'package:flutter/material.dart';
-  /// import 'route_configuration2.dart';
+  /// import 'route_configuration.dart';
 
   /// void main() {
   ///   runApp(MyApp());
@@ -240,7 +243,7 @@ class RouteConfiguration {
     switch (settings.name) {
       case ROUTE_${constantCase}:
         return CupertinoPageRoute(
-          builder: (context) => ${widgetName}(),
+          builder: (context) => ${widgetName}(args: settings.arguments as ${argType}),
           settings: RouteSettings(name: settings.name)
         );
       default:
@@ -255,6 +258,16 @@ class RouteConfiguration {
     }
   }
 }
+
+abstract class PageArgs {
+  final String routeName;
+  const PageArgs({required this.routeName});
+  
+  Future push();
+  Future pushReplacement();
+  Future pushAndRemoveAll();
+}
+
 `;
     return routeTemplate
 
@@ -270,22 +283,3 @@ function toUpperCamelCase(str: string): string {
 function changeCase_dotCase(str: string): string {
     return str.replace(/([a-z0-9])([A-Z])/g, '$1.$2').toLowerCase();
 }
-
-/// ```dart
-/// import 'package:flutter/material.dart';
-/// import 'route_configuration2.dart';
-
-/// void main() {
-///   runApp(MyApp());
-/// }
-
-/// class MyApp extends StatelessWidget {
-///   @override
-///   Widget build(BuildContext context) {
-///     return MaterialApp(
-///       title: 'My App',
-///       initialRoute: ROUTE_HOME,
-///       onGenerateRoute: RouteConfiguration.onGenerateRoute,
-///     );
-///   }
-/// }
