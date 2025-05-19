@@ -1,0 +1,42 @@
+# === macOS system files ===
+.DS_Store
+
+# === Build outputs ===
+/build/                         # Gradle build output
+/captures/                      # Android Studio screen recording
+/output.json                    # APK/AAB output file
+*.log                           # Log files
+*.hprof                         # Heap dumps
+
+# === Gradle files ===
+.gradle/                        # Gradle cache
+/local.properties               # Local SDK path (do not share)
+
+# === NDK / C++ build artifacts ===
+.cxx/
+.externalNativeBuild/
+
+# === IntelliJ / Android Studio project files ===
+.idea/                          # IDE settings
+*.iml                           # Module files
+*.ipr
+*.iws
+
+# Keep shared configs if needed
+!.idea/codeStyles/              # Shared code style settings
+!.idea/runConfigurations/       # Shared run configurations
+
+# Ignore volatile IDE files
+.idea/caches/
+.idea/libraries/
+.idea/modules.xml
+.idea/workspace.xml
+.idea/navEditor.xml
+.idea/assetWizardSettings.xml
+
+# === Signing keys ===
+*.keystore                      # Private signing keys (never commit)
+
+# === Test results ===
+/test-results/
+/androidTest-results/

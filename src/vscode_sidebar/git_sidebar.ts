@@ -8,7 +8,9 @@ import { getRootPath } from "../utils/src/vscode_utils/vscode_env_utils";
 import * as fs from 'fs';
 import * as path from 'path';
 import * as os from 'os';
-import { exec } from "child_process";
+import { exec, execSync } from "child_process";
+import { gitDataProvider, sidebarManger } from "../extension";
+import { logError } from "../utils/src/logger/logger";
 
 const gitScripts: TreeScriptModel[] = [
 
@@ -89,12 +91,13 @@ export class GitDataProvider extends BaseTreeDataProvider {
                 }
             });
         }
-        let isGit = isGitRepo()
+        // return gitScripts
+        let hasRemote = checkGitRepoWithRemote()
         let script = gitScripts
-        if (!isGit) {
+        if (!hasRemote) {
             script = script.filter((script) => { return script.label == "git init remote" })
         }
-        if (isGit) {
+        if (hasRemote) {
             script = script.filter((script) => { return script.label != "git init remote" })
         }
         return [...script];
@@ -102,11 +105,30 @@ export class GitDataProvider extends BaseTreeDataProvider {
     }
     getChildren(element?: SideBarEntryItem): vscode.ProviderResult<SideBarEntryItem[]> {
         isGitRepo()
-        return Promise.resolve(onGit(() => super.getChildren(), () => []));
+        return Promise.resolve(super.getChildren());
     }
 
 }
 
+/**
+ * 檢查當前目錄是否為 Git 倉庫，且已與 remote 連接
+ * @param directory 預設為 process.cwd()
+ * @returns true 表示是 Git repo 且有 remote，false 表示不是或沒有 remote
+ */
+export function checkGitRepoWithRemote(): boolean {
+    const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!rootPath) {
+
+        return false;
+    }
+    const gitConfig = path.join(rootPath, '.git/config');
+    if (!fs.existsSync(gitConfig)) {
+        return false;
+    }
+    let content = fs.readFileSync(gitConfig, 'utf-8');
+    return content.includes("[remote")
+   
+}
 
 
 
@@ -127,13 +149,41 @@ export function isGitRepo(): boolean {
 /// 7. 選擇是否公開
 /// 8.執行gh repo create
 
+async function selectAndApplyIgnoreTemplate() {
+    const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!rootPath) {
+        logError("無法取得igonre.txt專案根目錄", false)
+        return;
+    }
+    const ignorePath = path.join(rootPath, '.gitignore');
+    let hasIgnoreFile = fs.existsSync(ignorePath);
+    if (hasIgnoreFile) return
+    const ignoreDir = path.join(sidebarManger.context!.extensionPath, 'src/vscode_sidebar/git/igonre');
+    let templates = fs.readdirSync(ignoreDir)
+        .filter(f => f.endsWith('_igonre.txt'))
+        .map(f => ({ label: f.replace('_igonre.txt', ''), file: f }));
+    if (templates.length === 0) {
+        vscode.window.showWarningMessage('No .gitignore sample.');
+        return;
+    }
+    const picked = await vscode.window.showQuickPick(templates, { placeHolder: 'Create .gitignore Sample' });
+    if (!picked) return;
+    const templatePath = path.join(ignoreDir, picked.file);
+    const content = fs.readFileSync(templatePath, 'utf8');
+
+
+
+    fs.writeFileSync(ignorePath, content, 'utf8');
+    vscode.window.showInformationMessage(`Create ${picked.label} .ignore`);
+}
+
 export async function gitInitAndPush() {
     const rootPath = getRootPath();
     if (!rootPath) {
         vscode.window.showErrorMessage('⚠️ 無法取得目前的 workspace 資料夾。');
         return;
     }
-
+    await selectAndApplyIgnoreTemplate()
     const terminal = runTerminal('Git Init');
     // create Readme
     const readmePath = path.join(rootPath, 'README.md');
@@ -143,7 +193,7 @@ export async function gitInitAndPush() {
     // Step 1: git init
     terminal.sendText(`cd "${rootPath}"`);
     terminal.sendText(`git init`);
-
+    gitDataProvider.refresh()
     // Step 2: git add .
     terminal.sendText(`git add .`);
 

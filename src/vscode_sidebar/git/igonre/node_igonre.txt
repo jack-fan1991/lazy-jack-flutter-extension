@@ -1,0 +1,21 @@
+# Node
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+.env
+.DS_Store
+coverage/
+dist/
+build/
+logs/
+pids/
+*.pid
+*.seed
+*.log
+*.tgz
+.idea/
+.vscode/
+.cache/
+.next/
+out/

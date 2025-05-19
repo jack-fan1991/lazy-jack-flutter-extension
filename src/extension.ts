@@ -31,7 +31,8 @@ import { runCommand } from './utils/src/terminal_utils/terminal_utils';
 import { registerDartL10nStringFix } from './vscode_code_len_provider/l10n/flutter_l10n_fix';
 import { registerDartL10nStringTreeProvider } from './vscode_code_len_provider/l10n/dart_i10n_fix_listener';
 import { registerDartL10nStringAllFileTreeProvider } from './vscode_code_len_provider/l10n/dart_i10n_fix_all_files_listener';
-let sidebarManger = new SidebarManager()
+
+export let sidebarManger = new SidebarManager()
 export class APP {
   public static pubspecYaml: any | undefined = undefined;
   public static pubspecLockYaml: any | undefined = undefined;
@@ -95,9 +96,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
 export function deactivate() { }
 
+export let  gitDataProvider= new GitDataProvider()
 function setupSideBar(context: vscode.ExtensionContext) {
   sidebarManger.addSideBar(new TypescriptDataProvider())
-    .addSideBar(new GitDataProvider())
+    .addSideBar(gitDataProvider)
     .addSideBar(new FlutterDataProvider())
     .addSideBar(new VscodeDataProvider())
     .registerSideBarCommands(context, "lazy-jack.sidebar_command_onselect")
