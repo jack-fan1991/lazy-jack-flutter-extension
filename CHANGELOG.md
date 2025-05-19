@@ -1,3 +1,10 @@
+# 0.0.185
+## ✨ Features
+- **Git Sidebar**: Added a sidebar interface for Git operations.
+- **Action - Git Init Remote**:
+  - Supports initializing a local Git repository and creating a corresponding remote repository.
+  - Integrated with [GitHub CLI](https://cli.github.com/) for streamlined remote setup.
+
 # 0.0.181
 - [Feature] Flutter l10n Helper , add Disable button
 
