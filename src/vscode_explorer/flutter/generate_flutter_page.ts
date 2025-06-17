@@ -52,33 +52,34 @@ export function registerFlutterPageGenerate(context: vscode.ExtensionContext) {
         }
     }));
 }
-
 function getMainTemplate(mainClass: string) {
-  let upperCase = toUpperCamelCase(mainClass);
-  let camel = changeCase.camelCase(mainClass);
-  let name = changeCase.snakeCase(mainClass);
-  let endFix = 'PageWidget';
+  const upperCase = toUpperCamelCase(mainClass);
+  const camel = changeCase.camelCase(mainClass);
+  const name = changeCase.snakeCase(mainClass);
+  const endFix = 'PageWidget';
 
-  let className = `${upperCase}${endFix}`;
-  let cubit = changeCase.camelCase(`${upperCase}Cubit`);
-  let argType = `Route${upperCase}Args`;
+  const className = `${upperCase}${endFix}`;
+  const cubit = changeCase.camelCase(`${upperCase}Cubit`);
+  const argType = `Route${upperCase}Args`;
 
   return `
 import 'package:flutter/material.dart';
-import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:${APP.flutterLibName}/route/${route_page_args_file_name}';
 
 class ${argType} extends PageArgs {
   const ${argType}() : super(
-          routeName: ${className}.routeName,
-        );
-}  
+    routeName: ${className}.routeName,
+  );
+}
 
 class ${className} extends StatefulWidget {
   static const routeName = '/${camel}';
   final ${argType} args;
 
-  const ${className}({super.key, required this.args});
+  const ${className}({
+    super.key,
+    required this.args,
+  });
 
   @override
   State<${className}> createState() => _${className}State();
@@ -87,19 +88,14 @@ class ${className} extends StatefulWidget {
 class _${className}State extends State<${className}> {
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [],
-      child: Builder(
-        builder: (context) {
-          return Scaffold(
-            appBar: AppBar(
-              title: Text("${className}"),
-            ),
-            body: SafeArea(
-              child: Text("Args: \${widget.args}"),
-            ),
-          );
-        },
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("${className}"),
+      ),
+      body: SafeArea(
+        child: Center(
+          child: Text("Args: \${widget.args}"),
+        ),
       ),
     );
   }

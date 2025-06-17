@@ -81,18 +81,24 @@ export function registerCleanArchitectureGenerate(context: vscode.ExtensionConte
     }));
 }
 
-function getMainTemplate(isPages: boolean, mainClass: string, featurePath: string, dir: string) {
-  let upperCase = toUpperCamelCase(mainClass);
-  let camel = changeCase.camelCase(mainClass);
-  let name = changeCase.snakeCase(mainClass);
-  let endFix = isPages ? 'PageWidget' : 'ScreenWidget';
-  let bodyEndFix = isPages ? 'ScreenWidget' : 'ViewWidget';
+function getMainTemplate(
+  isPages: boolean,
+  mainClass: string,
+  featurePath: string,
+  dir: string
+) {
+  const upperCase = toUpperCamelCase(mainClass);
+  const camel = changeCase.camelCase(mainClass);
+  const name = changeCase.snakeCase(mainClass);
 
-  let className = `${upperCase}${endFix}`;
-  let bodyClassName = `${upperCase}${bodyEndFix}`;
-  let cubit = changeCase.camelCase(`${upperCase}Cubit`);
-  let useCase = changeCase.camelCase(`UseCase${upperCase}`);
-  let argType = `Route${upperCase}Args`;
+  const endFix = isPages ? 'PageWidget' : 'ScreenWidget';
+  const bodyEndFix = isPages ? 'ScreenWidget' : 'ViewWidget';
+
+  const className = `${upperCase}${endFix}`;
+  const bodyClassName = `${upperCase}${bodyEndFix}`;
+  const cubit = changeCase.camelCase(`${upperCase}Cubit`);
+  const useCase = changeCase.camelCase(`UseCase${upperCase}`);
+  const argType = `Route${upperCase}Args`;
 
   return `
 import 'package:flutter/material.dart';
@@ -104,15 +110,18 @@ import 'package:${APP.flutterLibName}/route/${route_page_args_file_name}';
 
 class ${argType} extends PageArgs {
   const ${argType}() : super(
-          routeName: ${className}.routeName,
-        );
-}  
+    routeName: ${className}.routeName,
+  );
+}
 
 class ${className} extends StatefulWidget {
   static const routeName = '/${camel}';
   final ${argType} args;
 
-  const ${className}({super.key, required this.args});
+  const ${className}({
+    super.key,
+    required this.args,
+  });
 
   @override
   State<${className}> createState() => _${className}State();
@@ -123,19 +132,12 @@ class _${className}State extends State<${className}> {
 
   @override
   Widget build(BuildContext context) {
-    return MultiBlocProvider(
-      providers: [],
-      child: Builder(
-        builder: (context) {
-          return Scaffold(
-            appBar: AppBar(
-              title: Text("${className}"),
-            ),
-            body: SafeArea(
-              child: ${bodyClassName}(${cubit}: _${cubit}),
-            ),
-          );
-        },
+    return Scaffold(
+      appBar: AppBar(
+        title: Text("${className}"),
+      ),
+      body: SafeArea(
+        child: ${bodyClassName}(${cubit}: _${cubit}),
       ),
     );
   }
