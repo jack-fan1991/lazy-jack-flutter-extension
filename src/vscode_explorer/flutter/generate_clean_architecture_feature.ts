@@ -9,7 +9,7 @@ import * as changeCase from "change-case";
 import { APP } from '../../extension';
 import { getRootPath } from '../../utils/src/vscode_utils/vscode_env_utils';
 import { showInfo } from '../../utils/src/logger/logger';
-import { route_configuration_file_name } from './generate_route_temp';
+import { route_configuration_file_name, route_page_args_file_name } from './generate_route_temp';
 
 const command_clean_architecture = "command_clean_architecture"
 
@@ -100,7 +100,7 @@ import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/bloc/${
 import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/widgets/${name}_widget.dart';
 import 'package:${APP.flutterLibName}/${dir}/${featurePath}/domain/${name}_useCase.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:${APP.flutterLibName}/route/${route_configuration_file_name}';
+import 'package:${APP.flutterLibName}/route/${route_page_args_file_name}';
 
 class ${argType} extends PageArgs {
   const ${argType}() : super(

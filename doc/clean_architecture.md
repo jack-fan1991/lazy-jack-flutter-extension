@@ -42,7 +42,7 @@ class RouteConfiguration {
   
   /// ```dart
   /// import 'package:flutter/material.dart';
-  /// import 'route_configuration2.dart';
+  /// import 'route_configuration.dart';
 
   /// void main() {
   ///   runApp(MyApp());

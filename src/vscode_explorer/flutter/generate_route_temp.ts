@@ -10,22 +10,29 @@ import { getRootPath } from '../../utils/src/vscode_utils/vscode_env_utils';
 import { openEditor, readFileToText } from '../../utils/src/vscode_utils/editor_utils';
 
 const command_create_routeConfiguration = "command_create_routeConfiguration"
-export const route_configuration_file_name = "route_configuration2.dart"
+export const route_configuration_file_name = "route_configuration.dart"
+export const route_page_args_file_name = "page_args.dart"
 
 export function registerCreateRouteConfiguration(context: vscode.ExtensionContext) {
-    context.subscriptions.push(vscode.commands.registerCommand(command_create_routeConfiguration, async (routName: string, routeParam: string, importText: string, widgetName: string,mainClass :string) => {
+    context.subscriptions.push(vscode.commands.registerCommand(command_create_routeConfiguration, async (routName: string, routeParam: string, importText: string, widgetName: string, mainClass: string) => {
         let root = getRootPath()
         const routeDir = `${root}/lib/route`;  // 指向 lib/route 目錄
         const filePath = `${routeDir}/${route_configuration_file_name}`;  // 路徑: lib/route/route_configuration.dart
-
+        const pageArgFilePath = `${routeDir}/${route_page_args_file_name}`;  // 路徑: lib/route/route_configuration.dart
         // 檢查目錄是否存在，如果不存在則創建它
         if (!fs.existsSync(routeDir)) {
             fs.mkdirSync(routeDir, { recursive: true });
         }
         if (!fs.existsSync(filePath)) {
-            fs.writeFileSync(filePath, createRouteConfiguration(routName, routeParam, importText, widgetName,mainClass));
+            fs.writeFileSync(filePath, createRouteConfiguration(routName, routeParam, importText, widgetName, mainClass));
             reFormat();
             openEditor(filePath)
+            return
+        }
+        if (!fs.existsSync(pageArgFilePath)) {
+            fs.writeFileSync(pageArgFilePath, createPageArgsFile());
+            reFormat();
+            openEditor(pageArgFilePath)
             return
         }
         let text = readFileToText(filePath);
@@ -51,14 +58,14 @@ export function registerCreateRouteConfiguration(context: vscode.ExtensionContex
                 lines.splice(i + 1, 1);
             }
         }
-        
+
         for (let i = 0; i < lines.length; i++) {
             let line = lines[i];
-            if(line.startsWith("///")){
+            if (line.startsWith("///")) {
                 linesTemp.push(line)
                 continue
             }
-            if(line.startsWith("//")){
+            if (line.startsWith("//")) {
                 continue
             }
 
@@ -75,7 +82,7 @@ export function registerCreateRouteConfiguration(context: vscode.ExtensionContex
                 linesTemp.push("// ===== WARNING =====\n")
                 linesTemp.push("\n")
             }
-            if (!line.startsWith("const String")  && !routeDone && importDone) {
+            if (!line.startsWith("const String") && !routeDone && importDone) {
 
                 linesTemp.push(`const String ROUTE_${changeCase.constantCase(routName)} = ${routeParam};\n
 `)
@@ -89,7 +96,7 @@ export function registerCreateRouteConfiguration(context: vscode.ExtensionContex
 
             }
             if (line.includes("default:") && !screenDone && routeDone && importDone) {
-                let temp = temScreen(routName, routeParam, importText, widgetName,mainClass).split('\n');
+                let temp = temScreen(routName, routeParam, importText, widgetName, mainClass).split('\n');
                 temp.forEach(element => {
                     linesTemp.push(element + "\n")
                 });
@@ -171,7 +178,7 @@ export async function ensureRouteConfigurationUpdated(
     await updateAndFormatFile(filePath, content);
 }
 
-function temScreen(routName: string, routeParam: string, importText: string, widgetName: string, mainClass:string): string {
+function temScreen(routName: string, routeParam: string, importText: string, widgetName: string, mainClass: string): string {
     // 假設我們將這兩個參數用於路由配置的生成
     let constantCase = changeCase.constantCase(routName);
     let upperCase = toUpperCamelCase(mainClass);
@@ -189,7 +196,7 @@ function temScreen(routName: string, routeParam: string, importText: string, wid
 }
 
 
-function createRouteConfiguration(routName: string, routeParam: string, importText: string, widgetName: string, mainClass:string): string {
+function createRouteConfiguration(routName: string, routeParam: string, importText: string, widgetName: string, mainClass: string): string {
     // 假設我們將這兩個參數用於路由配置的生成
     let constantCase = changeCase.constantCase(routName);
     let upperCase = toUpperCamelCase(mainClass);
@@ -258,20 +265,35 @@ class RouteConfiguration {
     }
   }
 }
-
-abstract class PageArgs {
-  final String routeName;
-  const PageArgs({required this.routeName});
-  
-  Future push();
-  Future pushReplacement();
-  Future pushAndRemoveAll();
-}
-
 `;
     return routeTemplate
 
 }
+
+
+
+
+function createPageArgsFile(): string {
+  return `
+abstract class PageArgs {
+  final String routeName;
+  const PageArgs({required this.routeName});
+
+  Future<void> push() {
+    throw UnimplementedError('push() not implemented');
+  }
+
+  Future<void> pushReplacement() {
+    throw UnimplementedError('pushReplacement() not implemented');
+  }
+
+  Future<void> pushAndRemoveAll() {
+    throw UnimplementedError('pushAndRemoveAll() not implemented');
+  }
+}
+`;
+}
+
 
 function toUpperCamelCase(str: string): string {
     return str.replace(/(^\w|-\w)/g, clearAndUpper);

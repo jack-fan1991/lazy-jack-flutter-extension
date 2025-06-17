@@ -9,7 +9,7 @@ import * as changeCase from "change-case";
 import { APP } from '../../extension';
 import { getRootPath } from '../../utils/src/vscode_utils/vscode_env_utils';
 import { showInfo } from '../../utils/src/logger/logger';
-import { route_configuration_file_name } from './generate_route_temp';
+import { route_configuration_file_name, route_page_args_file_name } from './generate_route_temp';
 
 const command_clean_architecture = "command_generate_flutter_page"
 
@@ -66,7 +66,7 @@ function getMainTemplate(mainClass: string) {
   return `
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:${APP.flutterLibName}/route/${route_configuration_file_name}';
+import 'package:${APP.flutterLibName}/route/${route_page_args_file_name}';
 
 class ${argType} extends PageArgs {
   const ${argType}() : super(
