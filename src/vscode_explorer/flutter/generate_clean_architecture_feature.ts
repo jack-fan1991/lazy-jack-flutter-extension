@@ -280,7 +280,7 @@ class _${className}State extends State<${className}> {
   @override
   void initState() {
     super.initState();
-    widget.${cubit}.fetchData(args: widget.args); // 可根據 args 呼叫
+    widget.${cubit}.fetchData(args: widget.args);
   }
 
   @override
@@ -292,7 +292,9 @@ class _${className}State extends State<${className}> {
       },
       builder: (context, ${state}) {
         return Center(
-          child: _LoadedWidget(args: widget.args),
+          child: _LoadedWidget(
+            ${cubit}: widget.${cubit},
+          ),
         );
       },
     );
@@ -300,9 +302,12 @@ class _${className}State extends State<${className}> {
 }
 
 class _LoadedWidget extends StatelessWidget {
-  final ${argType} args;
+  final ${upperCase}Cubit ${cubit};
 
-  const _LoadedWidget({super.key, required this.args});
+  const _LoadedWidget({
+    super.key,
+    required this.${cubit},
+  });
 
   @override
   Widget build(BuildContext context) {
