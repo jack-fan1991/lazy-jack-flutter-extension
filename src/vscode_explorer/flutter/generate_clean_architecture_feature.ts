@@ -44,7 +44,7 @@ export function registerCleanArchitectureGenerate(context: vscode.ExtensionConte
                 fs.writeFileSync(mainScreenPath, getMainTemplate(isPages,mainClass, featureName, dir));
                 let cubit = path.join(featurePath, `presentation/bloc/${name}_cubit.dart`)
 
-                fs.writeFileSync(cubit, getCubitTemplate(mainClass, featureName, dir));
+                fs.writeFileSync(cubit, getCubitTemplate(isPages,mainClass, featureName, dir));
 
                 let cubitState = path.join(featurePath, `presentation/bloc/${name}_state.dart`)
                 fs.writeFileSync(cubitState, getCubitStateTemplate(mainClass, featureName,dir));
@@ -148,7 +148,7 @@ class _${className}State extends State<${className}> {
 `;
 }
 
-function getCubitStateTemplate(mainClass: string, featurePath: string, dir: string) {
+function getCubitStateTemplate( mainClass: string, featurePath: string, dir: string) {
     let upperCase = toUpperCamelCase(mainClass);
     let name = changeCase.snakeCase(mainClass)
     return `import 'package:freezed_annotation/freezed_annotation.dart';
@@ -165,21 +165,25 @@ class ${upperCase}State with _$${upperCase}State {
 
 }
 
-function getCubitTemplate(mainClass: string, featurePath: string, dir: string) {
+function getCubitTemplate(isPages: boolean,mainClass: string, featurePath: string, dir: string) {
     let upperCase = toUpperCamelCase(mainClass);
     let name = changeCase.snakeCase(mainClass)
     let camel = changeCase.camelCase(mainClass);
     let useCase = changeCase.camelCase(`UseCase${upperCase}`); 
+    const argType = `Route${upperCase}Args`;
+    const pathEndFix = isPages ? 'page' : 'screen';
     return `import 'package:bloc/bloc.dart';
 import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/bloc/${name}_state.dart';
 import 'package:${APP.flutterLibName}/${dir}/${featurePath}/domain/${name}_useCase.dart';
 import 'package:${APP.flutterLibName}/${dir}/${featurePath}/data/${name}_ui_model.dart';
+import 'package:${APP.flutterLibName}/${dir}/${featurePath}/${name}_${pathEndFix}.dart';
+import 'package:${APP.flutterLibName}/route/${route_page_args_file_name}';
 
 class ${upperCase}Cubit extends Cubit<${upperCase}State> {
   final UseCase${upperCase} ${useCase} = UseCase${upperCase}();
   ${upperCase}Cubit() : super(${upperCase}State.initial(${name}UI: ${upperCase}UI()));
 
-  Future<void> fetchData() async {
+  Future<void> fetchData({required ${argType} args}) async {
     try {
       /// emit(loadingState);
       final ${camel}Model = await ${useCase}.call();
@@ -276,7 +280,7 @@ class _${className}State extends State<${className}> {
   @override
   void initState() {
     super.initState();
-    widget.${cubit}.fetchData(); // 可根據 args 呼叫
+    widget.${cubit}.fetchData(args: widget.args); // 可根據 args 呼叫
   }
 
   @override
