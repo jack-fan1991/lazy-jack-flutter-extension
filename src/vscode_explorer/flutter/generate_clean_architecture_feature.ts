@@ -137,7 +137,10 @@ class _${className}State extends State<${className}> {
         title: Text("${className}"),
       ),
       body: SafeArea(
-        child: ${bodyClassName}(${cubit}: _${cubit}),
+        child: ${bodyClassName}(
+          ${cubit}: _${cubit},
+          args: widget.args,
+        ),
       ),
     );
   }
@@ -232,24 +235,38 @@ class UseCase${upperCase} {
 
 }
 
-function getWidgetsTemplate(isPages:boolean,mainClass: string, featurePath: string, dir: string) {
-    let upperCase = toUpperCamelCase(mainClass);
-    let cubit=changeCase.camelCase(`${upperCase}Cubit` )
-    let state=changeCase.camelCase(`${upperCase}State` )
-    let name = changeCase.snakeCase(mainClass);
-    let bodyEndFix = 'ViewWidget'
-    if(isPages){
-        bodyEndFix = 'ScreenWidget'
-    }    
-    let className =`${upperCase}${bodyEndFix}`
-      return `import 'package:flutter/material.dart';
+function getWidgetsTemplate(
+  isPages: boolean,
+  mainClass: string,
+  featurePath: string,
+  dir: string
+) {
+  const upperCase = toUpperCamelCase(mainClass);
+  const cubit = changeCase.camelCase(`${upperCase}Cubit`);
+  const state = changeCase.camelCase(`${upperCase}State`);
+  const name = changeCase.snakeCase(mainClass);
+  const argType = `Route${upperCase}Args`;
+
+  const bodyEndFix = isPages ? 'ScreenWidget' : 'ViewWidget';
+  const pathEndFix = isPages ? 'page' : 'screen';
+  const className = `${upperCase}${bodyEndFix}`;
+
+  return `import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/bloc/${name}_cubit.dart';
 import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/bloc/${name}_state.dart';
+import 'package:${APP.flutterLibName}/${dir}/${featurePath}/${name}_${pathEndFix}.dart';
+import 'package:${APP.flutterLibName}/route/${route_page_args_file_name}';
 
 class ${className} extends StatefulWidget {
   final ${upperCase}Cubit ${cubit};
-  const ${className}({super.key, required this.${cubit}});
+  final ${argType} args;
+
+  const ${className}({
+    super.key,
+    required this.${cubit},
+    required this.args,
+  });
 
   @override
   State<${className}> createState() => _${className}State();
@@ -259,7 +276,7 @@ class _${className}State extends State<${className}> {
   @override
   void initState() {
     super.initState();
-    widget.${cubit}.fetchData();
+    widget.${cubit}.fetchData(); // 可根據 args 呼叫
   }
 
   @override
@@ -267,11 +284,11 @@ class _${className}State extends State<${className}> {
     return BlocConsumer<${upperCase}Cubit, ${upperCase}State>(
       bloc: widget.${cubit},
       listener: (context, ${state}) {
-        // show dialog
+        // show dialog or effect
       },
       builder: (context, ${state}) {
         return Center(
-          child: _LoadedWidget(),
+          child: _LoadedWidget(args: widget.args),
         );
       },
     );
@@ -279,17 +296,15 @@ class _${className}State extends State<${className}> {
 }
 
 class _LoadedWidget extends StatelessWidget {
-  const _LoadedWidget({
-    super.key,
-  });
+  final ${argType} args;
+
+  const _LoadedWidget({super.key, required this.args});
 
   @override
   Widget build(BuildContext context) {
-    final ${state} = context.watch<${toUpperCamelCase(cubit)}>().state;
+    final ${state} = context.watch<${upperCase}Cubit>().state;
     return Text("${className} state => \${${state}.runtimeType}");
   }
 }
-
-        `
-
+`;
 }
