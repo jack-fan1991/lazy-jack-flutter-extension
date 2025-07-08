@@ -61,7 +61,8 @@ function getMainTemplate(mainClass: string) {
   const className = `${upperCase}${endFix}`;
   const cubit = changeCase.camelCase(`${upperCase}Cubit`);
   const argType = `Route${upperCase}Args`;
-
+ // 使用 web path 規範（全部小寫、用 - 分隔）
+  const webPath = '/' + changeCase.paramCase(mainClass);
   return `
 import 'package:flutter/material.dart';
 import 'package:${APP.flutterLibName}/route/${route_page_args_file_name}';
@@ -73,7 +74,7 @@ class ${argType} extends PageArgs {
 }
 
 class ${className} extends StatefulWidget {
-  static const routeName = '/${camel}';
+  static const routeName = '/${webPath}';
   final ${argType} args;
 
   const ${className}({
