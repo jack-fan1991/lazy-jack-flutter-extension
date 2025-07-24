@@ -12,6 +12,7 @@ import { exec, execSync } from "child_process";
 import { gitDataProvider, sidebarManger } from "../extension";
 import { logError } from "../utils/src/logger/logger";
 
+
 const gitScripts: TreeScriptModel[] = [
 
     {
@@ -92,7 +93,7 @@ export class GitDataProvider extends BaseTreeDataProvider {
             });
         }
         // return gitScripts
-        let hasRemote = checkGitRepoWithRemote()
+        let hasRemote =  checkGitRepoWithRemote()
         let script = gitScripts
         if (!hasRemote) {
             script = script.filter((script) => { return script.label == "git init remote" })
@@ -127,7 +128,7 @@ export function checkGitRepoWithRemote(): boolean {
     }
     let content = fs.readFileSync(gitConfig, 'utf-8');
     return content.includes("[remote")
-   
+
 }
 
 
@@ -166,8 +167,9 @@ async function selectAndApplyIgnoreTemplate() {
         vscode.window.showWarningMessage('No .gitignore sample.');
         return;
     }
-    const picked = await vscode.window.showQuickPick(templates, { placeHolder: 'Create .gitignore Sample' });
-    if (!picked) return;
+    let none = { label: 'None', file: '' };
+    const picked = await vscode.window.showQuickPick([...[none], ...templates], { placeHolder: 'Create .gitignore Sample' });
+    if (!picked || picked.label === 'None') return;
     const templatePath = path.join(ignoreDir, picked.file);
     const content = fs.readFileSync(templatePath, 'utf8');
 
@@ -250,6 +252,13 @@ export async function gitInitAndPush() {
 
     // Step 7: 執行 gh repo create
     terminal.sendText(`gh repo create ${repoName} --${visibility} --source=. --remote=origin --push`);
+    // wait for the terminal to finish
+    terminal.show();
+    for (let i = 0; i < 5; i++) {
+        await new Promise(resolve => setTimeout(resolve, 3000)); // 等待1秒
+        if (terminal.exitStatus) break; // 如果終端機已經結束則跳出
+    }
+
 }
 
 async function isGhInstalled(): Promise<boolean> {
