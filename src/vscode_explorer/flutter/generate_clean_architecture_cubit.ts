@@ -1,220 +1,264 @@
-
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { get, template } from 'lodash';
-import { toUpperCamelCase } from '../../utils/src/regex/regex_utils';
-import { reFormat } from '../../utils/src/vscode_utils/activate_editor_utils';
 import * as changeCase from "change-case";
 import { APP } from '../../extension';
-import { getRootPath } from '../../utils/src/vscode_utils/vscode_env_utils';
+import { reFormat } from '../../utils/src/vscode_utils/activate_editor_utils';
 
+const COMMAND_ID = "lazyJack.createCubit";
 
-const command_clean_architecture = "command_add_clean_architecture_cubit"
-
-
-function createIfDoesNotExist(dir: string) {
-    if (!fs.existsSync(dir)) {
-        fs.mkdirSync(dir, { recursive: true });
-    }
-}
-
-export function registerCleanArchitectureCubitGenerate(context: vscode.ExtensionContext) {
-    context.subscriptions.push(vscode.commands.registerCommand(command_clean_architecture, async (folderUri) => {
-
-        let featureName = await vscode.window.showInputBox({
-            placeHolder: 'Enter bloc name',
+export function registerCreateCubit(context: vscode.ExtensionContext) {
+    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_ID, async (folderUri: vscode.Uri) => {
+        const cubitNameInput = await vscode.window.showInputBox({
+            placeHolder: '輸入 Cubit 名稱 (例如: user settings)',
+            prompt: '將會自動轉換為蛇形命名 (snake_case)',
         });
-        featureName = changeCase.snakeCase(featureName!)
-        if (featureName) {
-            const rootPath = folderUri.path;
-            let currentDir = rootPath.split('lib/').pop() //"presentation"
-          
-            const featurePath = path.dirname(rootPath) ;
-            const isFolderPages = path.dirname(rootPath).endsWith('pages')
-            try {
-                await createIfDoesNotExist(featurePath);
-                createIfDoesNotExist(path.join(featurePath, 'data'));
-                createIfDoesNotExist(path.join(featurePath, 'domain'));
-                createIfDoesNotExist(path.join(featurePath, 'presentation', 'bloc'));
-                createIfDoesNotExist(path.join(featurePath, 'presentation', 'widgets'));
-                let mainClass = `${featureName}`;
-                let upperCase = toUpperCamelCase(mainClass);
 
-                let name = changeCase.snakeCase(mainClass)
-                // let mainScreenPath = path.join(featurePath, `${mainClass}_screen.dart`)
-                // fs.writeFileSync(mainScreenPath, getMainTemplate(mainClass, featureName,dir));
+        if (!cubitNameInput) {
+            vscode.window.showErrorMessage('名稱不可為空');
+            return;
+        }
 
-                let mainScreenPath =path.join(featurePath, `presentation/widgets/${name}_widget.dart`)
-                let replacePath = path.join(getRootPath(),"lib/")
-                let libPath =featurePath.replace(replacePath,"")
+        const cubitName = changeCase.snakeCase(cubitNameInput);
+        const resolver = new CubitPathResolver(folderUri.path, cubitName);
 
-                let widgets = getWidgetsTemplate(isFolderPages,mainClass, libPath,currentDir);
-                fs.writeFileSync(mainScreenPath,widgets)
-            
+        try {
+            createDirectoryStructure(resolver);
+            createCubitFiles(resolver);
 
-                let cubit = path.join(featurePath, `presentation/bloc/${name}_cubit.dart`)
+            const uri = vscode.Uri.file(resolver.cubitPath);
+            await vscode.window.showTextDocument(uri);
+            await reFormat();
+            vscode.window.showInformationMessage(`✅ Cubit 檔案 for "${resolver.cubitNamePascalCase}" 建立成功！`);
 
-                fs.writeFileSync(cubit, getCubitTemplate(mainClass, libPath,currentDir));
-                
-                let cubitState = path.join(featurePath, `presentation/bloc/${name}_state.dart`)
-                fs.writeFileSync(cubitState, getCubitStateTemplate(mainClass,libPath));
-                
-                let dataModel = path.join(featurePath, `data/${name}_ui_model.dart`)
-                fs.writeFileSync(dataModel, getDataModelsTemplate(mainClass));
-                
-                let useCase = getUseCaseTemplate(mainClass, libPath);
-                fs.writeFileSync(path.join(featurePath, `domain/${name}_useCase.dart`), useCase);
-                    //open file
-                const uri = vscode.Uri.file(mainScreenPath);
-                await vscode.window.showTextDocument(uri);
-                reFormat();
-              
-            } catch (err) {
-                vscode.window.showErrorMessage('Failed to create feature');
-            }
+        } catch (err: any) {
+            console.error(err);
+            vscode.window.showErrorMessage(`建立檔案失敗: ${err.message}`);
         }
     }));
 }
 
-
-// function getMainTemplate(mainClass: string, featurePath: string,dir:string) {
-//     let upperCase = toUpperCamelCase(mainClass);
-//     let name = changeCase.dotCase(mainClass).replace(".", "-");
-
-//     return `
-// import 'package:flutter/material.dart';
-// import 'package:flutter_bloc/flutter_bloc.dart';
-// import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/bloc/${name}_cubit.dart';
-// import 'package:${APP.flutterLibName}/${dir}/${featurePath}/presentation/widgets/${name}_widget.dart';
-
-// class ${upperCase}Screen extends StatelessWidget {
-//   static const routeName = '/${upperCase}';
-//   const ${upperCase}Screen({super.key});
-
-//   @override
-//   Widget build(BuildContext context) {
-//     final state = context.watch<${upperCase}Cubit>().state;
-//     return Scaffold(
-//       appBar: AppBar(
-//         title: Text('${upperCase}'),
-//       ),
-//       body: ${upperCase}BodyWidget()
-//     );
-//   }
-// }
-
-// `
-
-// }
-
-function getCubitStateTemplate(mainClass: string,libPath: string) {
-    let upperCase = toUpperCamelCase(mainClass);
-    let name = changeCase.snakeCase(mainClass)
-    return `
-import 'package:freezed_annotation/freezed_annotation.dart';
-import 'package:${APP.flutterLibName}/${libPath}/data/${name}_ui_model.dart';
-part '${name}_state.freezed.dart';
-
-@freezed
-class ${upperCase}State with _$${upperCase}State {
-    const factory ${upperCase}State.initial({required ${upperCase}UI ${name}UI}) = _Initial;
-
+function createDirectoryStructure(resolver: CubitPathResolver) {
+    const dirs = [resolver.blocDir, resolver.modelsDir, resolver.widgetsDir];
+    dirs.forEach(dir => {
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+        }
+    });
 }
 
+function createCubitFiles(resolver: CubitPathResolver) {
+    fs.writeFileSync(resolver.cubitPath, getTemplate(resolver, 'cubit'));
+    fs.writeFileSync(resolver.statePath, getTemplate(resolver, 'state'));
+    fs.writeFileSync(resolver.uiModelPath, getTemplate(resolver, 'ui_model'));
+    fs.writeFileSync(resolver.viewPath, getTemplate(resolver, 'view'));
+}
+
+class CubitPathResolver {
+    public readonly parentDir: string;
+    public readonly cubitNameSnakeCase: string;
+    public readonly cubitNamePascalCase: string;
     
-    `
+    public readonly blocDir: string;
+    public readonly modelsDir: string;
+    public readonly widgetsDir: string;
 
+    public readonly cubitPath: string;
+    public readonly statePath: string;
+    public readonly uiModelPath: string;
+    public readonly viewPath: string;
+
+    public readonly viewName: string;
+    public readonly cubitName: string;
+    public readonly stateName: string;
+
+    constructor(parentPath: string, cubitName: string) {
+        this.parentDir = parentPath;
+        this.cubitNameSnakeCase = cubitName;
+        this.cubitNamePascalCase = changeCase.pascalCase(cubitName);
+
+        this.blocDir = path.join(this.parentDir, 'bloc');
+        this.modelsDir = path.join(this.parentDir, 'models');
+        this.widgetsDir = path.join(this.parentDir, 'widgets');
+
+        this.cubitPath = path.join(this.blocDir, `${this.cubitNameSnakeCase}_cubit.dart`);
+        this.statePath = path.join(this.blocDir, `${this.cubitNameSnakeCase}_state.dart`);
+        this.uiModelPath = path.join(this.modelsDir, `${this.cubitNameSnakeCase}_ui_model.dart`);
+        this.viewPath = path.join(this.widgetsDir, `${this.cubitNameSnakeCase}_view.dart`);
+
+        this.cubitName = `${this.cubitNamePascalCase}Cubit`;
+        this.stateName = `${this.cubitNamePascalCase}State`;
+        this.viewName = `${this.cubitNamePascalCase}View`;
+    }
+
+    private get libDir(): string {
+        const libIndex = this.parentDir.indexOf('lib');
+        if (libIndex === -1) throw new Error('無法找到 "lib" 目錄');
+        return this.parentDir.substring(libIndex + 'lib'.length + 1);
+    }
+
+    public getImportPath(fileType: 'cubit' | 'state' | 'ui_model' | 'view'): string {
+        switch (fileType) {
+            case 'cubit':
+                return `package:${APP.flutterLibName}/${path.join(this.libDir, 'bloc', `${this.cubitNameSnakeCase}_cubit.dart`).replace(/\\/g, '/')}`;
+            case 'state':
+                return `package:${APP.flutterLibName}/${path.join(this.libDir, 'bloc', `${this.cubitNameSnakeCase}_state.dart`).replace(/\\/g, '/')}`;
+            case 'ui_model':
+                 return `package:${APP.flutterLibName}/${path.join(this.libDir, 'models', `${this.cubitNameSnakeCase}_ui_model.dart`).replace(/\\/g, '/')}`;
+            case 'view':
+                 return `package:${APP.flutterLibName}/${path.join(this.libDir, 'widgets', `${this.cubitNameSnakeCase}_view.dart`).replace(/\\/g, '/')}`;
+        }
+    }
 }
 
-function getCubitTemplate(mainClass: string, libPath: string,dir :string) {
-    let upperCase = toUpperCamelCase(mainClass);
-    let name = changeCase.snakeCase(mainClass);
-    let camel = changeCase.camelCase(mainClass);
-    return `import 'package:bloc/bloc.dart';
-import 'package:${APP.flutterLibName}/${libPath}/presentation/bloc/${name}_state.dart';
-import 'package:${APP.flutterLibName}/${libPath}/domain/${name}_useCase.dart';
-import 'package:${APP.flutterLibName}/${libPath}/data/${name}_ui_model.dart';
+// #region Templates
 
-class ${upperCase}Cubit extends Cubit<${upperCase}State> {
-  final UseCase${upperCase} ${camel}UseCase = UseCase${upperCase}();
-  ${upperCase}Cubit() 
-      : super(
-          ${upperCase}State.initial(${name}UI: ${upperCase}UI()),
-        );
+function getTemplate(resolver: CubitPathResolver, templateName: 'cubit' | 'state' | 'ui_model' | 'view'): string {
+    const templates: { [key: string]: (r: CubitPathResolver) => string } = {
+        'cubit': getCubitTemplate,
+        'state': getStateTemplate,
+        'ui_model': getUiModelTemplate,
+        'view': getViewTemplate,
+    };
 
-  Future<void> fetch${upperCase}Data() async {
+    const templateFunc = templates[templateName];
+    if (!templateFunc) {
+        throw new Error(`Template '${templateName}' not found.`);
+    }
+    return templateFunc(resolver);
+}
+
+function getCubitTemplate(r: CubitPathResolver): string {
+    return `
+import 'package:bloc/bloc.dart';
+import '${r.getImportPath('state')}';
+import '${r.getImportPath('ui_model')}';
+
+class ${r.cubitName} extends Cubit<${r.stateName}> {
+  ${r.cubitName}() : super(const ${r.stateName}.initial());
+
+  Future<void> fetch() async {
+    emit(const ${r.stateName}.loading());
     try {
-      /// emit(loadingState);
-      final ${camel}Model = await ${camel}UseCase.call();
-
-      /// emit success state
-      emit(${upperCase}State.initial(${name}UI: ${camel}Model));
+      // Placeholder implementation:
+      await Future.delayed(const Duration(seconds: 1));
+      emit(${r.stateName}.success(data: ${r.cubitNamePascalCase}UiModel(id: '1', name: '範例資料')));
     } catch (e) {
-      // emit error state
+      emit(${r.stateName}.failure(e.toString()));
     }
   }
 }
-
-        `
-
+`;
 }
 
-
-
-
-function getDataModelsTemplate(mainClass: string) {
-    let upperCase = toUpperCamelCase(mainClass);
-    return `class ${upperCase}UI {
-    ${upperCase}UI();
+function getStateTemplate(r: CubitPathResolver): string {
+    const uiModelName = `${r.cubitNamePascalCase}UiModel`;
+    return createFreezedTemplate({
+        className: r.stateName,
+        imports: [
+            'package:freezed_annotation/freezed_annotation.dart',
+            r.getImportPath('ui_model'),
+        ],
+        parts: [`${r.cubitNameSnakeCase}_state.freezed.dart`],
+        classContent: `
+  const factory ${r.stateName}.initial() = _Initial;
+  const factory ${r.stateName}.loading() = _Loading;
+  const factory ${r.stateName}.success({required ${uiModelName} data}) = _Success;
+  const factory ${r.stateName}.failure(final String message) = _Failure;
+`
+    });
 }
 
-
-        `
-
+function getUiModelTemplate(r: CubitPathResolver): string {
+    const className = `${r.cubitNamePascalCase}UiModel`;
+    return createFreezedTemplate({
+        className: className,
+        imports: ['package:freezed_annotation/freezed_annotation.dart'],
+        parts: [
+            `${r.cubitNameSnakeCase}_ui_model.freezed.dart`,
+            `${r.cubitNameSnakeCase}_ui_model.g.dart`
+        ],
+        classContent: `
+  factory ${className}({
+    String? id,
+    String? name,
+  }) = _${className};
+`,
+        includeFromJson: true,
+    });
 }
 
-function getUseCaseTemplate(mainClass: string, libPath: string) {
-    let upperCase = toUpperCamelCase(mainClass);
-    let name = changeCase.snakeCase(mainClass);
-    return `import 'package:${APP.flutterLibName}/${libPath}/data/${name}_ui_model.dart';
- 
-class UseCase${upperCase} {
-  UseCase${upperCase}();
-
-  Future<${upperCase}UI> call() async {
-    await Future.delayed(const Duration(seconds: 1));
-    return ${upperCase}UI();
-  }  
-}
-        `
-
-}
-
-function getWidgetsTemplate(isFolderPages:boolean, mainClass: string, libPath: string,dir :string) {
-    let upperCase = toUpperCamelCase(mainClass);
-    let name = changeCase.snakeCase(mainClass)
-    let bodyEndFix = 'ViewWidget'
-    if(isFolderPages){
-        bodyEndFix = 'ScreenWidget'
-    }
-    let widgetName = `${upperCase}${bodyEndFix}`
-    return `import 'package:flutter/material.dart';
+function getViewTemplate(r: CubitPathResolver): string {
+    return `
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:${APP.flutterLibName}/${libPath}/presentation/bloc/${name}_cubit.dart';
+import '${r.getImportPath('cubit')}';
+import '${r.getImportPath('state')}';
 
-
-class ${widgetName} extends StatelessWidget {
-  const ${widgetName}({super.key});
+class ${r.viewName} extends StatelessWidget {
+  const ${r.viewName}({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final state = context.watch<${upperCase}Cubit>().state;
-    return const Center(
-      child: Text('${widgetName}'),
+    return BlocBuilder<${r.cubitName}, ${r.stateName}>(
+      builder: (context, state) {
+        return state.when(
+          initial: () => const Center(child: Text('Initial State')),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          success: (data) => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text('ID: \${data.id ?? ''}'),
+                Text('Name: \${data.name ?? ''}'),
+              ],
+            ),
+          ),
+          failure: (message) => Center(child: Text('Error: $message')),
+        );
+      },
     );
   }
 }
-        `
+`;
+}
 
+// #endregion
+
+// Helper function to create a freezed template
+function createFreezedTemplate({
+    className,
+    imports = [],
+    parts = [],
+    classContent,
+    includeFromJson = false,
+}: {
+    className: string;
+    imports?: string[];
+    parts?: string[];
+    classContent: string;
+    includeFromJson?: boolean;
+}): string {
+    const importStatements = imports.map(i => `import '${i}';`).join('\n');
+    const partStatements = parts.map(p => `part '${p}';`).join('\n');
+
+    let template = `
+${importStatements}
+
+${partStatements}
+
+@freezed
+class ${className} with _\$${className} {
+  ${classContent}
+`;
+
+    if (includeFromJson) {
+        template += `
+  factory ${className}.fromJson(Map<String, dynamic> json) => _\$${className}FromJson(json);
+`;
+    }
+
+    template += `}
+`;
+    return template;
 }

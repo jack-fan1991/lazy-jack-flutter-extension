@@ -24,13 +24,15 @@ import { registerCleanArchitectureGenerate } from './vscode_explorer/flutter/gen
 import { registerQuickFix } from './vscode_code_action/code_action';
 import { getPubspecLockAsMap } from './utils/src/language_utils/dart/pubspec/pubspec_utils';
 import { registerToGqlFragmentToDart } from './vscode_explore_menu/graphql_fragment_to_typedef';
-import { registerCreateRouteConfiguration } from './vscode_explorer/flutter/generate_route_temp';
-import { registerCleanArchitectureCubitGenerate } from './vscode_explorer/flutter/generate_clean_architecture_cubit';
+import { registerCreateRouteConfiguration, registerRouteConfigurationWatcher } from './vscode_explorer/flutter/generate_route_temp';
+import { registerCleanArchitectureCubitGenerate } from './vscode_explorer/flutter/generate_clean_architecture_cubit_bk';
+import { registerCleanArchitecturePageGenerate } from './vscode_explorer/flutter/generate_clean_architecture_page';
 import { registerFlutterPageGenerate } from './vscode_explorer/flutter/generate_flutter_page';
 import { runCommand } from './utils/src/terminal_utils/terminal_utils';
 import { registerDartL10nStringFix } from './vscode_code_len_provider/l10n/flutter_l10n_fix';
 import { registerDartL10nStringTreeProvider } from './vscode_code_len_provider/l10n/dart_i10n_fix_listener';
 import { registerDartL10nStringAllFileTreeProvider } from './vscode_code_len_provider/l10n/dart_i10n_fix_all_files_listener';
+import { registerCreateCubit } from './vscode_explorer/flutter/generate_clean_architecture_cubit';
 
 export let sidebarManger = new SidebarManager()
 export class APP {
@@ -64,6 +66,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
       log(APP.pubspecYaml)
       registerCreateRouteConfiguration(context)
+      registerRouteConfigurationWatcher(context)
       registerDartSnippet(context)
       registerToRequireParams(context)
 
@@ -86,7 +89,9 @@ export async function activate(context: vscode.ExtensionContext) {
   registerGenerateSvg(context)
   registerCleanArchitectureGenerate(context)
   registerCleanArchitectureCubitGenerate(context)
+  registerCleanArchitecturePageGenerate(context)
   registerFlutterPageGenerate(context)
+  registerCreateCubit(context)
   // 列出為多國的字串
   registerDartL10nStringFix(context)
   registerDartL10nStringTreeProvider(context)

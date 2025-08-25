@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.194",
+  "version": "0.0.195",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -21,6 +21,19 @@
     "*"
   ],
   "contributes": {
+    "configuration": {
+      "title": "Lazy Jack Flutter Extension",
+      "properties": {
+        "lazy-jack-flutter-extension.customCubit": {
+          "type": "array",
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "description": "Custom Cubit types for the Quick Fix."
+        }
+      }
+    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -133,22 +146,27 @@
       {
         "category": "lazy Jack",
         "command": "command_clean_architecture",
-        "title": "✨ Generate Clean Architecture feature"
-      },
-      {
-        "category": "lazy Jack",
-        "command": "command_add_clean_architecture_cubit",
-        "title": "✨ Add Clean Architecture cubit"
+        "title": "✨ Create Feature Module"
       },
       {
         "category": "lazy Jack",
         "command": "command_generate_flutter_page",
-        "title": "✨ Generate Flutter Page"
+        "title": "✨ Create TypeSafe Page"
       },
       {
         "category": "lazy Jack",
         "command": "graphql_code_gen_fragment_to_dart_type_def",
         "title": "✨ graphql to dart type def"
+      },
+      {
+        "category": "lazy Jack",
+        "command": "lazyJack.generateCleanArchitecturePage",
+        "title": "✨ Create Page Module"
+      },
+      {
+        "category": "lazy Jack",
+        "command": "lazyJack.createCubit",
+        "title": "✨ Add Cubit"
       }
     ],
     "menus": {
@@ -211,23 +229,28 @@
         },
         {
           "command": "command_clean_architecture",
-          "title": "✨ Generate Clean Architecture feature",
-          "when": "explorerResourceIsFolder && (resourceFilename =~ /.*(features|pages).*/)"
+          "title": "✨ Create Clean Arch Feature Module",
+          "when": "explorerResourceIsFolder && resourceFilename == features"
         },
         {
-          "command": "command_add_clean_architecture_cubit",
-          "title": "✨ Add Clean Architecture cubit",
+          "command": "lazyJack.createCubit",
+          "title": "✨ Create Clean Arch Cubit",
           "when": "explorerResourceIsFolder && (resourceFilename =~ /.*(presentation).*/)"
         },
         {
           "command": "command_generate_flutter_page",
-          "title": "✨  Generate Flutter Page",
-          "when": "explorerResourceIsFolder"
+          "title": "✨Create TypeSafe Page",
+          "when": "explorerResourceIsFolder && !(resourceFilename =~ /^(features|presentation|models|bloc|domain|repo|usecases|di|data|datasources|repo_impls|entities)$/)"
         },
         {
           "command": "graphql_code_gen_fragment_to_dart_type_def",
           "title": "✨ Graphql Fragment to dart typedef",
           "when": "explorerResourceIsFolder && resourceFilename == '__generated'"
+        },
+        {
+          "command": "lazyJack.generateCleanArchitecturePage",
+          "when": "explorerResourceIsFolder && resourcePath =~ /.*\\/features\\/.*\\/presentation.*$/  && !(resourceFilename =~ /^(bloc)$/)",
+          "title": "✨ Create Clean Arch Page Module"
         }
       ]
     },

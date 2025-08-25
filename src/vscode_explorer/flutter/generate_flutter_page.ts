@@ -2,13 +2,11 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { get, template } from 'lodash';
 import { toUpperCamelCase } from '../../utils/src/regex/regex_utils';
 import { reFormat } from '../../utils/src/vscode_utils/activate_editor_utils';
 import * as changeCase from "change-case";
 import { APP } from '../../extension';
 import { getRootPath } from '../../utils/src/vscode_utils/vscode_env_utils';
-import { showInfo } from '../../utils/src/logger/logger';
 import { route_configuration_file_name, route_page_args_file_name } from './generate_route_temp';
 
 const command_clean_architecture = "command_generate_flutter_page"
@@ -28,17 +26,16 @@ export function registerFlutterPageGenerate(context: vscode.ExtensionContext) {
                 let upperCase = toUpperCamelCase(mainClass);
 
                 let name = changeCase.snakeCase(mainClass);
-                let mainScreenPath = path.join(rootPath, `${mainClass}_screen.dart`)
+                let mainScreenPath = path.join(rootPath, `${mainClass}_page.dart`)
                 
                 fs.writeFileSync(mainScreenPath, getMainTemplate(mainClass));
                 let cubit = path.join(mainScreenPath, `presentation/bloc/${name}_cubit.dart`)
-         //open file
                 const uri = vscode.Uri.file(mainScreenPath);
                 await vscode.window.showTextDocument(uri);
                 reFormat();
-                let endFix = 'PageWidget'
+                let endFix = 'Page'
                 let mainWidget =`${upperCase}${endFix}`
-                vscode.window.showInformationMessage(`💡 Register ${upperCase}Screen as route ?`, 'Yes', 'No').then((value) => {
+                vscode.window.showInformationMessage(`💡 Register ${upperCase}Page to route ?`, 'Yes', 'No').then((value) => {
                     if (value === 'Yes') {
                         vscode.commands.executeCommand("command_create_routeConfiguration", mainClass, `${mainWidget}.routeName`, `import 'package:${APP.flutterLibName}${mainScreenPath.replace(getRootPath() + "/lib", "")}';`, `${mainWidget}`, toUpperCamelCase(mainClass) );
                     }
@@ -47,7 +44,7 @@ export function registerFlutterPageGenerate(context: vscode.ExtensionContext) {
 
 
             } catch (err) {
-                vscode.window.showErrorMessage('Failed to create feature');
+                vscode.window.showErrorMessage('Failed to create page');
             }
         }
     }));
@@ -56,7 +53,7 @@ function getMainTemplate(mainClass: string) {
   const upperCase = toUpperCamelCase(mainClass);
   const camel = changeCase.camelCase(mainClass);
   const name = changeCase.snakeCase(mainClass);
-  const endFix = 'PageWidget';
+  const endFix = 'Page';
 
   const className = `${upperCase}${endFix}`;
   const cubit = changeCase.camelCase(`${upperCase}Cubit`);
@@ -67,14 +64,14 @@ function getMainTemplate(mainClass: string) {
 import 'package:flutter/material.dart';
 import 'package:${APP.flutterLibName}/route/${route_page_args_file_name}';
 
-class ${argType} extends PageArgs {
+class ${argType} extends RouteArgs {
   const ${argType}() : super(
     routeName: ${className}.routeName,
   );
 }
 
 class ${className} extends StatefulWidget {
-  static const routeName = '/${webPath}';
+  static const routeName = '${webPath}';
   final ${argType} args;
 
   const ${className}({
