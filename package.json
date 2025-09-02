@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.195",
+  "version": "0.0.196",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -161,7 +161,7 @@
       {
         "category": "lazy Jack",
         "command": "lazyJack.generateCleanArchitecturePage",
-        "title": "✨ Create Page Module"
+        "title": "✨ Add subpage module"
       },
       {
         "category": "lazy Jack",
@@ -230,7 +230,7 @@
         {
           "command": "command_clean_architecture",
           "title": "✨ Create Clean Arch Feature Module",
-          "when": "explorerResourceIsFolder && resourceFilename == features"
+          "when": "explorerResourceIsFolder && (resourceFilename == 'features' || resourcePath =~ /.*\\/presentation\\/pages$/ || resourcePath =~ /.*\\/features\\/shared$/)"
         },
         {
           "command": "lazyJack.createCubit",
@@ -249,8 +249,8 @@
         },
         {
           "command": "lazyJack.generateCleanArchitecturePage",
-          "when": "explorerResourceIsFolder && resourcePath =~ /.*\\/features\\/.*\\/presentation.*$/  && !(resourceFilename =~ /^(bloc)$/)",
-          "title": "✨ Create Clean Arch Page Module"
+          "when": "explorerResourceIsFolder && resourcePath =~ /.*\\/features\\/.*\\/presentation.*$/  && !(resourceFilename =~ /^(bloc)$/) && !(resourceFilename =~ /^(pages)$/)",
+          "title": "✨ Add Clean Arch Subpage module"
         }
       ]
     },
