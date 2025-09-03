@@ -27,7 +27,7 @@ export function registerFlutterPageGenerate(context: vscode.ExtensionContext) {
 
                 let name = changeCase.snakeCase(mainClass);
                 let mainScreenPath = path.join(rootPath, `${mainClass}_page.dart`)
-                
+                 const argType = `Route${upperCase}Args`;
                 fs.writeFileSync(mainScreenPath, getMainTemplate(mainClass));
                 let cubit = path.join(mainScreenPath, `presentation/bloc/${name}_cubit.dart`)
                 const uri = vscode.Uri.file(mainScreenPath);
@@ -37,7 +37,7 @@ export function registerFlutterPageGenerate(context: vscode.ExtensionContext) {
                 let mainWidget =`${upperCase}${endFix}`
                 vscode.window.showInformationMessage(`💡 Register ${upperCase}Page to route ?`, 'Yes', 'No').then((value) => {
                     if (value === 'Yes') {
-                        vscode.commands.executeCommand("command_create_routeConfiguration", mainClass, `${mainWidget}.routeName`, `import 'package:${APP.flutterLibName}${mainScreenPath.replace(getRootPath() + "/lib", "")}';`, `${mainWidget}`, toUpperCamelCase(mainClass) );
+                        vscode.commands.executeCommand("command_create_routeConfiguration", mainClass, `${mainWidget}.routeName`, `import 'package:${APP.flutterLibName}${mainScreenPath.replace(getRootPath() + "/lib", "")}';`, `${mainWidget}`, toUpperCamelCase(mainClass) ,argType);
                     }
 
                 });
@@ -65,10 +65,19 @@ import 'package:flutter/material.dart';
 import 'package:${APP.flutterLibName}/route/${route_page_args_file_name}';
 
 class ${argType} extends RouteArgs {
-  const ${argType}() : super(
-    routeName: ${className}.routeName,
-  );
+  // TODO: Define the parameters required for this page here
+  final String? exampleId;
+
+  const ${argType}({this.exampleId})
+      : super(routeName: ${className}.routeName);
+
+  factory ${argType}.fromMap(Map<String, dynamic> map) {
+    return ${argType}(
+      exampleId: map['exampleId'] as String?,
+    );
+  }
 }
+
 
 class ${className} extends StatefulWidget {
   static const routeName = '${webPath}';
