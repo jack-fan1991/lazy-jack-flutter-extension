@@ -320,17 +320,15 @@ async function updateValidRoutesFile(validRoutesFilePath: string, routeConfigFil
 }
 
 function extractRouteNames(content: string): string[] {
-    const routeNames: string[] = [];
-    const lines = content.split('\n');
-    
-    for (const line of lines) {
-        const match = line.match(/const String (ROUTE_[A-Z_]+) = /i);
-        if (match) {
-            routeNames.push(match[1]);
-        }
-    }
-    
-    return routeNames.sort();
+  const routeNames: string[] = [];
+  const regex = /const\s+String\s+(ROUTE_[A-Z_]+)\s*=/g;
+
+  let match;
+  while ((match = regex.exec(content)) !== null) {
+    routeNames.push(match[1]);
+  }
+
+  return routeNames.sort();
 }
 
 function createValidRoutesContent(routeNames: string[]): string {
