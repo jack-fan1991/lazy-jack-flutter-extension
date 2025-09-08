@@ -141,24 +141,24 @@ function l18nFixAction(): vscode.CodeAction | undefined {
     let editor = getActivateEditor();
     let document = editor.document;
     let selection = editor.selection;
-    
+
     // 獲取選取區域的前後位置
     const startPos = selection.start;
     const endPos = selection.end;
-    
+
     // 檢查前後字元是否為引號
-    const startChar = startPos.character > 0 ? 
+    const startChar = startPos.character > 0 ?
         document.getText(new vscode.Range(
             new vscode.Position(startPos.line, startPos.character - 1),
             startPos
         )) : '';
-    
+
     const endChar = endPos.character < document.lineAt(endPos.line).text.length ?
         document.getText(new vscode.Range(
             endPos,
             new vscode.Position(endPos.line, endPos.character + 1)
         )) : '';
-    
+
     // 確認前後字元是否匹配且為引號
     if (!((startChar === '"' && endChar === '"') || (startChar === "'" && endChar === "'"))) {
         return undefined;
@@ -338,7 +338,7 @@ async function l18nFix() {
     key = changeCase.snakeCase(key)
 
     let l10nObject = await processL10nWithParams(text, key as string);
-    if(l10nObject ==undefined) return
+    if (l10nObject == undefined) return
     let newText = ""
     if (Object.keys(l10nObject).length === 0) {
         // 將選取的文字作為 value，並將 key-value 加入每個 .arb 檔案的末端
@@ -377,19 +377,22 @@ async function l18nFix() {
         editBuilder.replace(replaceSelect, newText);
     });
     await editor.document.save();
-    vscode.window.showInformationMessage(`View l10n file `, 'Confirm', 'Cancel').then(async (option) => {
+    vscode.window.showInformationMessage(`View l10n file `, 'Confirm', 'Cancel', 'gen-l10n').then(async (option) => {
         if (option == 'Confirm') {
             openEditor(firstFilePath)
         }
+        if (option == 'gen-l10n') {
+            files.forEach(async file => {
+                let filePath = path.join(targetPath, file);
+                let document = await vscode.workspace.openTextDocument(filePath)
+                sortArbKeys(document)
+
+            });
+
+            runTerminal('flutter gen-l10n');
+        }
     })
-    files.forEach(async file => {
-        let filePath = path.join(targetPath, file);
-        let document = await vscode.workspace.openTextDocument(filePath)
-        sortArbKeys(document)
 
-    });
-
-    runTerminal('flutter gen-l10n');
     if (!totalContent.includes(`import 'package:${APP.flutterLibName}/main.dart';`)) {
         editor.edit(editBuilder => {
             editBuilder.insert(new vscode.Position(0, 0), `import 'package:${APP.flutterLibName}/main.dart';\n`);
