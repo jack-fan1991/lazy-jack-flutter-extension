@@ -377,11 +377,11 @@ async function l18nFix() {
         editBuilder.replace(replaceSelect, newText);
     });
     await editor.document.save();
-    vscode.window.showInformationMessage(`View l10n file `, 'Confirm', 'Cancel', 'gen-l10n').then(async (option) => {
-        if (option == 'Confirm') {
+    vscode.window.showInformationMessage(`View l10n file `, 'Gen-l10n','open file', 'Cancel', ).then(async (option) => {
+        if (option == 'open file') {
             openEditor(firstFilePath)
         }
-        if (option == 'gen-l10n') {
+        if (option == 'Gen-l10n') {
             files.forEach(async file => {
                 let filePath = path.join(targetPath, file);
                 let document = await vscode.workspace.openTextDocument(filePath)
