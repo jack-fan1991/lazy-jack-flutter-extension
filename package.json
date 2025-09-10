@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.200",
+  "version": "0.0.201",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -240,7 +240,7 @@
         {
           "command": "command_generate_flutter_page",
           "title": "✨Create TypeSafe Page",
-          "when": "explorerResourceIsFolder && !(resourceFilename =~ /^(features|presentation|models|bloc|domain|repo|usecases|di|data|datasources|repo_impls|entities)$/)"
+          "when": "explorerResourceIsFolder && resourcePath =~ /.*lib.*/ && !(resourceFilename =~ /^(features|presentation|models|bloc|domain|repo|usecases|di|data|datasources|repo_impls|entities)$/)"
         },
         {
           "command": "graphql_code_gen_fragment_to_dart_type_def",
