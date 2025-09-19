@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.201",
+  "version": "0.0.202",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -94,19 +94,23 @@
       },
       {
         "command": "dartL10n.clean",
-        "title": "🗑️"
+        "title": "Clear all ignored items",
+        "icon": "$(trash)"
       },
       {
         "command": "dartL10n.refresh",
-        "title": "🔄"
+        "title": "Rescan files",
+        "icon": "$(refresh)"
       },
       {
         "command": "dartL10n.filterDir",
-        "title": "🔍"
+        "title": "Filter directory",
+        "icon": "$(search)"
       },
       {
         "command": "dartL10n.disable",
-        "title": "🚫"
+        "title": "Disable l10n helper",
+        "icon": "$(circle-slash)"
       },
       {
         "category": "lazy Jack",

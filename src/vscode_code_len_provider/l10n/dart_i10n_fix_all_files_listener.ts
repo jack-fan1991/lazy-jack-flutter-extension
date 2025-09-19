@@ -209,53 +209,56 @@ export function registerDartL10nStringAllFileTreeProvider(context: vscode.Extens
 
         const libUri = vscode.Uri.joinPath(workspaceFolders[0].uri, 'lib');
         try {
-            const libStat = await vscode.workspace.fs.stat(libUri);
-            if (!libStat) return;
+            await vscode.workspace.fs.stat(libUri);
+
+            let activeFileDirOption: (vscode.QuickPickItem & { isEntryPoint?: boolean }) | undefined;
+            const editor = vscode.window.activeTextEditor;
+            if (editor) {
+                const relativePath = vscode.workspace.asRelativePath(editor.document.uri, false);
+                if (relativePath.startsWith('lib/')) {
+                    const dirName = relativePath.substring(0, relativePath.lastIndexOf('/'));
+                    if (dirName) {
+                        activeFileDirOption = {
+                            label: `$(file-directory) Use Active File's Directory`,
+                            description: dirName,
+                            isEntryPoint: true,
+                        };
+                    }
+                }
+            }
 
             let currentPath = 'lib';
             let keepSelecting = true;
+            let isFirstTime = true;
 
             while (keepSelecting) {
                 const currentUri = vscode.Uri.joinPath(workspaceFolders[0].uri, currentPath);
                 const dirs = await vscode.workspace.fs.readDirectory(currentUri);
                 const subDirs = dirs
-                    .filter(([name, type]) => {
-                        if (type !== vscode.FileType.Directory) return false;
-                        return !isDirIgnored(name, fileTreeProvider.ignoredDir) 
-                        // return !fileTreeProvider.ignoredDir.has(name) || !fileTreeProvider.ignoredDir.has(`/${name}`);
-                    })
-                    .map(([name]) => name);
-                let options = [
-                    { label: '$(check) Use Current Directory', description: currentPath },
-                    { label: '$(circle-slash) Ignore Directory', description: currentPath },
-                    ...(currentPath !== 'lib' ? [{ label: '$(arrow-left) Back', description: 'Go to parent directory' }] : []),
-                ]
-                if (subDirs.length === 0) {
-                    // options = [
-                    //     ...options,
-                    //     ...subDirs.map(dir => ({
-                    //         label: dir,
-                    //         description: `${currentPath}/${dir}`
-                    //     }))
-                    // ];
-                } else {
-                    options = [
-                        ...options,
-                        ...subDirs.map(dir => ({
-                            label: dir,
-                            description: `${currentPath}/${dir}`
-                        }))
-                    ];
+                    .filter(([, type]) => type === vscode.FileType.Directory)
+                    .map(([name]) => name)
+                    .filter(name => !isDirIgnored(name, fileTreeProvider.ignoredDir));
 
+                const options: (vscode.QuickPickItem & { isEntryPoint?: boolean })[] = [];
+
+                if (isFirstTime && activeFileDirOption) {
+                    options.push(activeFileDirOption);
+                }
+                isFirstTime = false;
+
+                options.push(
+                    { label: '$(check) Use Current Directory', description: currentPath },
+                    { label: '$(circle-slash) Ignore Directory', description: currentPath }
+                );
+
+                if (currentPath !== 'lib') {
+                    options.push({ label: '$(arrow-left) Back', description: 'Go to parent directory' });
                 }
 
-                options = [
-                    ...options,
-                    ...subDirs.map(dir => ({
-                        label: dir,
-                        description: `${currentPath}/${dir}`
-                    }))
-                ];
+                options.push(...subDirs.map(dir => ({
+                    label: dir,
+                    description: `${currentPath}/${dir}`
+                })));
 
                 const selected = await vscode.window.showQuickPick(options, {
                     placeHolder: `Select Directory (Current: ${currentPath})`,
@@ -266,18 +269,21 @@ export function registerDartL10nStringAllFileTreeProvider(context: vscode.Extens
                     return; // User cancelled selection
                 }
 
-                if (selected.label === '$(check) Use Current Directory') {
+                if (selected.isEntryPoint) {
+                    fileTreeProvider.filterDir = selected.description!;
+                    keepSelecting = false;
+                } else if (selected.label === '$(check) Use Current Directory') {
                     fileTreeProvider.filterDir = currentPath;
                     keepSelecting = false;
                 } else if (selected.label === '$(arrow-left) Back') {
-                    currentPath = currentPath.split('/').slice(0, -1).join('/');
-                }else if (selected.label === '$(circle-slash) Ignore Directory') {
+                    const parent = currentPath.split('/').slice(0, -1).join('/');
+                    currentPath = parent ? parent : 'lib';
+                } else if (selected.label === '$(circle-slash) Ignore Directory') {
                     fileTreeProvider.ignoredDir.add(selected.description!);
-                    currentPath = currentPath.split('/').slice(0, -1).join('/');
-                } 
-                
-                else {
-                    currentPath = `${currentPath}/${selected.label}`;
+                    const parent = currentPath.split('/').slice(0, -1).join('/');
+                    currentPath = parent ? parent : 'lib';
+                } else {
+                    currentPath = selected.description!;
                 }
             }
 
