@@ -32,6 +32,54 @@ class ArbFileListener extends FileListenerBase {
 }
 
 export const arbFileListener = new ArbFileListener()
+
+export function sortArbKeysObject(
+  arbObject: Record<string, any>
+): Record<string, any> {
+  // 所有 key
+  const keys = Object.keys(arbObject);
+
+  // 分類
+  const atKeys = keys.filter(k => k.startsWith('@'));
+  const normalKeys = keys.filter(k => !k.startsWith('@') && k !== 'appName');
+
+  // 準備最終排序的 key 陣列
+  const sortedKeys: string[] = [];
+
+  // 先放 appName
+  if (keys.includes('appName')) {
+    sortedKeys.push('appName');
+  }
+
+  // 找出有對應 @key 的 normal key
+  const matchedNormalKeys = new Set(atKeys.map(atKey => atKey.slice(1)));
+
+  // 先加入沒有對應 @key 的 normal key（字母排序）
+  const unmatchedNormalKeys = normalKeys
+    .filter(key => !matchedNormalKeys.has(key))
+    .sort((a, b) => a.localeCompare(b));
+  sortedKeys.push(...unmatchedNormalKeys);
+
+  // 最後處理 @key 與其對應的 normal key
+  atKeys.sort((a, b) => a.localeCompare(b)).forEach(atKey => {
+    const matchingKey = atKey.slice(1);
+    if (normalKeys.includes(matchingKey)) {
+      sortedKeys.push(matchingKey, atKey);
+    } else {
+      sortedKeys.push(atKey);
+    }
+  });
+
+  // 依排序結果建立新物件
+  const sortedObject: Record<string, any> = {};
+  sortedKeys.forEach(key => {
+    sortedObject[key] = arbObject[key];
+  });
+
+  return sortedObject;
+}
+
+
 export async function sortArbKeys(document: vscode.TextDocument): Promise<void> {
     try {
         const text = document.getText();
@@ -90,74 +138,3 @@ export async function sortArbKeys(document: vscode.TextDocument): Promise<void> 
         console.error('Error sorting ARB keys:', error);
     }
 }
-
-// async function sortArbKeys(document: vscode.TextDocument): Promise<void> {
-//     try {
-//         const text = document.getText();
-//         const arbObject = JSON.parse(text);
-
-//         const sortedKeys = Object.keys(arbObject).sort((keyA, keyB) => {
-//             if (keyA === 'appName') return -1; // 確保 appName 排在最前
-//             if (keyB === 'appName') return 1;
-            
-//             const isAIncludes = keyA.startsWith('@') || keyA.includes('includes_fees_fmt');
-//             const isBIncludes = keyB.startsWith('@') || keyB.includes('includes_fees_fmt');
-
-//             if (isAIncludes && !isBIncludes) return -1;
-//             if (!isAIncludes && isBIncludes) return 1;
-
-//             return keyA.localeCompare(keyB);
-//         });
-
-//         const sortedObject: { [key: string]: any } = {};
-//         sortedKeys.forEach((key) => {
-//             sortedObject[key] = arbObject[key];
-//         });
-
-//         const sortedText = JSON.stringify(sortedObject, null, 2);
-//         if (text === sortedText) return;
-
-//         const edit = new vscode.WorkspaceEdit();
-//         const fullRange = new vscode.Range(
-//             document.positionAt(0),
-//             document.positionAt(text.length)
-//         );
-
-//         edit.replace(document.uri, fullRange, sortedText);
-//         await vscode.workspace.applyEdit(edit);
-//     } catch (error) {
-//         console.error('Error sorting ARB keys:', error);
-//     }
-// }
-
-// async function sortArbKeys(document: vscode.TextDocument): Promise<void> {
-//     try {
-//         // 解析 ARB 文件內容
-//         const text = document.getText();
-//         const arbObject = JSON.parse(text);
-
-//         // 對 key 進行排序
-//         const sortedEntries = Object.entries(arbObject).sort(([keyA], [keyB]) => keyA.localeCompare(keyB));
-//         const sortedObject = Object.fromEntries(sortedEntries);
-
-//         // 創建格式化後的文本
-//         const sortedText = JSON.stringify(sortedObject, null, 2);
-
-//         // 檢查是否有變更
-//         if (text === sortedText) {
-//             return;
-//         }
-
-//         // 應用編輯
-//         const edit = new vscode.WorkspaceEdit();
-//         const fullRange = new vscode.Range(
-//             document.positionAt(0),
-//             document.positionAt(text.length)
-//         );
-
-//         edit.replace(document.uri, fullRange, sortedText);
-//         await vscode.workspace.applyEdit(edit);
-//     } catch (error) {
-//         console.error('Error sorting ARB keys:', error);
-//     }
-// }

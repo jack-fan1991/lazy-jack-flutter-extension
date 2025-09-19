@@ -9,7 +9,7 @@ import * as fs from 'fs';
 import { runTerminal } from '../../../utils/src/terminal_utils/terminal_utils';
 // let counter = new OpenCloseFinder()
 import * as changeCase from "change-case";
-import { sortArbKeys } from '../../../vscode_file_listener/arb_file_listener';
+import { sortArbKeys, sortArbKeysObject } from '../../../vscode_file_listener/arb_file_listener';
 
 export class DartCurserDetector implements EzCodeActionProviderInterface {
 
@@ -346,7 +346,8 @@ async function l18nFix() {
             let filePath = path.join(targetPath, file);
             let content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
             content[key as string] = text;
-            let jsonString = JSON.stringify(content, null, 2);
+            let sortedObject = sortArbKeysObject(content);
+            let jsonString = JSON.stringify(sortedObject, null, 2);
             fs.writeFileSync(filePath, jsonString, 'utf8');
         });
         newText = `App.l10n.${key as string}`
@@ -359,7 +360,8 @@ async function l18nFix() {
             Object.entries(l10nObject!).forEach(([k, v]) => {
                 content[k] = v;
             });
-            let jsonString = JSON.stringify(content, null, 2);
+            let sortedObject = sortArbKeysObject(content);
+            let jsonString = JSON.stringify(sortedObject, null, 2);
             let params = detectParameters(text).join(",");
 
             fs.writeFileSync(filePath, jsonString, 'utf8');
@@ -367,7 +369,7 @@ async function l18nFix() {
         });
     }
 
-
+    runTerminal('flutter gen-l10n');
 
 
     // 替換選取範圍的文字為輸入的 key
@@ -377,18 +379,11 @@ async function l18nFix() {
         editBuilder.replace(replaceSelect, newText);
     });
     await editor.document.save();
-    vscode.window.showInformationMessage(`View l10n file `, 'Gen-l10n','open file', 'Cancel', ).then(async (option) => {
+    vscode.window.showInformationMessage(`View l10n file `, 'Gen-l10n', 'open file', 'Cancel',).then(async (option) => {
         if (option == 'open file') {
             openEditor(firstFilePath)
         }
         if (option == 'Gen-l10n') {
-            files.forEach(async file => {
-                let filePath = path.join(targetPath, file);
-                let document = await vscode.workspace.openTextDocument(filePath)
-                sortArbKeys(document)
-
-            });
-
             runTerminal('flutter gen-l10n');
         }
     })
