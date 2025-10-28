@@ -20,7 +20,7 @@ export function registerCleanArchitecturePageGenerate(context: vscode.ExtensionC
         const pageNameInput = await vscode.window.showInputBox({
             placeHolder: '輸入 Page/View 名稱 (例如: user settings)',
             prompt: '將會自動轉換為蛇形命名 (snake_case)',
-        });
+        }); 
 
         if (!pageNameInput) {
             vscode.window.showErrorMessage('名稱不可為空');

@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.205",
+  "version": "0.0.206",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -31,6 +31,21 @@
             "type": "string"
           },
           "description": "Custom Cubit types for the Quick Fix."
+        },
+        "lazy-jack-flutter-extension.dataReturnWrapper": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The name of the wrapper class, e.g., 'Result'."
+            },
+            "import": {
+              "type": "string",
+              "description": "The import statement for the wrapper class."
+            }
+          },
+          "description": "Define a wrapper type (e.g., Result, Either) for feature data layer return values."
         }
       }
     },
@@ -171,6 +186,11 @@
         "category": "lazy Jack",
         "command": "lazyJack.createCubit",
         "title": "✨ Add sub view"
+      },
+      {
+        "category": "lazy Jack",
+        "command": "lazyJack.addDataSourceMethod",
+        "title": "✨ Add Data Source Method"
       }
     ],
     "menus": {
@@ -255,6 +275,10 @@
           "command": "lazyJack.generateCleanArchitecturePage",
           "when": "explorerResourceIsFolder && resourcePath =~ /.*\\/features\\/.*\\/presentation$/",
           "title": "✨ Add Clean Arch Subpage module"
+        },
+        {
+          "command": "lazyJack.addDataSourceMethod",
+          "when": "explorerResourceIsFolder && resourcePath =~ /.*\\/features\\/.*\\/data$/"
         }
       ]
     },
