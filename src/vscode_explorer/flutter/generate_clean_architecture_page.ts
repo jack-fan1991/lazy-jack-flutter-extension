@@ -27,7 +27,7 @@ export function registerCleanArchitecturePageGenerate(context: vscode.ExtensionC
             return;
         }
 
-        const pageName = changeCase.snakeCase(pageNameInput);
+        const pageName = changeCase.snakeCase( pageNameInput);
         const resolver = new PagePathResolver(folderUri.path, featureName, pageName);
 
         try {
@@ -37,7 +37,7 @@ export function registerCleanArchitecturePageGenerate(context: vscode.ExtensionC
             const uri = vscode.Uri.file(resolver.pagePath);
             await vscode.window.showTextDocument(uri);
             await reFormat();
-             vscode.window.showInformationMessage(`✅ Page 模組 for "${resolver.pageNamePascalCase}" 建立成功！`);
+            vscode.window.showInformationMessage(`✅ Page 模組 for "${resolver.pageNamePascalCase}" 建立成功！`);
             vscode.window.showInformationMessage(`💡 是否要將 ${resolver.pageNamePascalCase}Page 註冊為路由?`, '是', '否').then((value) => {
                 if (value === '是') {
                     const importPathValue = path.join(resolver.libDir, 'pages', `${resolver.pageNameSnakeCase}_page.dart`).replace(/\\/g, '/');
@@ -86,17 +86,17 @@ function createPageFiles(resolver: PagePathResolver) {
     fs.writeFileSync(resolver.uiModelPath, getPresentationUiModelTemplate(resolver));
 }
 
+
 function getFeatureNameFromPath(filePath: string): string | undefined {
-    const parts = filePath.split(path.sep);
-    const featuresIndex = parts.indexOf('features');
-    if (featuresIndex !== -1 && featuresIndex + 1 < parts.length) {
-        return parts[featuresIndex + 1];
-    }
-    const libIndex = parts.indexOf('lib');
-    if (libIndex !== -1 && libIndex + 2 < parts.length) {
-        return parts[libIndex + 1]
-    }
+  const parts = filePath.split(path.sep);
+
+  // 確保最後一個資料夾是 'presentation'
+  if (parts[parts.length - 1] !== 'presentation') {
     return undefined;
+  }
+
+  // 直接取 presentation 上一層資料夾作為 feature name
+  return parts[parts.length - 2];
 }
 
 class PagePathResolver {
@@ -204,31 +204,205 @@ class PagePathResolver {
 
 // #region Templates
 
+
 function getPresentationPageTemplate(r: PagePathResolver): string {
     const argType = `Route${r.pageName}Args`;
     const webPath = changeCase.paramCase(r.pageNameSnakeCase);
 
-    return `\nimport 'package:flutter/material.dart';\nimport 'package:flutter_bloc/flutter_bloc.dart';\nimport 'package:${APP.flutterLibName}/route/${route_page_args_file_name}';\nimport '${r.getImportPath('cubit')}';\nimport '${r.getImportPath('view')}';\nimport '${r.getImportPath('feature_usecase')}';\nimport '${r.getImportPath('feature_repository')}';\nimport '${r.getImportPath('feature_repo_impl')}';\nimport '${r.getImportPath('feature_datasource_impl')}';\n\n// Tip: It's recommended to use a dependency injection tool like get_it instead of manual instantiation.\n\nclass ${argType} extends RouteArgs {\n  // TODO: Define the parameters required for this page here\n  final String? exampleId;\n\n  const ${argType}({this.exampleId})\n      : super(routeName: ${r.pageName}.routeName);\n\n  factory ${argType}.fromMap(Map<String, dynamic> map) {\n    return ${argType}(\n      exampleId: map['exampleId'] as String?,\n    );\n  }\n}\n\nclass ${r.pageName} extends StatefulWidget {\n  static const routeName = '${webPath}';\n  final ${argType} args;\n\n  const ${r.pageName}({\n    super.key,\n    required this.args,\n  });\n\n  @override\n  State<${r.pageName}> createState() => _${r.pageName}State();\n}\n\nclass _${r.pageName}State extends State<${r.pageName}> {\n  // In a real project, you would use a dependency injection tool like get_it to get the cubit instance.\n  // final ${r.cubitName} _cubit = GetIt.instance<${r.cubitName}>();\n  late final ${r.cubitName} _cubit;\n\n  @override\n  void initState() {\n    super.initState();\n    // This is a manual dependency injection for demonstration purposes.\n    // In a real project, it is highly recommended to use a dependency injection framework (e.g., get_it).\n    final remoteDataSource = ${r.datasourceImplName}();\n    final repository = ${r.repositoryImplName}(remoteDataSource: remoteDataSource);\n    final usecase = ${r.usecaseName}(repository);\n    _cubit = ${r.cubitName}(usecase);\n    _cubit.fetch(widget.args.exampleId ?? '1'); // Initial data fetch\n  }\n\n  @override\n  Widget build(BuildContext context) {\n    return BlocProvider(\n      create:(context) => _cubit,\n      child: Scaffold(\n        appBar: AppBar(\n          title: Text('${r.pageNamePascalCase} Page'),\n        ),\n        body: SafeArea(\n          child: const ${r.viewName}(),\n        ),\n        floatingActionButton: FloatingActionButton(\n          onPressed: () {\n            _cubit.fetch(widget.args.exampleId ?? '1');\n          },\n          child: const Icon(Icons.refresh),\n        ),\n      ),\n    );\n  }\n}\n`;
+    return `
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:${APP.flutterLibName}/route/${route_page_args_file_name}';
+import '${r.getImportPath('cubit')}';
+import '${r.getImportPath('view')}';
+import '${r.getImportPath('feature_usecase')}';
+import '${r.getImportPath('feature_repository')}';
+import '${r.getImportPath('feature_repo_impl')}';
+import '${r.getImportPath('feature_datasource_impl')}';
+
+// Tip: It's recommended to use a dependency injection tool like get_it instead of manual instantiation.
+
+class ${argType} extends RouteArgs {
+  // TODO: Define the parameters required for this page here
+  final String? exampleId;
+
+  const ${argType}({this.exampleId}) : super(routeName: ${r.pageName}.routeName);
+
+  factory ${argType}.fromMap(Map<String, dynamic> map) {
+    return ${argType}(
+      exampleId: map['exampleId'] as String?,
+    );
+  }
 }
+
+class ${r.pageName} extends StatefulWidget {
+  static const routeName = '${webPath}';
+  final ${argType} args;
+
+  const ${r.pageName}({super.key, required this.args});
+
+  @override
+  State<${r.pageName}> createState() => _${r.pageName}State();
+}
+
+class _${r.pageName}State extends State<${r.pageName}> {
+  // In a real project, you would use a dependency injection tool like get_it to get the cubit instance.
+  // final ${r.cubitName} _cubit = GetIt.instance<${r.cubitName}>();
+  late final ${r.cubitName} _cubit;
+
+  @override
+  void initState() {
+    super.initState();
+    // Manual DI for demonstration; consider using get_it in real projects.
+    final remoteDataSource = ${r.datasourceImplName}();
+    final repository = ${r.repositoryImplName}(remoteDataSource: remoteDataSource);
+    final usecase = ${r.usecaseName}(repository);
+    _cubit = ${r.cubitName}(usecase);
+    _cubit.fetch(widget.args.exampleId ?? '1'); // Initial data fetch
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => _cubit,
+      child: Scaffold(
+        appBar: AppBar(title: Text('${r.pageNamePascalCase} Page')),
+        body: const SafeArea(child: ${r.viewName}()),
+        floatingActionButton: FloatingActionButton(
+          onPressed: () => _cubit.fetch(widget.args.exampleId ?? '1'),
+          child: const Icon(Icons.refresh),
+        ),
+      ),
+    );
+  }
+}
+`;
+}
+
 
 function getPresentationViewTemplate(r: PagePathResolver): string {
-    return `\nimport 'package:flutter/material.dart';\nimport 'package:flutter_bloc/flutter_bloc.dart';\nimport '${r.getImportPath('cubit')}';\nimport '${r.getImportPath('state')}';\n\nclass ${r.viewName} extends StatelessWidget {\n  const ${r.viewName}({super.key});\n\n  @override\n  Widget build(BuildContext context) {\n    return BlocBuilder<${r.cubitName}, ${r.stateName}>(\n      builder: (context, state) {\n        return state.when(\n          initial: () => const Center(child: Text('Please click the button to load data')),\n          loading: () => const Center(child: CircularProgressIndicator()),\n          success: (uiModel) => Center(\n            child: Column(\n              mainAxisAlignment: MainAxisAlignment.center,\n              children: [\n                Text(uiModel.title),\n                Text(uiModel.subtitle),\n              ],\n            ),\n          ),\n          failure: (message) => Center(child: Text('Error: $message')),\n        );\n      },\n    );\n  }\n}\n`;
-}
+    return `
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '${r.getImportPath('cubit')}';
+import '${r.getImportPath('state')}';
 
+class ${r.viewName} extends StatelessWidget {
+  const ${r.viewName}({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<${r.cubitName}, ${r.stateName}>(
+      builder: (context, state) {
+        return state.when(
+          initial: () => const Center(child: Text('Please click the button to load data')),
+          loading: () => const Center(child: CircularProgressIndicator()),
+          success: (uiModel) => Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(uiModel.title),
+                Text(uiModel.subtitle),
+              ],
+            ),
+          ),
+          failure: (message) => Center(child: Text('Error: \$message')),
+        );
+      },
+    );
+  }
+}
+`;
+}
 function getPresentationCubitTemplate(r: PagePathResolver): string {
-    return `\nimport 'package:bloc/bloc.dart';\nimport '${r.getImportPath('state')}';\nimport '${r.getImportPath('feature_usecase')}';\nimport '${r.getImportPath('ui_model')}';\nimport '${r.getImportPath('feature_entity')}';\n\nclass ${r.cubitName} extends Cubit<${r.stateName}> {\n  final ${r.usecaseName} _get${r.featureNamePascalCase};\n\n  ${r.cubitName}(this._get${r.featureNamePascalCase}) : super(const ${r.stateName}.initial());\n\n  Future<void> fetch(String id) async {\n    emit(const ${r.stateName}.loading());\n    try {\n      final entity = await _get${r.featureNamePascalCase}(id);\n      final uiModel = ${r.uiModelName}.fromEntity(entity);\n      emit(${r.stateName}.success(uiModel));\n    } catch (e) {\n      emit(${r.stateName}.failure(e.toString()));\n    }\n  }\n}\n`;
+    return `
+import 'package:bloc/bloc.dart';
+import '${r.getImportPath('state')}';
+import '${r.getImportPath('feature_usecase')}';
+import '${r.getImportPath('ui_model')}';
+import '${r.getImportPath('feature_entity')}';
+
+class ${r.cubitName} extends Cubit<${r.stateName}> {
+  final ${r.usecaseName} _get${r.featureNamePascalCase};
+
+  ${r.cubitName}(this._get${r.featureNamePascalCase}) : super(const ${r.stateName}.initial());
+
+  Future<void> fetch(String id) async {
+    emit(const ${r.stateName}.loading());
+    try {
+      final entity = await _get${r.featureNamePascalCase}(id);
+      final uiModel = ${r.uiModelName}.fromEntity(entity);
+      emit(${r.stateName}.success(uiModel));
+    } catch (e) {
+      emit(${r.stateName}.failure(e.toString()));
+    }
+  }
+}
+`;
 }
 
 function getPresentationStateTemplate(r: PagePathResolver): string {
-    return `\nimport 'package:freezed_annotation/freezed_annotation.dart';\nimport '${r.getImportPath('ui_model')}';\n\npart '${r.pageNameSnakeCase}_state.freezed.dart';\n\n@freezed\nclass ${r.stateName} with _\$${r.stateName} {\n  const factory ${r.stateName}.initial() = _Initial;\n  const factory ${r.stateName}.loading() = _Loading;\n  const factory ${r.stateName}.success(final ${r.uiModelName} uiModel) = _Success;\n  const factory ${r.stateName}.failure(final String message) = _Failure;\n}\n`;
+    return `
+import 'package:freezed_annotation/freezed_annotation.dart';
+import '${r.getImportPath('ui_model')}';
+
+part '${r.pageNameSnakeCase}_state.freezed.dart';
+
+@freezed
+class ${r.stateName} with _$${r.stateName} {
+  const factory ${r.stateName}.initial() = _Initial;
+  const factory ${r.stateName}.loading() = _Loading;
+  const factory ${r.stateName}.success(${r.uiModelName} uiModel) = _Success;
+  const factory ${r.stateName}.failure(String message) = _Failure;
 }
+`;
+}
+
 
 function getDomainEntityTemplate(r: PagePathResolver): string {
-    return `\nimport 'package:equatable/equatable.dart';\n\nclass ${r.entityName} extends Equatable {\n  // TODO: 定義業務實體屬性\n  final String id;\n  final String name;\n\n  const ${r.entityName}({\n    required this.id,\n    required this.name,\n  });\n\n  @override\n  List<Object?> get props => [id, name];\n}\n`;
+    return `
+import 'package:equatable/equatable.dart';
+
+class ${r.entityName} extends Equatable {
+  // TODO: 定義業務實體屬性
+  final String id;
+  final String name;
+
+  const ${r.entityName}({
+    required this.id,
+    required this.name,
+  });
+
+  @override
+  List<Object?> get props => [id, name];
+}
+`;
 }
 
+
 function getPresentationUiModelTemplate(r: PagePathResolver): string {
-    const featureEntityName = `${r.featureNamePascalCase}Entity`; return `\nimport 'package:freezed_annotation/freezed_annotation.dart';\nimport '${r.getImportPath('feature_entity')}';\n\npart '${r.pageNameSnakeCase}_ui_model.freezed.dart';\n\n@freezed\nclass ${r.uiModelName} with _\$${r.uiModelName} {\n  const factory ${r.uiModelName}({\n    required String title,\n    required String subtitle,\n  }) = _${r.uiModelName};\n\n  factory ${r.uiModelName}.fromEntity(${featureEntityName} entity) {\n    return ${r.uiModelName}(\n      title: 'ID: \${entity.id}',\n      subtitle: 'Name: \${entity.name}',\n    );\n  }\n}\n`;
+    const featureEntityName = `${r.featureNamePascalCase}Entity`;
+    return `
+import 'package:freezed_annotation/freezed_annotation.dart';
+import '${r.getImportPath('feature_entity')}';
+
+part '${r.pageNameSnakeCase}_ui_model.freezed.dart';
+
+@freezed
+class ${r.uiModelName} with _$${r.uiModelName} {
+  const factory ${r.uiModelName}({
+    required String title,
+    required String subtitle,
+  }) = _${r.uiModelName};
+
+  factory ${r.uiModelName}.fromEntity(${featureEntityName} entity) {
+    return ${r.uiModelName}(
+      title: 'ID: \${entity.id}',
+      subtitle: 'Name: \${entity.name}',
+    );
+  }
+}
+`;
 }
 
 // #endregion

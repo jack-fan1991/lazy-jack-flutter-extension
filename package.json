@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.204",
+  "version": "0.0.205",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -165,12 +165,12 @@
       {
         "category": "lazy Jack",
         "command": "lazyJack.generateCleanArchitecturePage",
-        "title": "✨ Add subpage module"
+        "title": "✨ Add sub page"
       },
       {
         "category": "lazy Jack",
         "command": "lazyJack.createCubit",
-        "title": "✨ Add Cubit"
+        "title": "✨ Add sub view"
       }
     ],
     "menus": {
@@ -253,7 +253,7 @@
         },
         {
           "command": "lazyJack.generateCleanArchitecturePage",
-          "when": "explorerResourceIsFolder && resourcePath =~ /.*\\/features\\/.*\\/presentation.*$/  && !(resourceFilename =~ /^(bloc)$/) && !(resourceFilename =~ /^(pages)$/)",
+          "when": "explorerResourceIsFolder && resourcePath =~ /.*\\/features\\/.*\\/presentation$/",
           "title": "✨ Add Clean Arch Subpage module"
         }
       ]

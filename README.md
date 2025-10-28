@@ -20,7 +20,7 @@
   
   | Feature | Image                                           |
   |---------------|-------------------------------------------------|
-  | **Add cubit** | ![](./image/clean_architecture/add_cubit.png)    |
+  | **Add sub view** | ![](./image/clean_architecture/add_cubit.png)    |
   | **Register Route** | ![](./image/clean_architecture/auto_route.png)    |
 
 

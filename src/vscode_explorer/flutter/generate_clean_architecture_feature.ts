@@ -231,7 +231,7 @@ part '${r.featureNameSnakeCase}_model.freezed.dart';
 part '${r.featureNameSnakeCase}_model.g.dart';
 
 @freezed
-class ${r.modelName} with _\${r.modelName} {
+class ${r.modelName} with _$${r.modelName} {
     const ${r.modelName}._();
 
     const factory ${r.modelName}({
@@ -239,7 +239,7 @@ class ${r.modelName} with _\${r.modelName} {
       required String name,
     }) = _${r.modelName};
 
-    factory ${r.modelName}.fromJson(Map<String, dynamic> json) => _\${r.modelName}FromJson(json);
+    factory ${r.modelName}.fromJson(Map<String, dynamic> json) => _$${r.modelName}FromJson(json);
 
     // 將 Model 轉換為業務層的 Entity
     ${r.entityName} toEntity() {
@@ -317,7 +317,7 @@ import '${r.importPath("presentation", "uiModel")}';
 part '${r.featureNameSnakeCase}_state.freezed.dart';
 
 @freezed
-class ${r.stateName} with _\${r.stateName} {
+class ${r.stateName} with _$${r.stateName} {
   const factory ${r.stateName}.initial() = _Initial;
   const factory ${r.stateName}.loading() = _Loading;
   const factory ${r.stateName}.success(final ${r.uiModelName} uiModel) = _Success;
@@ -334,7 +334,7 @@ import '${r.importPath("domain", "entity")}';
 part '${r.featureNameSnakeCase}_ui_model.freezed.dart';
 
 @freezed
-class ${r.uiModelName} with _\${r.uiModelName} {
+class ${r.uiModelName} with _$${r.uiModelName} {
   const factory ${r.uiModelName}({
     required String title,
     required String subtitle,
