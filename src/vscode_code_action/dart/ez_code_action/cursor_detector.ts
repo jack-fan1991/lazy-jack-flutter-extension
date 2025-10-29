@@ -1,20 +1,12 @@
 import * as vscode from 'vscode';
 import { EzCodeActionProviderInterface } from '../../code_action';
-import { getActivateEditor, getCursorLineText, getSelectedText, openEditor, replaceSelectionText } from '../../../utils/src/vscode_utils/editor_utils';
+import { getCursorLineText, getSelectedText } from '../../../utils/src/vscode_utils/editor_utils';
 import path = require('path');
-import { getActivateText, insertToActivateEditor, reFormat } from '../../../utils/src/vscode_utils/activate_editor_utils';
-import { APP } from '../../../extension';
-import { getRootPath } from '../../../utils/src/vscode_utils/vscode_env_utils';
-import * as fs from 'fs';
-import { runTerminal } from '../../../utils/src/terminal_utils/terminal_utils';
-// let counter = new OpenCloseFinder()
-import * as changeCase from "change-case";
-import { sortArbKeys, sortArbKeysObject } from '../../../vscode_file_listener/arb_file_listener';
+import { getActivateText, insertToActivateEditor } from '../../../utils/src/vscode_utils/activate_editor_utils';
 
 export class DartCurserDetector implements EzCodeActionProviderInterface {
 
     public static readonly command_to_require = 'command.param.to.require';
-    public static readonly command_l10n_fix = 'command.l10n.fix';
 
     getLangrageType() { return 'dart' }
 
@@ -31,10 +23,6 @@ export class DartCurserDetector implements EzCodeActionProviderInterface {
         let action = this.requiredParamFixAction()
         if (action != undefined) {
             actions.push(action)
-        }
-        let action2 = l18nFixAction()
-        if (action2 != undefined) {
-            actions.push(action2)
         }
         if (actions.length == 0) {
             return undefined
@@ -64,14 +52,13 @@ export class DartCurserDetector implements EzCodeActionProviderInterface {
         // context.subscriptions.push(vscode.commands.registerCommand(DartCurserDetector.command_to_require, async (range: vscode.Range) => {
         //     paramToRequireGenerator(range)
         // }));
-        context.subscriptions.push(vscode.commands.registerCommand(DartCurserDetector.command_l10n_fix, async (uri: vscode.Uri, range: vscode.Range) => {
-            if (uri != undefined) {
-                const editor = await vscode.window.showTextDocument(uri, { preview: false });
-                editor.selection = new vscode.Selection(range.start, range.end);
-                editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
-            }
-            l18nFix()
-        }));
+        // context.subscriptions.push(vscode.commands.registerCommand(DartCurserDetector.command_l10n_fix, async (uri: vscode.Uri, range: vscode.Range) => {
+        //     if (uri != undefined) {
+        //         const editor = await vscode.window.showTextDocument(uri, { preview: false });
+        //         editor.selection = new vscode.Selection(range.start, range.end);
+        //         editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+        //     }
+        // }));
     }
 
 
@@ -133,44 +120,6 @@ function getAllClassNames(text: string): string[] {
 }
 
 
-function l18nFixAction(): vscode.CodeAction | undefined {
-    if (APP.flutterLocalizations == undefined) {
-        return undefined;
-    }
-
-    let editor = getActivateEditor();
-    let document = editor.document;
-    let selection = editor.selection;
-
-    // 獲取選取區域的前後位置
-    const startPos = selection.start;
-    const endPos = selection.end;
-
-    // 檢查前後字元是否為引號
-    const startChar = startPos.character > 0 ?
-        document.getText(new vscode.Range(
-            new vscode.Position(startPos.line, startPos.character - 1),
-            startPos
-        )) : '';
-
-    const endChar = endPos.character < document.lineAt(endPos.line).text.length ?
-        document.getText(new vscode.Range(
-            endPos,
-            new vscode.Position(endPos.line, endPos.character + 1)
-        )) : '';
-
-    // 確認前後字元是否匹配且為引號
-    if (!((startChar === '"' && endChar === '"') || (startChar === "'" && endChar === "'"))) {
-        return undefined;
-    }
-
-    let data = "🌐 Export String to l10n resource";
-    const fix = new vscode.CodeAction(data, vscode.CodeActionKind.QuickFix);
-    fix.command = { command: DartCurserDetector.command_l10n_fix, title: data };
-    fix.isPreferred = true;
-    return fix;
-}
-
 
 // 添加检测字符串参数的函数
 function detectParameters(text: string): string[] {
@@ -197,231 +146,6 @@ function detectParameters(text: string): string[] {
     return Array.from(params);
 }
 
-
-/**
- * 将带参数的字符串转换为Flutter多国语言模板
- * @param text 原始文本
- * @param key 多语言键名
- * @returns 处理后的多语言对象
- */
-async function processL10nWithParams(text: string, key: string): Promise<{ [key: string]: any } | undefined> {
-    // 提取所有参数
-    const params = detectParameters(text);
-
-    if (params.length === 0) {
-        // 没有参数
-        return {};
-    }
-
-    // 准备存储参数类型的对象
-    const placeholders: { [param: string]: { type: string } } = {};
-    let processedText = text;
-
-    // 为每个参数询问类型
-    for (const param of params) {
-        const paramType = await vscode.window.showQuickPick(
-            ['String', 'num'],
-            { placeHolder: `Select "${param}" type` }
-        );
-
-        if (!paramType) {
-            return undefined; // 用户取消了选择，中止处理
-        }
-
-        placeholders[param] = { type: paramType };
-
-        // 替换文本中的参数格式为 Flutter 的 {param} 格式
-        processedText = processedText.replace(new RegExp(`\\$\\{${param}\\}|\\$${param}(?!\\w)`, 'g'), `{${param}}`);
-    }
-
-
-    return {
-        [key]: processedText,
-        [`@${key}`]: {
-            placeholders
-        }
-    };
-}
-async function l18nFix() {
-    let text = getSelectedText();
-    let root = getRootPath();
-    let editor = getActivateEditor()
-    let fileName = editor.document.fileName.split('/').pop();
-
-    let targetPath = `${root}/lib/l10n`;
-    // 讀取所有 lib/l18n/*.arb 檔案
-    let files = fs.readdirSync(targetPath).filter(file => file.endsWith('.arb'));
-    if (files.length === 0) {
-        return undefined;
-    }
-    let fullText = getActivateText()
-    let position = editor.document.offsetAt(editor.selection.start);
-
-    // 向前搜尋最近的 class 名稱
-    let nearestClassName = findNearestClassName(fullText, position);
-    nearestClassName = nearestClassName
-    let nearestClassDescription = changeCase.snakeCase(nearestClassName)
-    if (nearestClassDescription.endsWith("_widget")) {
-        nearestClassDescription = nearestClassDescription.replace("_widget", "")
-    }
-    let nearestClassNameOption = { label: `[Class] ${nearestClassName}`, description: `🔑 ${nearestClassDescription}` }
-
-    let fileNameDescription = changeCase.snakeCase(fileName!.replace(".dart", ""))
-    if (fileNameDescription.endsWith("_widget")) {
-        fileNameDescription = fileNameDescription.replace("_widget", "")
-    }
-    let fileNameOption = { label: `[File] ${fileName!}`, description: `🔑 ${fileNameDescription}` }
-    let firstKey = files[0];
-    let firstFilePath = path.join(targetPath, firstKey);
-    // 彈出選單或輸入框讓使用者選擇 key
-    let totalContent = getActivateText()
-    let classMatch = getAllClassNames(totalContent).filter(e => e !== undefined && !e.includes(nearestClassName));
-    let quickPickItems: vscode.QuickPickItem[] = [
-        { label: "✨ Enter custom key...", description: "Enter a custom key for l10n" },
-        ...(nearestClassName ? [nearestClassNameOption] : []), // 最近 class 名稱
-        ...new Set(
-            classMatch.filter((key) => {
-                changeCase.snakeCase(key) != changeCase.snakeCase(fileName!.replace(".dart", "")) ||
-                    changeCase.snakeCase(key) != changeCase.snakeCase(nearestClassName)
-            })
-                .map(key => {
-                    // 處理 description: 使用 snake_case 並移除 "_widget"（如果存在）
-                    let description = changeCase.snakeCase(key);
-
-                    if (description.endsWith("_widget")) {
-                        description = description.replace("_widget", "");
-                    }
-
-                    return { label: `[Class] ${key}`, description: `🔑 ${description}` };
-                })
-        ), // 所有已存在的 key
-        ...(fileName ? [fileNameOption] : [])
-    ];
-    let selectText = getSelectedText()
-
-    selectText = changeCase.snakeCase(selectText)
-    let quickPickItemsResult: vscode.QuickPickItem[] = []
-    for (let item in quickPickItems) {
-        if (!quickPickItems[item].label.includes("✨ Enter custom key...")) {
-            quickPickItemsResult.push({ label: `${quickPickItems[item].label}`, description: `${quickPickItems[item].description}_${selectText}` })
-        }
-        quickPickItemsResult.push(quickPickItems[item])
-    }
-    let selectedKey = await vscode.window.showQuickPick(quickPickItemsResult, { placeHolder: "Select l10n key or Custom." }); if (selectedKey == undefined) return
-    let outputKey = selectedKey.label
-    let withName = selectedKey.description?.includes(selectText)
-
-    if (outputKey.includes("]")) {
-        outputKey = selectedKey.label.split("]")[1].trim()
-    }
-    if (selectedKey.label === "Enter custom key...") {
-        outputKey = ""
-    }
-    outputKey = changeCase.snakeCase(outputKey)
-    if (outputKey.endsWith("_dart")) {
-        outputKey = outputKey.replace("_dart", "")
-    }
-    if (outputKey.endsWith("_widget")) {
-        outputKey = outputKey.replace("_widget", "")
-    }
-    if (withName) {
-        outputKey = `${outputKey}_${selectText}`
-    }
-    // 彈出輸入框讓使用者輸入 key
-    let key = await vscode.window.showInputBox({ prompt: 'Enter the key for l10n', value: outputKey });
-    if (!key) {
-        return undefined;
-    }
-    key = key.replace(`"`, "")
-    key = key.replace(".dart", "")
-    key = changeCase.camelCase(key)
-    key = changeCase.snakeCase(key)
-
-    let l10nObject = await processL10nWithParams(text, key as string);
-    if (l10nObject == undefined) return
-    let newText = ""
-    if (Object.keys(l10nObject).length === 0) {
-        // 將選取的文字作為 value，並將 key-value 加入每個 .arb 檔案的末端
-        files.forEach(file => {
-            let filePath = path.join(targetPath, file);
-            let content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-            content[key as string] = text;
-            let sortedObject = sortArbKeysObject(content);
-            let jsonString = JSON.stringify(sortedObject, null, 2);
-            fs.writeFileSync(filePath, jsonString, 'utf8');
-        });
-        newText = `App.l10n.${key as string}`
-    } else {
-        // 將選取的文字作為 value，並將 key-value 加入每個 .arb 檔案的末端
-        files.forEach(file => {
-            let filePath = path.join(targetPath, file);
-            let content = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-            // 將所有 key-value 從 l10nObject 放進 content
-            Object.entries(l10nObject!).forEach(([k, v]) => {
-                content[k] = v;
-            });
-            let sortedObject = sortArbKeysObject(content);
-            let jsonString = JSON.stringify(sortedObject, null, 2);
-            let params = detectParameters(text).join(",");
-
-            fs.writeFileSync(filePath, jsonString, 'utf8');
-            newText = `App.l10n.${key as string}(${params})`
-        });
-    }
-
-    runTerminal('flutter gen-l10n');
-
-
-    // 替換選取範圍的文字為輸入的 key
-    editor.edit(editBuilder => {
-        let replaceSelect = editor.selection
-        replaceSelect = new vscode.Selection(new vscode.Position(replaceSelect.start.line, replaceSelect.start.character - 1), new vscode.Position(replaceSelect.end.line, replaceSelect.end.character + 1))
-        editBuilder.replace(replaceSelect, newText);
-    });
-    await editor.document.save();
-    vscode.window.showInformationMessage(`View l10n file `, 'Gen-l10n', 'open file', 'Cancel',).then(async (option) => {
-        if (option == 'open file') {
-            openEditor(firstFilePath)
-        }
-        if (option == 'Gen-l10n') {
-            runTerminal('flutter gen-l10n');
-        }
-    })
-
-    if (!totalContent.includes(`import 'package:${APP.flutterLibName}/main.dart';`)) {
-        editor.edit(editBuilder => {
-            editBuilder.insert(new vscode.Position(0, 0), `import 'package:${APP.flutterLibName}/main.dart';\n`);
-        });
-    }
-    await editor.document.save();
-
-    // 定義正則表達式，匹配 "ASD", 'ASD', '''ASD'''
-    const regex = new RegExp(`(['"]{1,3})${newText}\\1`, 'g')
-    text = getActivateText()
-    let match: RegExpExecArray | null;
-    const edit = new vscode.WorkspaceEdit();
-    while ((match = regex.exec(text)) !== null) {
-        const startPos = editor.document.positionAt(match.index);
-        const endPos = editor.document.positionAt(match.index + match[0].length);
-
-        // 定義替換的內容
-        const range = new vscode.Range(startPos, endPos);
-        let t = editor.document.getText(new vscode.Range(startPos, endPos))
-        edit.replace(editor.document.uri, range, newText);
-        t = editor.document.getText(new vscode.Range(startPos, endPos))
-
-    }
-
-    // Apply the edit and save
-    const editSuccess = await vscode.workspace.applyEdit(edit);
-    if (editSuccess) {
-        await editor.document.save();
-
-    } else {
-        throw new Error('Failed to apply edits');
-    }
-
-}
 
 export function findNearestClassName(text: string, position: number): string {
     let classRegex = /class\s+(\w+)/g;
