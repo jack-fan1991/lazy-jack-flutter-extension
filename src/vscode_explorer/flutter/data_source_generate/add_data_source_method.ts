@@ -91,7 +91,7 @@ export function registerAddDataSourceMethod(context: vscode.ExtensionContext) {
             } else {
                 finalReturnType = `Future<${wrapperConfig.name}<${baseReturnType}>>`;
             }
-            imports.push(wrapperConfig.import);
+            imports.push(normalizeImport(wrapperConfig.import));
         } else {
             if (baseReturnType === 'void') {
                 finalReturnType = `Future<void>`;
@@ -206,4 +206,13 @@ async function addRepoImplMethod(filePath: string, returnType: string, methodNam
   }
 `;
     await modifyFile(filePath, imports, methodImplementation);
+}
+
+function normalizeImport(importValue: string): string {
+    const trimmed = importValue.trim();
+    if (trimmed.startsWith('import ')) {
+        return trimmed.endsWith(';') ? trimmed : `${trimmed};`;
+    }
+    const cleaned = trimmed.replace(/^['"]|['"]$/g, '');
+    return `import '${cleaned}';`;
 }
