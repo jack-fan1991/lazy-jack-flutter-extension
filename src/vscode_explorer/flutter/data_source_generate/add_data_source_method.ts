@@ -80,7 +80,9 @@ export function registerAddDataSourceMethod(context: vscode.ExtensionContext) {
         const baseReturnType = isWriteOperation ? 'void' : `${changeCase.pascalCase(methodName)}Data`;
 
         const config = vscode.workspace.getConfiguration('lazy-jack-flutter-extension');
-        const wrapperConfig = config.get<{ name: string; import: string }>('dataReturnWrapper');
+        const wrapperConfig =
+            config.get<{ name: string; import: string }>('resultWrapper')
+            ?? config.get<{ name: string; import: string }>('dataReturnWrapper');
 
         let finalReturnType: string;
         const imports: string[] = [];

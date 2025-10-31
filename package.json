@@ -32,7 +32,7 @@
           },
           "description": "Custom Cubit types for the Quick Fix."
         },
-        "lazy-jack-flutter-extension.dataReturnWrapper": {
+        "lazy-jack-flutter-extension.resultWrapper": {
           "type": "object",
           "default": {},
           "properties": {
@@ -46,6 +46,22 @@
             }
           },
           "description": "Define a wrapper type (e.g., Result, Either) for feature data layer return values."
+        },
+        "lazy-jack-flutter-extension.dataReturnWrapper": {
+          "type": "object",
+          "default": {},
+          "properties": {
+            "name": {
+              "type": "string",
+              "description": "The name of the wrapper class, e.g., 'Result'."
+            },
+            "import": {
+              "type": "string",
+              "description": "The import statement for the wrapper class."
+            }
+          },
+          "description": "Define a wrapper type (e.g., Result, Either) for feature data layer return values.",
+          "deprecationMessage": "已改用 lazy-jack-flutter-extension.resultWrapper。"
         }
       }
     },
@@ -153,6 +169,16 @@
         "category": "lazy Jack",
         "command": "lazyJack.addDataSourceMethod",
         "title": "✨ Add Data Source Method"
+      },
+      {
+        "category": "lazy Jack",
+        "command": "lazyJack.createModuleTemplate",
+        "title": "✨ Create Module Template"
+      },
+      {
+        "category": "lazy Jack",
+        "command": "lazyJack.addModuleMethod",
+        "title": "✨ Add Module Method"
       }
     ],
     "menus": {
@@ -192,7 +218,7 @@
         {
           "command": "command_generate_flutter_page",
           "title": "✨Create TypeSafe Page",
-          "when": "explorerResourceIsFolder && resourcePath =~ /.*lib.*/ && !(resourceFilename =~ /^(features|presentation|models|bloc|domain|repo|usecases|di|data|datasources|repo_impls|entities)$/)"
+          "when": "explorerResourceIsFolder && resourcePath =~ /.*lib.*/ && !(resourceFilename =~ /^(modules|features|presentation|models|bloc|domain|repo|usecases|di|data|datasources|repo_impls|entities)$/)"
         },
         {
           "command": "graphql_code_gen_fragment_to_dart_type_def",
@@ -207,6 +233,16 @@
         {
           "command": "lazyJack.addDataSourceMethod",
           "when": "explorerResourceIsFolder && resourcePath =~ /.*\\/features\\/.*\\/data$/"
+        },
+        {
+          "command": "lazyJack.createModuleTemplate",
+          "title": "✨ Create Module Template",
+          "when": "explorerResourceIsFolder && resourceFilename == 'modules'"
+        },
+        {
+          "command": "lazyJack.addModuleMethod",
+          "title": "✨ Add Module Method",
+          "when": "explorerResourceIsFolder && resourcePath =~ /.*[\\\\/]lib[\\\\/]modules[\\\\/][^\\\\/]+$/"
         }
       ]
     },

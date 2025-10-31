@@ -96,7 +96,9 @@ function createFiles(resolver: ModulePathResolver, ctx: ReturnTypeContext) {
 
 function resolveReturnType(baseType: string): ReturnTypeContext {
   const config = vscode.workspace.getConfiguration('lazy-jack-flutter-extension');
-  const wrapperConfig = config.get<{ name: string; import: string }>('dataReturnWrapper');
+  const wrapperConfig =
+    config.get<{ name: string; import: string }>('resultWrapper') ??
+    config.get<{ name: string; import: string }>('dataReturnWrapper');
 
   const imports: string[] = [];
 

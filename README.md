@@ -23,6 +23,30 @@
   | **Add sub view** | ![](./image/clean_architecture/add_cubit.png)    |
   | **Register Route** | ![](./image/clean_architecture/auto_route.png)    |
 
+  #### 模組資料層方法產生器 (Add Module Method)
+  * 於 `lib/modules/<feature>` 右鍵點選 `✨ Add Module Method` 後，輸入方法名稱，外掛會依命名推斷是否為寫操作：
+    - 以 `create`、`add`、`update`、`delete`、`remove`、`send`、`post`、`put`、`patch` 開頭者視為寫操作，回傳 `Future<Result<void>>`。
+    - 其餘視為讀取操作，會自動建立 `data/models/<method>_data.dart` 並回傳 `Future<Result<NewModel>>`。
+  * 指令會同步更新下列檔案並補上必要 `import`：
+    - `domain/repositories/<feature>_repository.dart`
+    - `data/sources` 或 `data/datasources` 內的 data source 與其實作
+    - `data/repositories` 或 `data/repo_impls` 內的 repository impl，包括 mock 版本（若存在）
+  * 建議事前確認模組資料夾符合 sample 中的結構 (`domain/repositories`、`data/sources`、`data/repositories` 或 `data/repo_impls`、`data/models`)。
+
+  * 如需客製回傳包裹型別，可在 VS Code 設定 (`settings.json`) 中加入：
+    ```json
+    {
+      "lazy-jack-flutter-extension.resultWrapper": {
+        "name": "Result",
+        "import": "package:owlcash_core/common/result.dart"
+      }
+    }
+    ```
+    - `name`：外層容器類別名稱。
+    - `import`：可填 `import '...' ;` 或純路徑，外掛會自動補齊語法。
+    - 若未設定，讀取方法預設回傳 `Future<NewModel?>`，寫入方法回傳 `Future<void>`。
+    - 舊設定鍵 `lazy-jack-flutter-extension.dataReturnWrapper` 仍會被辨識，但建議改用新的 `resultWrapper`。
+
 
   #### Dart Asset Transformer
   * [ReadMore](./doc/assets_creator.md)
@@ -158,5 +182,3 @@
 #### SideBar GUI
 
 ![Before](./image/sideBar.png)
-
-

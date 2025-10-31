@@ -31,6 +31,7 @@ import { registerCleanArchitectureGenerate } from './vscode_explorer/flutter/cle
 import { registerCleanArchitecturePageGenerate } from './vscode_explorer/flutter/clean_architecture_generate/generate_clean_architecture_page';
 import { registerCreateCubit } from './vscode_explorer/flutter/clean_architecture_generate/generate_clean_architecture_cubit';
 import { registerCreateModuleTemplate } from './vscode_explorer/flutter/clean_module_generate/create_module_template';
+import { registerAddModuleMethod } from './vscode_explorer/flutter/clean_module_generate/add_module_method';
 
 export let sidebarManger = new SidebarManager()
 export class APP {
@@ -90,6 +91,7 @@ export async function activate(context: vscode.ExtensionContext) {
   registerFlutterPageGenerate(context)
   registerCreateCubit(context)
   registerCreateModuleTemplate(context)
+  registerAddModuleMethod(context)
   registerAddDataSourceMethod(context)
 
 }
@@ -106,6 +108,4 @@ function setupSideBar(context: vscode.ExtensionContext) {
     .registerSideBarCommands(context, "lazy-jack.sidebar_command_onselect")
     .registerSideBar(context)
 }
-
-
 
