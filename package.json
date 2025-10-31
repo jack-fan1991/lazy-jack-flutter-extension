@@ -127,7 +127,7 @@
       {
         "category": "lazy Jack",
         "command": "command_clean_architecture",
-        "title": "✨ Create Feature Module"
+        "title": "✨ Create Feature"
       },
       {
         "category": "lazy Jack",
@@ -253,7 +253,7 @@
     "iconv-lite": "^0.6.3",
     "js-yaml": "^4.1.0",
     "lodash": "^4.17.19",
-    "vsce": "^2.15.0",
+    "@vscode/vsce": "^2.23.0",
     "yaml": "^2.2.1"
   },
   "devDependencies": {

@@ -34,16 +34,16 @@ async function generatorSvg(folderUri: any) {
     let document: vscode.TextDocument;
     try {
         // 檢查目錄是否存在，若不存在則創建
-        if (!fs.existsSync(folderUri)) {
+        if (!fs.existsSync(folderUri.path)) {
             await vscode.workspace.fs.createDirectory(folderUri);
          
         }
 
         // 檢查文件是否存在，若不存在則創建
         if (!fs.existsSync(assertPath)) {
-            const content = Buffer.from("enum SvgAssets{} ", "utf8");
+            const content = new TextEncoder().encode("enum SvgAssets{} ");
             await vscode.workspace.fs.writeFile(fileUri, content);
-            isNew =true
+            isNew = true
         }
 
          document = await vscode.workspace.openTextDocument(fileUri);

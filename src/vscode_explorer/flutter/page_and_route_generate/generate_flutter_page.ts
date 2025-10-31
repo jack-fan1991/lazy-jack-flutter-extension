@@ -2,11 +2,11 @@
 import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
-import { toUpperCamelCase } from '../../utils/src/regex/regex_utils';
-import { reFormat } from '../../utils/src/vscode_utils/activate_editor_utils';
+import { toUpperCamelCase } from '../../../utils/src/regex/regex_utils';
+import { reFormat } from '../../../utils/src/vscode_utils/activate_editor_utils';
 import * as changeCase from "change-case";
-import { APP } from '../../extension';
-import { getRootPath } from '../../utils/src/vscode_utils/vscode_env_utils';
+import { APP } from '../../../extension';
+import { getRootPath } from '../../../utils/src/vscode_utils/vscode_env_utils';
 import { route_configuration_file_name, route_page_args_file_name } from './generate_route_temp';
 
 const command_clean_architecture = "command_generate_flutter_page"

@@ -2,11 +2,11 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import { get, template } from 'lodash';
-import { reFormat } from '../../utils/src/vscode_utils/activate_editor_utils';
+import { reFormat } from '../../../utils/src/vscode_utils/activate_editor_utils';
 import * as changeCase from "change-case";
-import { APP } from '../../extension';
-import { getRootPath } from '../../utils/src/vscode_utils/vscode_env_utils';
-import { openEditor, readFileToText } from '../../utils/src/vscode_utils/editor_utils';
+import { APP } from '../../../extension';
+import { getRootPath } from '../../../utils/src/vscode_utils/vscode_env_utils';
+import { openEditor, readFileToText } from '../../../utils/src/vscode_utils/editor_utils';
 
 const command_create_routeConfiguration = "command_create_routeConfiguration"
 export const route_configuration_file_name = "route_configuration.dart"
@@ -330,7 +330,7 @@ function extractRouteNames(content: string): string[] {
 
   return routeNames.sort();
 }
-
+// #region  建立內部路由驗證清單
 function createValidRoutesContent(routeNames: string[]): string {
     const sortedRoutes = routeNames.sort();
     

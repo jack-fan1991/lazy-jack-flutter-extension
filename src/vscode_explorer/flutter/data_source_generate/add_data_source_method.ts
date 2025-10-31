@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as changeCase from "change-case";
-import { toUpperCamelCase } from '../../utils/src/regex/regex_utils';
-import { reFormat } from '../../utils/src/vscode_utils/activate_editor_utils';
+import { toUpperCamelCase } from '../../../utils/src/regex/regex_utils';
+import { reFormat } from '../../../utils/src/vscode_utils/activate_editor_utils';
 
 const COMMAND_ID = "lazyJack.addDataSourceMethod";
 

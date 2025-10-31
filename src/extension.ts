@@ -20,16 +20,16 @@ import { registerUpdateDependencyVersion } from './utils/src/language_utils/dart
 import { registerToRequireParams } from './helper/dart/to_require_params';
 import { log } from 'console';
 import { updateGitSubModule } from './utils/src/language_utils/dart/pubspec/update_git_submodule';
-import { registerCleanArchitectureGenerate } from './vscode_explorer/flutter/generate_clean_architecture_feature';
 import { registerQuickFix } from './vscode_code_action/code_action';
 import { getPubspecLockAsMap } from './utils/src/language_utils/dart/pubspec/pubspec_utils';
 import { registerToGqlFragmentToDart } from './vscode_explore_menu/graphql_fragment_to_typedef';
-import { registerCreateRouteConfiguration, registerRouteConfigurationWatcher } from './vscode_explorer/flutter/generate_route_temp';
-import { registerCleanArchitecturePageGenerate } from './vscode_explorer/flutter/generate_clean_architecture_page';
-import { registerFlutterPageGenerate } from './vscode_explorer/flutter/generate_flutter_page';
+import { registerCreateRouteConfiguration, registerRouteConfigurationWatcher } from './vscode_explorer/flutter/page_and_route_generate/generate_route_temp';
+import { registerFlutterPageGenerate } from './vscode_explorer/flutter/page_and_route_generate/generate_flutter_page';
 import { runCommand } from './utils/src/terminal_utils/terminal_utils';
-import { registerCreateCubit } from './vscode_explorer/flutter/generate_clean_architecture_cubit';
-import { registerAddDataSourceMethod } from './vscode_explorer/flutter/add_data_source_method';
+import { registerAddDataSourceMethod } from './vscode_explorer/flutter/data_source_generate/add_data_source_method';
+import { registerCleanArchitectureGenerate } from './vscode_explorer/flutter/clean_architecture_generate/generate_clean_architecture_feature';
+import { registerCleanArchitecturePageGenerate } from './vscode_explorer/flutter/clean_architecture_generate/generate_clean_architecture_page';
+import { registerCreateCubit } from './vscode_explorer/flutter/clean_architecture_generate/generate_clean_architecture_cubit';
 
 export let sidebarManger = new SidebarManager()
 export class APP {

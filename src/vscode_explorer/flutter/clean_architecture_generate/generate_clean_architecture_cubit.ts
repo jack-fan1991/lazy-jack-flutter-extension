@@ -2,8 +2,8 @@ import * as vscode from 'vscode';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as changeCase from "change-case";
-import { APP } from '../../extension';
-import { reFormat } from '../../utils/src/vscode_utils/activate_editor_utils';
+import { reFormat } from '../../../utils/src/vscode_utils/activate_editor_utils';
+import { APP } from '../../../extension';
 
 const COMMAND_ID = "lazyJack.createCubit";
 
