@@ -22,7 +22,22 @@ export function registerCleanArchitectureGenerate(context: vscode.ExtensionConte
         }
 
         featureName = changeCase.snakeCase(featureName);
-        const resolver = new PathResolver(folderUri.path, featureName);
+
+        const entitiesChoice = await vscode.window.showQuickPick(
+            ['使用 Entities 層', '不使用 Entities 層'],
+            {
+                placeHolder: '是否建立 Entities 層?',
+                title: 'Clean Architecture 產生器',
+            }
+        );
+
+        if (!entitiesChoice) {
+            vscode.window.showWarningMessage('已取消建立功能');
+            return;
+        }
+
+        const useEntitiesLayer = entitiesChoice === '使用 Entities 層';
+        const resolver = new PathResolver(folderUri.path, featureName, useEntitiesLayer);
 
         try {
             // 1. 創建所有資料夾
@@ -66,7 +81,7 @@ function createDirectoryStructure(resolver: PathResolver) {
         resolver.featureDir,
         resolver.di.dir,
         resolver.domain.dir,
-        resolver.domain.entitiesDir,
+        ...(resolver.useEntities ? [resolver.domain.entitiesDir] : []),
         resolver.domain.repoDir,
         resolver.domain.usecasesDir,
         resolver.data.dir,
@@ -91,7 +106,9 @@ function createFeatureFiles(resolver: PathResolver) {
     fs.writeFileSync(resolver.di.injection, getDiInjectionTemplate(resolver));
 
     // Domain
-    fs.writeFileSync(resolver.domain.entity, getDomainEntityTemplate(resolver));
+    if (resolver.useEntities) {
+        fs.writeFileSync(resolver.domain.entity, getDomainEntityTemplate(resolver));
+    }
     fs.writeFileSync(resolver.domain.repository, getDomainRepositoryTemplate(resolver));
     fs.writeFileSync(resolver.domain.usecase, getDomainUsecaseTemplate(resolver));
 
@@ -158,17 +175,28 @@ class ${r.entityName} extends Equatable {
 }
 
 function getDomainRepositoryTemplate(r: PathResolver): string {
-    return `
+    if (r.useEntities) {
+        return `
 import '${r.importPath("domain", "entity")}';
 
 abstract class ${r.repositoryName} {
   Future<${r.entityName}> get${r.featureNamePascalCase}(String id);
 }
 `;
+    }
+
+    return `
+import '${r.importPath("data", "model")}';
+
+abstract class ${r.repositoryName} {
+  Future<${r.modelName}> get${r.featureNamePascalCase}(String id);
+}
+`;
 }
 
 function getDomainUsecaseTemplate(r: PathResolver): string {
-    return `
+    if (r.useEntities) {
+        return `
 import '${r.importPath("domain", "entity")}';
 import '${r.importPath("domain", "repository")}';
 
@@ -179,6 +207,22 @@ class ${r.usecaseName} {
 
   Future<${r.entityName}> call(String id) async {
     // 在這裡可以加入參數驗證、日誌記錄等業務邏輯
+    return await repository.get${r.featureNamePascalCase}(id);
+  }
+}
+`;
+    }
+
+    return `
+import '${r.importPath("data", "model")}';
+import '${r.importPath("domain", "repository")}';
+
+class ${r.usecaseName} {
+  final ${r.repositoryName} repository;
+
+  ${r.usecaseName}(this.repository);
+
+  Future<${r.modelName}> call(String id) async {
     return await repository.get${r.featureNamePascalCase}(id);
   }
 }
@@ -222,7 +266,8 @@ class ${r.datasourceImplName} implements ${r.datasourceName} {
 }
 
 function getDataModelTemplate(r: PathResolver): string {
-    return `
+    if (r.useEntities) {
+        return `
 import '${r.importPath("domain", "entity")}';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
@@ -249,10 +294,31 @@ class ${r.modelName} with _$${r.modelName} {
     }
 }
 `;
+    }
+
+    return `
+import 'package:freezed_annotation/freezed_annotation.dart';
+
+part '${r.featureNameSnakeCase}_model.freezed.dart';
+part '${r.featureNameSnakeCase}_model.g.dart';
+
+@freezed
+class ${r.modelName} with _$${r.modelName} {
+    const ${r.modelName}._();
+
+    const factory ${r.modelName}({
+      required String id,
+      required String name,
+    }) = _${r.modelName};
+
+    factory ${r.modelName}.fromJson(Map<String, dynamic> json) => _$${r.modelName}FromJson(json);
+}
+`;
 }
 
 function getDataRepositoryImplTemplate(r: PathResolver): string {
-    return `
+    if (r.useEntities) {
+        return `
 import '${r.importPath("data", "datasource")}';
 import '${r.importPath("domain", "entity")}';
 import '${r.importPath("domain", "repository")}';
@@ -280,10 +346,39 @@ class ${r.repositoryImplName} implements ${r.repositoryName} {
   }
 }
 `;
+    }
+
+    return `
+import '${r.importPath("data", "datasource")}';
+import '${r.importPath("data", "model")}';
+import '${r.importPath("domain", "repository")}';
+
+class ${r.repositoryImplName} implements ${r.repositoryName} {
+  final ${r.datasourceName} remoteDataSource;
+  // final ${r.datasourceName} localDataSource;
+
+  ${r.repositoryImplName}({
+    required this.remoteDataSource,
+    // required this.localDataSource,
+  });
+
+  @override
+  Future<${r.modelName}> get${r.featureNamePascalCase}(String id) async {
+    try {
+      final remoteData = await remoteDataSource.fetch${r.featureNamePascalCase}(id);
+      return remoteData;
+    } catch (e) {
+      // 處理錯誤，例如從本地資料源獲取或拋出自定義異常
+      throw Exception('Failed to get data for $id');
+    }
+  }
+}
+`;
 }
 
 function getPresentationCubitTemplate(r: PathResolver): string {
-    return `
+    if (r.useEntities) {
+        return `
 import 'package:bloc/bloc.dart';
 import '${r.importPath("presentation", "state")}';
 import '${r.importPath("domain", "usecase")}';
@@ -299,6 +394,31 @@ class ${r.cubitName} extends Cubit<${r.stateName}> {
     try {
       final entity = await _get${r.featureNamePascalCase}(id);
       final uiModel = ${r.uiModelName}.fromEntity(entity);
+      emit(${r.stateName}.success(uiModel));
+    } catch (e) {
+      emit(${r.stateName}.failure(e.toString()));
+    }
+  }
+}
+`;
+    }
+
+    return `
+import 'package:bloc/bloc.dart';
+import '${r.importPath("presentation", "state")}';
+import '${r.importPath("domain", "usecase")}';
+import '${r.importPath("presentation", "uiModel")}';
+
+class ${r.cubitName} extends Cubit<${r.stateName}> {
+  final ${r.usecaseName} _get${r.featureNamePascalCase};
+
+  ${r.cubitName}(this._get${r.featureNamePascalCase}) : super(const ${r.stateName}.initial());
+
+  Future<void> fetch(String id) async {
+    emit(const ${r.stateName}.loading());
+    try {
+      final model = await _get${r.featureNamePascalCase}(id);
+      final uiModel = ${r.uiModelName}.fromModel(model);
       emit(${r.stateName}.success(uiModel));
     } catch (e) {
       emit(${r.stateName}.failure(e.toString()));
@@ -326,7 +446,8 @@ class ${r.stateName} with _$${r.stateName} {
 }
 
 function getPresentationUiModelTemplate(r: PathResolver): string {
-    return `
+    if (r.useEntities) {
+        return `
 import 'package:freezed_annotation/freezed_annotation.dart';
 import '${r.importPath("domain", "entity")}';
 
@@ -343,6 +464,29 @@ class ${r.uiModelName} with _$${r.uiModelName} {
     return ${r.uiModelName}(
       title: 'ID: \${entity.id}',
       subtitle: 'Name: \${entity.name}',
+    );
+  }
+}
+`;
+    }
+
+    return `
+import 'package:freezed_annotation/freezed_annotation.dart';
+import '${r.importPath("data", "model")}';
+
+part '${r.featureNameSnakeCase}_ui_model.freezed.dart';
+
+@freezed
+class ${r.uiModelName} with _$${r.uiModelName} {
+  const factory ${r.uiModelName}({
+    required String title,
+    required String subtitle,
+  }) = _${r.uiModelName};
+
+  factory ${r.uiModelName}.fromModel(${r.modelName} model) {
+    return ${r.uiModelName}(
+      title: 'ID: \${model.id}',
+      subtitle: 'Name: \${model.name}',
     );
   }
 }
@@ -480,6 +624,7 @@ class PathResolver {
     public readonly rootPath: string;
     public readonly libDir: string;
     public readonly featureDir: string;
+    public readonly useEntities: boolean;
 
     // Feature Names
     public readonly featureNameSnakeCase: string;
@@ -505,10 +650,11 @@ class PathResolver {
     public readonly widgetName: string;
     public readonly pageName: string;
 
-    constructor(currentPath: string, featureName: string) {
+    constructor(currentPath: string, featureName: string, useEntities: boolean) {
         this.rootPath = currentPath;
         this.featureNameSnakeCase = featureName;
         this.featureNamePascalCase = toUpperCamelCase(featureName);
+        this.useEntities = useEntities;
 
         this.libDir = this.rootPath.split('lib/')[1];
         this.featureDir = path.join(this.rootPath, `${this.featureNameSnakeCase}`);
