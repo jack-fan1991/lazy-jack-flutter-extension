@@ -178,7 +178,7 @@
       {
         "category": "lazy Jack",
         "command": "lazyJack.addModuleMethod",
-        "title": "✨ Add Module Method"
+        "title": "✨ Add Module Data Source Method"
       }
     ],
     "menus": {
@@ -218,7 +218,7 @@
         {
           "command": "command_generate_flutter_page",
           "title": "✨Create TypeSafe Page",
-          "when": "explorerResourceIsFolder && resourcePath =~ /.*lib.*/ && !(resourceFilename =~ /^(modules|features|presentation|models|bloc|domain|repo|usecases|di|data|datasources|repo_impls|entities)$/)"
+          "when": "explorerResourceIsFolder && resourcePath =~ /.*lib.*/ && !(resourceFilename =~ /^(modules|features|presentation|models|bloc|domain|repository|usecases|di|data|sources|repo_impls|entities)$/)"
         },
         {
           "command": "graphql_code_gen_fragment_to_dart_type_def",

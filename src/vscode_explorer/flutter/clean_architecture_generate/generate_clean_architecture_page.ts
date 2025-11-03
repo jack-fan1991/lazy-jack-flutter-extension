@@ -27,8 +27,23 @@ export function registerCleanArchitecturePageGenerate(context: vscode.ExtensionC
             return;
         }
 
-        const pageName = changeCase.snakeCase( pageNameInput);
-        const resolver = new PagePathResolver(folderUri.path, featureName, pageName);
+        const pageName = changeCase.snakeCase(pageNameInput);
+
+        const entitiesChoice = await vscode.window.showQuickPick(
+            ['使用 Entities 層', '不使用 Entities 層'],
+            {
+                placeHolder: '是否建立 Entities 層?',
+                title: 'Clean Architecture 產生器',
+            }
+        );
+
+        if (!entitiesChoice) {
+            vscode.window.showWarningMessage('已取消建立頁面');
+            return;
+        }
+
+        const useEntitiesLayer = entitiesChoice === '使用 Entities 層';
+        const resolver = new PagePathResolver(folderUri.path, featureName, pageName, useEntitiesLayer);
 
         try {
             createDirectoryStructure(resolver);
@@ -67,8 +82,8 @@ function createDirectoryStructure(resolver: PagePathResolver) {
         resolver.pagesDir,
         resolver.blocDir,
         resolver.widgetsDir,
-        resolver.entitiesDir,
         resolver.modelsDir,
+        ...(resolver.useEntities ? [resolver.entitiesDir] : []),
     ];
     dirs.forEach(dir => {
         if (!fs.existsSync(dir)) {
@@ -82,7 +97,9 @@ function createPageFiles(resolver: PagePathResolver) {
     fs.writeFileSync(resolver.cubitPath, getPresentationCubitTemplate(resolver));
     fs.writeFileSync(resolver.statePath, getPresentationStateTemplate(resolver));
     fs.writeFileSync(resolver.viewPath, getPresentationViewTemplate(resolver));
-    fs.writeFileSync(resolver.entityPath, getDomainEntityTemplate(resolver));
+    if (resolver.useEntities) {
+        fs.writeFileSync(resolver.entityPath, getDomainEntityTemplate(resolver));
+    }
     fs.writeFileSync(resolver.uiModelPath, getPresentationUiModelTemplate(resolver));
 }
 
@@ -105,6 +122,7 @@ class PagePathResolver {
     public readonly featureNamePascalCase: string;
     public readonly pageNameSnakeCase: string;
     public readonly pageNamePascalCase: string;
+    public readonly useEntities: boolean;
 
     public readonly pagesDir: string;
     public readonly blocDir: string;
@@ -132,12 +150,13 @@ class PagePathResolver {
     public readonly datasourceImplName: string;
 
 
-    constructor(presentationPath: string, featureName: string, pageName: string) {
+    constructor(presentationPath: string, featureName: string, pageName: string, useEntities: boolean) {
         this.presentationDir = presentationPath;
         this.featureNameSnakeCase = featureName;
         this.featureNamePascalCase = changeCase.pascalCase(featureName);
         this.pageNameSnakeCase = pageName;
         this.pageNamePascalCase = changeCase.pascalCase(pageName);
+        this.useEntities = useEntities;
 
         this.pagesDir = path.join(this.presentationDir, 'pages');
         this.blocDir = path.join(this.presentationDir, 'bloc');
@@ -173,7 +192,7 @@ class PagePathResolver {
         this.datasourceImplName = `${this.featureNamePascalCase}RemoteDataSourceImpl`;
     }
 
-    public getImportPath(fileType: 'cubit' | 'state' | 'view' | 'entity' | 'ui_model' | 'feature_usecase' | 'feature_entity' | 'feature_repository' | 'feature_datasource_impl' | 'feature_repo_impl'): string {
+    public getImportPath(fileType: 'cubit' | 'state' | 'view' | 'entity' | 'ui_model' | 'feature_usecase' | 'feature_entity' | 'feature_model' | 'feature_repository' | 'feature_datasource_impl' | 'feature_repo_impl'): string {
         const featureLibPath = path.dirname(this.libDir);
         const currentFeatureLibPath = this.libDir
 
@@ -185,17 +204,19 @@ class PagePathResolver {
             case 'view':
                 return `package:${APP.flutterLibName}/${path.join(currentFeatureLibPath, 'widgets', `${this.pageNameSnakeCase}_view.dart`).replace(/\\/g, '/')}`;
             case 'entity':
-                return `package:${APP.flutterLibName}/${path.join(currentFeatureLibPath, 'entities', `${this.pageNameSnakeCase}_entity.dart`).replace(/\\/g, '/')}`;
+                return `package:${APP.flutterLibName}/${path.join(featureLibPath, 'domain', 'entities', `${this.pageNameSnakeCase}_entity.dart`).replace(/\\/g, '/')}`;
             case 'ui_model':
                 return `package:${APP.flutterLibName}/${path.join(currentFeatureLibPath, 'models', `${this.pageNameSnakeCase}_ui_model.dart`).replace(/\\/g, '/')}`;
             case 'feature_usecase':
                 return `package:${APP.flutterLibName}/${path.join(featureLibPath, 'domain', 'usecases', `get_${this.featureNameSnakeCase}.dart`).replace(/\\/g, '/')}`;
             case 'feature_entity':
                 return `package:${APP.flutterLibName}/${path.join(featureLibPath, 'domain', 'entities', `${this.featureNameSnakeCase}_entity.dart`).replace(/\\/g, '/')}`;
+            case 'feature_model':
+                return `package:${APP.flutterLibName}/${path.join(featureLibPath, 'data', 'models', `${this.featureNameSnakeCase}_model.dart`).replace(/\\/g, '/')}`;
             case 'feature_repository':
                 return `package:${APP.flutterLibName}/${path.join(featureLibPath, 'domain', 'repo', `${this.featureNameSnakeCase}_repository.dart`).replace(/\\/g, '/')}`;
             case 'feature_datasource_impl':
-                return `package:${APP.flutterLibName}/${path.join(featureLibPath, 'data', 'datasources', `${this.featureNameSnakeCase}_remote_datasource_impl.dart`).replace(/\\/g, '/')}`;
+                return `package:${APP.flutterLibName}/${path.join(featureLibPath, 'data', 'sources', `${this.featureNameSnakeCase}_remote_data_source_impl.dart`).replace(/\\/g, '/')}`;
             case 'feature_repo_impl':
                 return `package:${APP.flutterLibName}/${path.join(featureLibPath, 'data', 'repo_impls', `${this.featureNameSnakeCase}_repository_impl.dart`).replace(/\\/g, '/')}`;
         }
@@ -315,12 +336,14 @@ class ${r.viewName} extends StatelessWidget {
 `;
 }
 function getPresentationCubitTemplate(r: PagePathResolver): string {
-    return `
+    if (r.useEntities) {
+        return `
 import 'package:bloc/bloc.dart';
 import '${r.getImportPath('state')}';
 import '${r.getImportPath('feature_usecase')}';
 import '${r.getImportPath('ui_model')}';
 import '${r.getImportPath('feature_entity')}';
+import '${r.getImportPath('entity')}';
 
 class ${r.cubitName} extends Cubit<${r.stateName}> {
   final ${r.usecaseName} _get${r.featureNamePascalCase};
@@ -330,8 +353,39 @@ class ${r.cubitName} extends Cubit<${r.stateName}> {
   Future<void> fetch(String id) async {
     emit(const ${r.stateName}.loading());
     try {
-      final entity = await _get${r.featureNamePascalCase}(id);
+      final featureEntity = await _get${r.featureNamePascalCase}(id);
+      final entity = ${r.entityName}(
+        id: featureEntity.id,
+        name: featureEntity.name,
+      );
       final uiModel = ${r.uiModelName}.fromEntity(entity);
+      emit(${r.stateName}.success(uiModel));
+    } catch (e) {
+      emit(${r.stateName}.failure(e.toString()));
+    }
+  }
+}
+`;
+
+    }
+
+    return `
+import 'package:bloc/bloc.dart';
+import '${r.getImportPath('state')}';
+import '${r.getImportPath('feature_usecase')}';
+import '${r.getImportPath('ui_model')}';
+import '${r.getImportPath('feature_model')}';
+
+class ${r.cubitName} extends Cubit<${r.stateName}> {
+  final ${r.usecaseName} _get${r.featureNamePascalCase};
+
+  ${r.cubitName}(this._get${r.featureNamePascalCase}) : super(const ${r.stateName}.initial());
+
+  Future<void> fetch(String id) async {
+    emit(const ${r.stateName}.loading());
+    try {
+      final model = await _get${r.featureNamePascalCase}(id);
+      final uiModel = ${r.uiModelName}.fromModel(model);
       emit(${r.stateName}.success(uiModel));
     } catch (e) {
       emit(${r.stateName}.failure(e.toString()));
@@ -381,10 +435,10 @@ class ${r.entityName} extends Equatable {
 
 
 function getPresentationUiModelTemplate(r: PagePathResolver): string {
-    const featureEntityName = `${r.featureNamePascalCase}Entity`;
-    return `
+    if (r.useEntities) {
+        return `
 import 'package:freezed_annotation/freezed_annotation.dart';
-import '${r.getImportPath('feature_entity')}';
+import '${r.getImportPath('entity')}';
 
 part '${r.pageNameSnakeCase}_ui_model.freezed.dart';
 
@@ -395,10 +449,34 @@ class ${r.uiModelName} with _$${r.uiModelName} {
     required String subtitle,
   }) = _${r.uiModelName};
 
-  factory ${r.uiModelName}.fromEntity(${featureEntityName} entity) {
+  factory ${r.uiModelName}.fromEntity(${r.entityName} entity) {
     return ${r.uiModelName}(
       title: 'ID: \${entity.id}',
       subtitle: 'Name: \${entity.name}',
+    );
+  }
+}
+`;
+}
+
+    const featureModelName = `${r.featureNamePascalCase}Model`;
+    return `
+import 'package:freezed_annotation/freezed_annotation.dart';
+import '${r.getImportPath('feature_model')}';
+
+part '${r.pageNameSnakeCase}_ui_model.freezed.dart';
+
+@freezed
+class ${r.uiModelName} with _$${r.uiModelName} {
+  const factory ${r.uiModelName}({
+    required String title,
+    required String subtitle,
+  }) = _${r.uiModelName};
+
+  factory ${r.uiModelName}.fromModel(${featureModelName} model) {
+    return ${r.uiModelName}(
+      title: 'ID: \${model.id}',
+      subtitle: 'Name: \${model.name}',
     );
   }
 }

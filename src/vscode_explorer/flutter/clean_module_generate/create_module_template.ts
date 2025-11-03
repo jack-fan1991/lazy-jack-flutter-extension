@@ -176,7 +176,7 @@ class ModulePathResolver {
     this.featureNamePascalCase = changeCase.pascalCase(featureNameSnakeCase);
 
     this.dataDir = path.join(this.featureDir, 'data');
-    this.dataDatasourcesDir = path.join(this.dataDir, 'datasources');
+    this.dataDatasourcesDir = path.join(this.dataDir, 'sources');
     this.dataRepoImplsDir = path.join(this.dataDir, 'repo_impls');
     this.dataModelsDir = path.join(this.dataDir, 'models');
     this.domainDir = path.join(this.featureDir, 'domain');
@@ -237,8 +237,8 @@ function writeFileIfAbsent(filePath: string, content: string) {
 function getModuleFileTemplate(r: ModulePathResolver): string {
   return `
 import 'package:get_it/get_it.dart';
-import 'data/datasources/${path.basename(r.dataSourcePath)}';
-import 'data/datasources/${path.basename(r.remoteDataSourceImplPath)}';
+import 'data/sources/${path.basename(r.dataSourcePath)}';
+import 'data/sources/${path.basename(r.remoteDataSourceImplPath)}';
 import 'data/repo_impls/${path.basename(r.repositoryImplPath)}';
 import 'domain/repositories/${path.basename(r.domainRepositoryPath)}';
 

@@ -23,13 +23,71 @@
   | **Add sub view** | ![](./image/clean_architecture/add_cubit.png)    |
   | **Register Route** | ![](./image/clean_architecture/auto_route.png)    |
 
+### ✨ 產生的模組結構範例
+
+#### 1. 完整功能模組 (包含UI層)
+
+當您透過右鍵選單 `Clean Architecture: Generate Feature` 產生一個新的功能模組（例如輸入 `user_profile`），此擴充功能會建立以下完整的目錄與檔案結構：
+
+```markdown
+user_profile/
+├── data/
+│   ├── sources/
+│   │   ├── user_profile_data_source.dart
+│   │   └── user_profile_remote_data_source_impl.dart
+│   ├── models/
+│   │   └── user_profile_model.dart
+│   └── repo_impls/
+│       └── user_profile_repository_impl.dart
+├── di/
+│   └── injection.dart
+├── domain/
+│   ├── entities/
+│   │   └── user_profile_entity.dart
+│   ├── repositories/
+│   │   └── user_profile_repository.dart
+│   └── usecases/
+│       └── get_user_profile.dart
+└── presentation/
+    ├── bloc/
+    │   ├── user_profile_cubit.dart
+    │   └── user_profile_state.dart
+    ├── models/
+    │   └── user_profile_ui_model.dart
+    ├── pages/
+    │   └── user_profile_page.dart
+    └── widgets/
+        └── user_profile_view.dart
+```
+這個標準化的結構可以確保您專案中所有功能的一致性以及關注點分離。
+
+#### 2. 資料/邏輯模組 (無UI層)
+
+當您透過右鍵選單 `Clean Architecture: Generate Module Template` 產生一個純資料/邏輯模組（例如輸入 `transaction`），則會建立一個不含 `presentation` 層的精簡結構，適合用來封裝共享的業務邏輯：
+
+```markdown
+transaction/
+├── data/
+│   ├── sources/
+│   │   ├── transaction_data_source.dart
+│   │   └── transaction_remote_data_source_impl.dart
+│   ├── models/
+│   │   └── transaction_model.dart
+│   └── repo_impls/
+│       └── transaction_repository_impl.dart
+├── domain/
+│   └── repositories/
+│       └── transaction_repository.dart
+└── transaction_module.dart
+```
+
   #### 模組資料層方法產生器 (Add Module Method)
   * 於 `lib/modules/<feature>` 右鍵點選 `✨ Add Module Method` 後，輸入方法名稱，外掛會依命名推斷是否為寫操作：
     - 以 `create`、`add`、`update`、`delete`、`remove`、`send`、`post`、`put`、`patch` 開頭者視為寫操作，回傳 `Future<Result<void>>`。
     - 其餘視為讀取操作，會自動建立 `data/models/<method>_data.dart` 並回傳 `Future<Result<NewModel>>`。
   * 指令會同步更新下列檔案並補上必要 `import`：
     - `domain/repositories/<feature>_repository.dart`
-    - `data/sources` 或 `data/datasources` 內的 data source 與其實作
+    - `data/sources` 或 `data/sources` 內的 data source 與其實作
     - `data/repositories` 或 `data/repo_impls` 內的 repository impl，包括 mock 版本（若存在）
   * 建議事前確認模組資料夾符合 sample 中的結構 (`domain/repositories`、`data/sources`、`data/repositories` 或 `data/repo_impls`、`data/models`)。
 

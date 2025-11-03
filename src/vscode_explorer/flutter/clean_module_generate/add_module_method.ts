@@ -206,7 +206,7 @@ class ModuleMethodPathResolver {
     this.featureNamePascalCase = changeCase.pascalCase(this.featureNameSnakeCase);
 
     this.dataDir = path.join(featureDir, 'data');
-    this.dataSourcesDir = this.resolveExistingDir(this.dataDir, ['sources', 'datasources']);
+    this.dataSourcesDir = this.resolveExistingDir(this.dataDir, ['sources', 'sources']);
     this.dataRepositoriesDir = this.resolveExistingDir(this.dataDir, ['repositories', 'repo_impls']);
 
     this.domainRepositoryPath = path.join(featureDir, 'domain', 'repositories', `${this.featureNameSnakeCase}_repository.dart`);

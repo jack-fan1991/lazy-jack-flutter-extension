@@ -5,6 +5,7 @@ import * as changeCase from "change-case";
 import { toUpperCamelCase } from '../../../utils/src/regex/regex_utils';
 import { reFormat } from '../../../utils/src/vscode_utils/activate_editor_utils';
 
+
 const COMMAND_ID = "lazyJack.addDataSourceMethod";
 
 class DataPathResolver {
@@ -80,9 +81,7 @@ export function registerAddDataSourceMethod(context: vscode.ExtensionContext) {
         const baseReturnType = isWriteOperation ? 'void' : `${changeCase.pascalCase(methodName)}Data`;
 
         const config = vscode.workspace.getConfiguration('lazy-jack-flutter-extension');
-        const wrapperConfig =
-            config.get<{ name: string; import: string }>('resultWrapper')
-            ?? config.get<{ name: string; import: string }>('dataReturnWrapper');
+        const wrapperConfig = config.get<{ name: string; import: string }>('dataReturnWrapper');
 
         let finalReturnType: string;
         const imports: string[] = [];
@@ -93,7 +92,7 @@ export function registerAddDataSourceMethod(context: vscode.ExtensionContext) {
             } else {
                 finalReturnType = `Future<${wrapperConfig.name}<${baseReturnType}>>`;
             }
-            imports.push(normalizeImport(wrapperConfig.import));
+            imports.push(wrapperConfig.import);
         } else {
             if (baseReturnType === 'void') {
                 finalReturnType = `Future<void>`;
@@ -184,12 +183,7 @@ async function modifyFile(filePath: string, imports: string[], methodString: str
 
 async function addAbstractMethod(filePath: string, returnType: string, methodName: string, imports: string[]) {
     const methodSignature = `\n  ${returnType} ${methodName}();\n`;
-    try {
-        await modifyFile(filePath, imports, methodSignature);
-    } catch (err) {
-        console.error(`Error adding abstract method to ${filePath}:`, err);
-        throw err;
-    }
+    await modifyFile(filePath, imports, methodSignature);
 }
 
 async function addConcreteMethod(filePath: string, returnType: string, methodName: string, imports: string[]) {
@@ -213,13 +207,4 @@ async function addRepoImplMethod(filePath: string, returnType: string, methodNam
   }
 `;
     await modifyFile(filePath, imports, methodImplementation);
-}
-
-function normalizeImport(importValue: string): string {
-    const trimmed = importValue.trim();
-    if (trimmed.startsWith('import ')) {
-        return trimmed.endsWith(';') ? trimmed : `${trimmed};`;
-    }
-    const cleaned = trimmed.replace(/^['"]|['"]$/g, '');
-    return `import '${cleaned}';`;
 }

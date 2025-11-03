@@ -534,7 +534,7 @@ function getPresentationPageTemplate(r: PathResolver): string {
   const webPath = changeCase.paramCase(r.featureNameSnakeCase);
   const featurePath = `${r.libDir}/${r.featureNameSnakeCase}`;
   const repoImplImport = `package:${APP.flutterLibName}/${featurePath}/data/repo_impls/${r.featureNameSnakeCase}_repository_impl.dart`;
-  const datasourceImplImport = `package:${APP.flutterLibName}/${featurePath}/data/datasources/${r.featureNameSnakeCase}_remote_datasource_impl.dart`;
+  const datasourceImplImport = `package:${APP.flutterLibName}/${featurePath}/data/sources/${r.featureNameSnakeCase}_remote_data_source_impl.dart`;
 
   return `
 import 'package:flutter/material.dart';
@@ -679,15 +679,14 @@ class PathResolver {
         // Data Paths
         this.data = {
             dir: path.join(this.featureDir, 'data'),
-            datasourcesDir: path.join(this.featureDir, 'data', 'datasources'),
+            datasourcesDir: path.join(this.featureDir, 'data', 'sources'),
             modelsDir: path.join(this.featureDir, 'data', 'models'),
             repoImplsDir: path.join(this.featureDir, 'data', 'repo_impls'),
-            datasource: path.join(this.featureDir, 'data', 'datasources', `${this.featureNameSnakeCase}_remote_datasource.dart`),
-            datasourceImpl: path.join(this.featureDir, 'data', 'datasources', `${this.featureNameSnakeCase}_remote_datasource_impl.dart`),
+            datasource: path.join(this.featureDir, 'data', 'sources', `${this.featureNameSnakeCase}_data_source.dart`),
+            datasourceImpl: path.join(this.featureDir, 'data', 'sources', `${this.featureNameSnakeCase}_remote_data_source_impl.dart`),
             model: path.join(this.featureDir, 'data', 'models', `${this.featureNameSnakeCase}_model.dart`),
             repositoryImpl: path.join(this.featureDir, 'data', 'repo_impls', `${this.featureNameSnakeCase}_repository_impl.dart`),
         };
-
         // Presentation Paths
         this.presentation = {
             dir: path.join(this.featureDir, 'presentation'),
@@ -726,7 +725,7 @@ class PathResolver {
                 if (file === 'usecase') return `package:${APP.flutterLibName}/${featurePath}/domain/usecases/get_${this.featureNameSnakeCase}.dart`;
                 break;
             case 'data':
-                 if (file === 'datasource') return `package:${APP.flutterLibName}/${featurePath}/data/datasources/${this.featureNameSnakeCase}_remote_datasource.dart`;
+                 if (file === 'datasource') return `package:${APP.flutterLibName}/${featurePath}/data/sources/${this.featureNameSnakeCase}_data_source.dart`;
                  if (file === 'model') return `package:${APP.flutterLibName}/${featurePath}/data/models/${this.featureNameSnakeCase}_model.dart`;
                  break;
             case 'presentation':
