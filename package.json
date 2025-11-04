@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.206",
+  "version": "0.0.210",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -143,7 +143,7 @@
       {
         "category": "lazy Jack",
         "command": "command_clean_architecture",
-        "title": "✨ Create Feature"
+        "title": "✨ Create Feature Template"
       },
       {
         "category": "lazy Jack",
@@ -208,7 +208,7 @@
         {
           "command": "command_clean_architecture",
           "title": "✨ Create Clean Arch Feature Module",
-          "when": "explorerResourceIsFolder && (resourceFilename == 'features' || resourcePath =~ /.*\\/presentation\\/pages$/ || resourcePath =~ /.*\\/features\\/shared$/)"
+          "when": "explorerResourceIsFolder && (resourceFilename == 'features' || !(resourceFilename =~ /^(modules|presentation|models|bloc|domain|repository|usecases|di|data|sources|repo_impls|entities|repositories)$/))"
         },
         {
           "command": "lazyJack.createCubit",
@@ -218,7 +218,7 @@
         {
           "command": "command_generate_flutter_page",
           "title": "✨Create TypeSafe Page",
-          "when": "explorerResourceIsFolder && resourcePath =~ /.*lib.*/ && !(resourceFilename =~ /^(modules|features|presentation|models|bloc|domain|repository|usecases|di|data|sources|repo_impls|entities)$/)"
+          "when": "explorerResourceIsFolder && resourcePath =~ /.*lib.*/ && !(resourceFilename =~ /^(modules|features|presentation|models|bloc|domain|repository|usecases|di|data|sources|repo_impls|entities|repositories)$/)"
         },
         {
           "command": "graphql_code_gen_fragment_to_dart_type_def",
