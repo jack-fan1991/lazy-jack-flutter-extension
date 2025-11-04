@@ -104,7 +104,7 @@ function setupSideBar(context: vscode.ExtensionContext) {
   sidebarManger.addSideBar(new TypescriptDataProvider())
     .addSideBar(gitDataProvider)
     .addSideBar(new FlutterDataProvider())
-    .addSideBar(new VscodeDataProvider())
+    // .addSideBar(new VscodeDataProvider())
     .registerSideBarCommands(context, "lazy-jack.sidebar_command_onselect")
     .registerSideBar(context)
 }
