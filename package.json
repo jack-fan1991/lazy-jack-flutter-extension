@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.211",
+  "version": "0.0.212",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -204,7 +204,7 @@
         {
           "command": "command_clean_architecture",
           "title": "✨ Create Clean Arch Feature Module",
-          "when": "explorerResourceIsFolder && (resourceFilename == 'features' || !(resourceFilename =~ /^(modules|presentation|models|bloc|domain|repository|usecases|di|data|sources|repo_impls|entities|repositories)$/))"
+          "when": "explorerResourceIsFolder && (  resourcePath =~ /.*features.*/ && !(resourceFilename =~ /^(modules|presentation|models|bloc|domain|repository|usecases|di|data|sources|repo_impls|entities|repositories)$/))"
         },
         {
           "command": "lazyJack.createCubit",
@@ -228,7 +228,7 @@
         },
         {
           "command": "lazyJack.addDataSourceMethod",
-          "when": "explorerResourceIsFolder && resourcePath =~ /.*\\/features\\/.*\\/data$/"
+          "when": "explorerResourceIsFolder && ( resourcePath =~ /.*features.*/ && resourcePath =~ /\\/data/ )"
         },
         {
           "command": "lazyJack.createModuleTemplate",

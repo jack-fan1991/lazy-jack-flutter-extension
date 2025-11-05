@@ -12,6 +12,15 @@ interface ReturnTypeContext {
   imports: string[];
 }
 
+type RepositoryImplCandidate = {
+  filePath: string;
+  featureNameSnakeCase: string;
+};
+
+type RepositoryQuickPickItem = vscode.QuickPickItem & {
+  candidate: RepositoryImplCandidate;
+};
+
 export function registerAddModuleMethod(context: vscode.ExtensionContext) {
   context.subscriptions.push(
     vscode.commands.registerCommand(COMMAND_ID, async (folderUri: vscode.Uri) => {
@@ -26,10 +35,8 @@ export function registerAddModuleMethod(context: vscode.ExtensionContext) {
         return;
       }
 
-      const resolver = new ModuleMethodPathResolver(featureDir);
-      const structureError = validateModuleStructure(resolver);
-      if (structureError) {
-        vscode.window.showErrorMessage(structureError);
+      const resolver = await ModuleMethodPathResolver.create(featureDir);
+      if (!resolver) {
         return;
       }
 
@@ -59,47 +66,39 @@ export function registerAddModuleMethod(context: vscode.ExtensionContext) {
         await ensureMethodAbsent(resolver.dataSourcePath, methodName);
         await ensureMethodAbsent(resolver.remoteDataSourceImplPath, methodName);
         await ensureMethodAbsent(resolver.repositoryImplPath, methodName);
-        if (resolver.mockRepositoryImplPath && fs.existsSync(resolver.mockRepositoryImplPath)) {
-          await ensureMethodAbsent(resolver.mockRepositoryImplPath, methodName);
-        }
+        await ensureMethodAbsent(resolver.mockRepositoryImplPath, methodName);
 
         const domainImports =
           baseReturnType !== 'void'
-            ? [...returnContext.imports, `import '${resolver.getModelImportPath(resolver.domainRepositoryPath, returnContext.baseType)}';`]
-            : returnContext.imports;
+            ? buildImportList(returnContext.imports, resolver.getModelImportPath(resolver.domainRepositoryPath, returnContext.baseType))
+            : [...returnContext.imports];
 
         const dataSourceImports =
           baseReturnType !== 'void'
-            ? [...returnContext.imports, `import '${resolver.getModelImportPath(resolver.dataSourcePath, returnContext.baseType)}';`]
-            : returnContext.imports;
+            ? buildImportList(returnContext.imports, resolver.getModelImportPath(resolver.dataSourcePath, returnContext.baseType))
+            : [...returnContext.imports];
 
         const remoteImports =
           baseReturnType !== 'void'
-            ? [...returnContext.imports, `import '${resolver.getModelImportPath(resolver.remoteDataSourceImplPath, returnContext.baseType)}';`]
-            : returnContext.imports;
+            ? buildImportList(returnContext.imports, resolver.getModelImportPath(resolver.remoteDataSourceImplPath, returnContext.baseType))
+            : [...returnContext.imports];
 
-        const repoImports =
-          baseReturnType !== 'void'
-            ? [
-                ...returnContext.imports,
-                `import '${resolver.getModelImportPath(resolver.repositoryImplPath, returnContext.baseType)}';`,
-                `import '${resolver.getDataSourceImportPath(resolver.repositoryImplPath)}';`,
-              ]
-            : [
-                ...returnContext.imports,
-                `import '${resolver.getDataSourceImportPath(resolver.repositoryImplPath)}';`,
-              ];
+        const repoImports = buildRepoImports(resolver, returnContext.imports, baseReturnType !== 'void' ? returnContext.baseType : undefined);
 
         await addAbstractMethod(resolver.domainRepositoryPath, returnContext.finalReturnType, methodName, domainImports);
-        await addAbstractMethod(resolver.dataSourcePath, returnContext.finalReturnType, methodName, dataSourceImports);
-        await addRemoteMethod(resolver.remoteDataSourceImplPath, returnContext.finalReturnType, methodName, remoteImports);
+        if (resolver.dataSourcePath) {
+          await addAbstractMethod(resolver.dataSourcePath, returnContext.finalReturnType, methodName, dataSourceImports);
+        }
+        if (resolver.remoteDataSourceImplPath) {
+          await addRemoteMethod(resolver.remoteDataSourceImplPath, returnContext.finalReturnType, methodName, remoteImports);
+        }
         await addRepositoryMethod(resolver.repositoryImplPath, returnContext.finalReturnType, methodName, repoImports, resolver);
 
-        if (resolver.mockRepositoryImplPath && fs.existsSync(resolver.mockRepositoryImplPath)) {
+        if (resolver.mockRepositoryImplPath) {
           const mockImports =
             baseReturnType !== 'void'
-              ? [...returnContext.imports, `import '${resolver.getModelImportPath(resolver.mockRepositoryImplPath, returnContext.baseType)}';`]
-              : returnContext.imports;
+              ? buildImportList(returnContext.imports, resolver.getModelImportPath(resolver.mockRepositoryImplPath, returnContext.baseType))
+              : [...returnContext.imports];
           await addMockRepositoryMethod(resolver.mockRepositoryImplPath, returnContext.finalReturnType, methodName, mockImports);
         }
 
@@ -127,21 +126,6 @@ function isValidModuleFeatureDir(dirPath: string): boolean {
     return false;
   }
   return dirPath.includes(`${path.sep}lib${path.sep}`);
-}
-
-function validateModuleStructure(resolver: ModuleMethodPathResolver): string | undefined {
-  const requiredPaths = [
-    resolver.domainRepositoryPath,
-    resolver.dataSourcePath,
-    resolver.remoteDataSourceImplPath,
-    resolver.repositoryImplPath,
-  ];
-
-  const missing = requiredPaths.filter((p) => !fs.existsSync(p));
-  if (missing.length > 0) {
-    return `模組結構不完整，缺少: ${missing.map((m) => path.basename(m)).join(', ')}`;
-  }
-  return undefined;
 }
 
 function resolveReturnType(baseType: string): ReturnTypeContext {
@@ -188,48 +172,102 @@ class ModuleMethodPathResolver {
   public readonly featureNameSnakeCase: string;
   public readonly featureNamePascalCase: string;
 
-  public readonly dataDir: string;
-  public readonly dataSourcesDir: string;
-  public readonly dataRepositoriesDir: string;
   public readonly domainRepositoryPath: string;
-  public readonly dataSourcePath: string;
-  public readonly remoteDataSourceImplPath: string;
+  public readonly dataSourcePath?: string;
+  public readonly remoteDataSourceImplPath?: string;
   public readonly repositoryImplPath: string;
   public readonly mockRepositoryImplPath?: string;
   public readonly modelsDir: string;
+  public readonly dataSourceClassNames: string[];
 
-  public readonly dataSourceClassName: string;
+  private constructor(params: {
+    featureDir: string;
+    featureNameSnakeCase: string;
+    featureNamePascalCase: string;
+    domainRepositoryPath: string;
+    dataSourcePath?: string;
+    remoteDataSourceImplPath?: string;
+    repositoryImplPath: string;
+    mockRepositoryImplPath?: string;
+    modelsDir: string;
+    dataSourceClassNames: string[];
+  }) {
+    this.featureDir = params.featureDir;
+    this.featureNameSnakeCase = params.featureNameSnakeCase;
+    this.featureNamePascalCase = params.featureNamePascalCase;
 
-  constructor(featureDir: string) {
-    this.featureDir = featureDir;
-    this.featureNameSnakeCase = path.basename(featureDir);
-    this.featureNamePascalCase = changeCase.pascalCase(this.featureNameSnakeCase);
-
-    this.dataDir = path.join(featureDir, 'data');
-    this.dataSourcesDir = this.resolveExistingDir(this.dataDir, ['sources', 'sources']);
-    this.dataRepositoriesDir = this.resolveExistingDir(this.dataDir, ['repositories', 'repo_impls']);
-
-    this.domainRepositoryPath = path.join(featureDir, 'domain', 'repositories', `${this.featureNameSnakeCase}_repository.dart`);
-    this.dataSourcePath = path.join(this.dataSourcesDir, `${this.featureNameSnakeCase}_data_source.dart`);
-    this.remoteDataSourceImplPath = path.join(this.dataSourcesDir, `${this.featureNameSnakeCase}_remote_data_source_impl.dart`);
-    this.repositoryImplPath = path.join(this.dataRepositoriesDir, `${this.featureNameSnakeCase}_repository_impl.dart`);
-    const mockPath = path.join(this.dataRepositoriesDir, 'mock', `mock_${this.featureNameSnakeCase}_repository_impl.dart`);
-    if (fs.existsSync(mockPath)) {
-      this.mockRepositoryImplPath = mockPath;
-    }
-    this.modelsDir = path.join(this.dataDir, 'models');
-
-    this.dataSourceClassName = `${this.featureNamePascalCase}DataSource`;
+    this.domainRepositoryPath = params.domainRepositoryPath;
+    this.dataSourcePath = params.dataSourcePath;
+    this.remoteDataSourceImplPath = params.remoteDataSourceImplPath;
+    this.repositoryImplPath = params.repositoryImplPath;
+    this.mockRepositoryImplPath = params.mockRepositoryImplPath;
+    this.modelsDir = params.modelsDir;
+    this.dataSourceClassNames = params.dataSourceClassNames;
   }
 
-  private resolveExistingDir(baseDir: string, candidates: string[]): string {
-    for (const candidate of candidates) {
-      const dir = path.join(baseDir, candidate);
-      if (fs.existsSync(dir)) {
-        return dir;
-      }
+  public static async create(featureDir: string): Promise<ModuleMethodPathResolver | undefined> {
+    const dataDir = path.join(featureDir, 'data');
+    const domainDir = path.join(featureDir, 'domain');
+
+    if (!directoryExists(dataDir) || !directoryExists(domainDir)) {
+      vscode.window.showErrorMessage('模組缺少 data 或 domain 目錄，無法新增方法');
+      return undefined;
     }
-    return path.join(baseDir, candidates[0]);
+
+    const repoCandidates = collectRepositoryImplCandidates(dataDir);
+    if (repoCandidates.length === 0) {
+      vscode.window.showErrorMessage('未找到 *_repository_impl.dart，請檢查 data/repositories 或 data/repo_impls');
+      return undefined;
+    }
+
+    let selected = repoCandidates[0];
+    if (repoCandidates.length > 1) {
+      const pickItems: RepositoryQuickPickItem[] = repoCandidates.map((candidate) => ({
+        label: path.basename(candidate.filePath),
+        description: path.relative(featureDir, candidate.filePath),
+        detail: `${changeCase.pascalCase(candidate.featureNameSnakeCase)}RepositoryImpl`,
+        candidate,
+      }));
+
+      const pick = await vscode.window.showQuickPick(pickItems, {
+        placeHolder: '選擇要更新的 Repository 實作',
+      });
+
+      if (!pick) {
+        return undefined;
+      }
+      selected = pick.candidate;
+    }
+
+    const featureNameSnakeCase = selected.featureNameSnakeCase;
+    const featureNamePascalCase = changeCase.pascalCase(featureNameSnakeCase);
+    const repositoryImplPath = selected.filePath;
+
+    const domainRepositoryPath = resolveDomainRepositoryPath(domainDir, featureNameSnakeCase);
+    if (!domainRepositoryPath || !fs.existsSync(domainRepositoryPath)) {
+      vscode.window.showErrorMessage(`找不到 ${featureNameSnakeCase}_repository.dart，請確認 domain 目錄`);
+      return undefined;
+    }
+
+    const dataSourcePath = findFileRecursively(dataDir, `${featureNameSnakeCase}_data_source.dart`);
+    const remoteDataSourceImplPath = findFileRecursively(dataDir, `${featureNameSnakeCase}_remote_data_source_impl.dart`);
+    const mockRepositoryImplPath = findMockRepositoryImplPath(repositoryImplPath, featureNameSnakeCase);
+
+    const modelsDir = path.join(dataDir, 'models');
+    const dataSourceClassNames = buildDataSourceClassNames(featureNamePascalCase);
+
+    return new ModuleMethodPathResolver({
+      featureDir,
+      featureNameSnakeCase,
+      featureNamePascalCase,
+      domainRepositoryPath,
+      dataSourcePath: dataSourcePath ?? undefined,
+      remoteDataSourceImplPath: remoteDataSourceImplPath ?? undefined,
+      repositoryImplPath,
+      mockRepositoryImplPath: mockRepositoryImplPath ?? undefined,
+      modelsDir,
+      dataSourceClassNames,
+    });
   }
 
   public getModelPath(baseTypeName: string): string {
@@ -237,13 +275,19 @@ class ModuleMethodPathResolver {
     return path.join(this.modelsDir, fileName);
   }
 
-  public getModelImportPath(importerPath: string, modelTypeName: string): string {
+  public getModelImportPath(importerPath: string | undefined, modelTypeName: string): string | undefined {
+    if (!importerPath) {
+      return undefined;
+    }
     const modelPath = this.getModelPath(modelTypeName);
     const importerDir = path.dirname(importerPath);
     return path.relative(importerDir, modelPath).replace(/\\/g, '/');
   }
 
-  public getDataSourceImportPath(importerPath: string): string {
+  public getDataSourceImportPath(importerPath: string): string | undefined {
+    if (!this.dataSourcePath) {
+      return undefined;
+    }
     const importerDir = path.dirname(importerPath);
     return path.relative(importerDir, this.dataSourcePath).replace(/\\/g, '/');
   }
@@ -261,7 +305,10 @@ function ensureModelFile(resolver: ModuleMethodPathResolver, typeName: string) {
   fs.writeFileSync(modelPath, content);
 }
 
-async function ensureMethodAbsent(filePath: string, methodName: string) {
+async function ensureMethodAbsent(filePath: string | undefined, methodName: string) {
+  if (!filePath || !fs.existsSync(filePath)) {
+    return;
+  }
   const uri = vscode.Uri.file(filePath);
   const document = await vscode.workspace.openTextDocument(uri);
   const originalContent = document.getText();
@@ -330,7 +377,7 @@ async function addRepositoryMethod(
   imports: string[],
   resolver: ModuleMethodPathResolver,
 ) {
-  const dataSourceIdentifier = await findDataSourceIdentifier(filePath, resolver.dataSourceClassName);
+  const dataSourceIdentifier = await findDataSourceIdentifier(filePath, resolver.dataSourceClassNames);
   const callStatement = dataSourceIdentifier
     ? `    return ${dataSourceIdentifier}.${methodName}();\n`
     : `    // TODO: 呼叫資料來源\n    throw UnimplementedError('${methodName} 尚未實作');\n`;
@@ -354,18 +401,20 @@ async function addMockRepositoryMethod(filePath: string, returnType: string, met
   await modifyFile(filePath, imports, method);
 }
 
-async function findDataSourceIdentifier(filePath: string, className: string): Promise<string | undefined> {
+async function findDataSourceIdentifier(filePath: string, classNames: string[]): Promise<string | undefined> {
   try {
     const content = fs.readFileSync(filePath, 'utf8');
-    const regex = new RegExp(`final\\s+${className}\\s+(\\w+);`);
-    const match = content.match(regex);
-    if (match && match[1]) {
-      return match[1];
+    for (const className of classNames) {
+      const regex = new RegExp(`final\\s+${className}\\s+(\\w+);`);
+      const match = content.match(regex);
+      if (match && match[1]) {
+        return match[1];
+      }
     }
   } catch {
     return undefined;
   }
-  return 'remote';
+  return classNames.length > 0 ? 'remote' : undefined;
 }
 
 function normalizeImport(importValue: string): string {
@@ -375,4 +424,147 @@ function normalizeImport(importValue: string): string {
   }
   const cleaned = trimmed.replace(/^['"]|['"]$/g, '');
   return `import '${cleaned}';`;
+}
+
+function collectRepositoryImplCandidates(dataDir: string): RepositoryImplCandidate[] {
+  const candidateRoots = [
+    path.join(dataDir, 'repo_impls'),
+    path.join(dataDir, 'repositories'),
+    path.join(dataDir, 'data_repo_impls'),
+  ];
+
+  const results: RepositoryImplCandidate[] = [];
+  const visited = new Set<string>();
+
+  for (const root of candidateRoots) {
+    collectRepositoryImplFromDir(root, results, visited);
+  }
+
+  return results;
+}
+
+function collectRepositoryImplFromDir(dirPath: string, bucket: RepositoryImplCandidate[], visited: Set<string>) {
+  if (!directoryExists(dirPath)) {
+    return;
+  }
+
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      collectRepositoryImplFromDir(fullPath, bucket, visited);
+      continue;
+    }
+
+    if (!entry.isFile() || !entry.name.endsWith('.dart')) {
+      continue;
+    }
+
+    const match = entry.name.match(/^(.+)_repository_impl\.dart$/);
+    if (!match) {
+      continue;
+    }
+
+    if (entry.name.includes('mock_')) {
+      continue;
+    }
+
+    const normalized = path.normalize(fullPath);
+    if (visited.has(normalized)) {
+      continue;
+    }
+    visited.add(normalized);
+
+    bucket.push({
+      filePath: normalized,
+      featureNameSnakeCase: match[1],
+    });
+  }
+}
+
+function resolveDomainRepositoryPath(domainDir: string, featureNameSnakeCase: string): string | undefined {
+  const targetFileName = `${featureNameSnakeCase}_repository.dart`;
+  const defaultPath = path.join(domainDir, 'repositories', targetFileName);
+
+  if (fs.existsSync(defaultPath)) {
+    return defaultPath;
+  }
+
+  return findFileRecursively(domainDir, targetFileName);
+}
+
+function findFileRecursively(dirPath: string, targetFileName: string): string | undefined {
+  if (!directoryExists(dirPath)) {
+    return undefined;
+  }
+
+  const entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  for (const entry of entries) {
+    const fullPath = path.join(dirPath, entry.name);
+    if (entry.isDirectory()) {
+      const nested = findFileRecursively(fullPath, targetFileName);
+      if (nested) {
+        return nested;
+      }
+    } else if (entry.isFile() && entry.name === targetFileName) {
+      return fullPath;
+    }
+  }
+  return undefined;
+}
+
+function directoryExists(dirPath: string): boolean {
+  try {
+    return fs.existsSync(dirPath) && fs.statSync(dirPath).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
+function findMockRepositoryImplPath(repositoryImplPath: string, featureNameSnakeCase: string): string | undefined {
+  const repoDir = path.dirname(repositoryImplPath);
+  const parentDir = path.dirname(repoDir);
+  const candidates = [
+    path.join(repoDir, `mock_${featureNameSnakeCase}_repository_impl.dart`),
+    path.join(repoDir, 'mock', `mock_${featureNameSnakeCase}_repository_impl.dart`),
+    path.join(parentDir, 'mock', `mock_${featureNameSnakeCase}_repository_impl.dart`),
+  ];
+
+  for (const candidate of candidates) {
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
+  }
+  return undefined;
+}
+
+function buildImportList(base: string[], extra?: string): string[] {
+  const imports = [...base];
+  if (extra) {
+    imports.push(`import '${extra}';`);
+  }
+  return imports;
+}
+
+function buildRepoImports(resolver: ModuleMethodPathResolver, baseImports: string[], modelType?: string): string[] {
+  const imports = [...baseImports];
+  if (modelType) {
+    const modelImport = resolver.getModelImportPath(resolver.repositoryImplPath, modelType);
+    if (modelImport) {
+      imports.push(`import '${modelImport}';`);
+    }
+  }
+  const dataSourceImport = resolver.getDataSourceImportPath(resolver.repositoryImplPath);
+  if (dataSourceImport) {
+    imports.push(`import '${dataSourceImport}';`);
+  }
+  return imports;
+}
+
+function buildDataSourceClassNames(featureNamePascalCase: string): string[] {
+  return [
+    `${featureNamePascalCase}DataSource`,
+    `${featureNamePascalCase}RemoteDataSource`,
+    `${featureNamePascalCase}LocalDataSource`,
+  ];
 }

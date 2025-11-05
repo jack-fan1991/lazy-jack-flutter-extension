@@ -26,12 +26,12 @@ import { registerToGqlFragmentToDart } from './vscode_explore_menu/graphql_fragm
 import { registerCreateRouteConfiguration, registerRouteConfigurationWatcher } from './vscode_explorer/flutter/page_and_route_generate/generate_route_temp';
 import { registerFlutterPageGenerate } from './vscode_explorer/flutter/page_and_route_generate/generate_flutter_page';
 import { runCommand } from './utils/src/terminal_utils/terminal_utils';
-import { registerAddDataSourceMethod } from './vscode_explorer/flutter/data_source_generate/add_data_source_method';
 import { registerCleanArchitectureGenerate } from './vscode_explorer/flutter/clean_architecture_generate/generate_clean_architecture_feature';
 import { registerCleanArchitecturePageGenerate } from './vscode_explorer/flutter/clean_architecture_generate/generate_clean_architecture_page';
 import { registerCreateCubit } from './vscode_explorer/flutter/clean_architecture_generate/generate_clean_architecture_cubit';
 import { registerCreateModuleTemplate } from './vscode_explorer/flutter/clean_module_generate/create_module_template';
 import { registerAddModuleMethod } from './vscode_explorer/flutter/clean_module_generate/add_module_method';
+import { registerAddDataSourceMethod } from './vscode_explorer/flutter/clean_architecture_generate/add_data_source_method';
 
 export let sidebarManger = new SidebarManager()
 export class APP {
