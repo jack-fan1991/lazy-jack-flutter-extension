@@ -104,13 +104,7 @@ export function registerAddModuleMethod(context: vscode.ExtensionContext) {
 
         vscode.window.showInformationMessage(`✅ 已於 ${resolver.featureNamePascalCase} 模組新增 ${methodName} 方法`);
 
-        if (baseReturnType !== 'void') {
-          const modelUri = vscode.Uri.file(resolver.getModelPath(returnContext.baseType));
-          await vscode.window.showTextDocument(modelUri);
-        } else {
-          const repoUri = vscode.Uri.file(resolver.domainRepositoryPath);
-          await vscode.window.showTextDocument(repoUri);
-        }
+        await openWorkingFiles(resolver, baseReturnType, returnContext.baseType, methodName);
         await reFormat();
       } catch (error: any) {
         console.error(error);
@@ -567,4 +561,74 @@ function buildDataSourceClassNames(featureNamePascalCase: string): string[] {
     `${featureNamePascalCase}RemoteDataSource`,
     `${featureNamePascalCase}LocalDataSource`,
   ];
+}
+
+async function openWorkingFiles(
+  resolver: ModuleMethodPathResolver,
+  baseReturnType: string,
+  baseTypeName: string,
+  methodName: string,
+) {
+  const leftUri =
+    baseReturnType !== 'void'
+      ? vscode.Uri.file(resolver.getModelPath(baseTypeName))
+      : resolver.dataSourcePath
+        ? vscode.Uri.file(resolver.dataSourcePath)
+        : vscode.Uri.file(resolver.domainRepositoryPath);
+  const leftDoc = await vscode.workspace.openTextDocument(leftUri);
+  await vscode.window.showTextDocument(leftDoc, { viewColumn: vscode.ViewColumn.One, preview: false });
+
+  if (!resolver.remoteDataSourceImplPath) {
+    return;
+  }
+  const remoteUri = vscode.Uri.file(resolver.remoteDataSourceImplPath);
+  const remoteDoc = await vscode.workspace.openTextDocument(remoteUri);
+  const remoteEditor = await vscode.window.showTextDocument(remoteDoc, {
+    viewColumn: vscode.ViewColumn.Two,
+    preview: false,
+  });
+  highlightMethodInEditor(remoteEditor, methodName);
+}
+
+function highlightMethodInEditor(editor: vscode.TextEditor, methodName: string) {
+  const document = editor.document;
+  const content = document.getText();
+  const methodIndex = content.indexOf(`${methodName}(`);
+  if (methodIndex === -1) {
+    return;
+  }
+
+  let startIndex = content.lastIndexOf('@override', methodIndex);
+  if (startIndex === -1) {
+    startIndex = methodIndex;
+  }
+
+  const braceStart = content.indexOf('{', methodIndex);
+  if (braceStart === -1) {
+    const fallbackRange = new vscode.Range(
+      document.positionAt(startIndex),
+      document.positionAt(methodIndex + methodName.length + 2),
+    );
+    editor.selection = new vscode.Selection(fallbackRange.start, fallbackRange.end);
+    editor.revealRange(fallbackRange, vscode.TextEditorRevealType.InCenter);
+    return;
+  }
+
+  let braceDepth = 0;
+  let endIndex = braceStart;
+  for (let i = braceStart; i < content.length; i++) {
+    if (content[i] === '{') {
+      braceDepth++;
+    } else if (content[i] === '}') {
+      braceDepth--;
+      if (braceDepth === 0) {
+        endIndex = i + 1;
+        break;
+      }
+    }
+  }
+
+  const range = new vscode.Range(document.positionAt(startIndex), document.positionAt(endIndex));
+  editor.selection = new vscode.Selection(range.start, range.end);
+  editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
 }
