@@ -6,20 +6,39 @@ import { reFormat } from '../../../utils/src/vscode_utils/activate_editor_utils'
 import * as changeCase from "change-case";
 import { APP } from '../../../extension';
 import { getRootPath } from '../../../utils/src/vscode_utils/vscode_env_utils';
-import { openEditor, readFileToText } from '../../../utils/src/vscode_utils/editor_utils';
+import { readFileToText } from '../../../utils/src/vscode_utils/editor_utils';
 
-const command_create_routeConfiguration = "command_create_routeConfiguration"
-export const route_configuration_file_name = "route_configuration.dart"
-export const route_page_args_file_name = "page_args.dart"
-export const valid_routes_file_name = "valid_routes.dart"
+const command_create_routeConfiguration = "command_create_routeConfiguration";
+export const route_configuration_file_name = "route_configuration.dart";
+export const route_page_args_file_name = "page_args.dart";
+export const valid_routes_file_name = "valid_routes.dart";
+
+export interface RouteConfigurationCommandOptions {
+    openEditor?: boolean;
+}
+
+export interface RouteConfigurationResult {
+    routeFilePath: string;
+    handlerSnippet: string;
+    routeCaseLabel: string;
+}
 
 export function registerCreateRouteConfiguration(context: vscode.ExtensionContext) {
-    context.subscriptions.push(vscode.commands.registerCommand(command_create_routeConfiguration, async (routeName: string, routeParam: string, importText: string, widgetName: string, mainClass: string, routeArg: string) => {
+    context.subscriptions.push(vscode.commands.registerCommand(command_create_routeConfiguration, async (
+        routeName: string,
+        routeParam: string,
+        importText: string,
+        widgetName: string,
+        mainClass: string,
+        routeArg: string,
+        options?: RouteConfigurationCommandOptions
+    ): Promise<RouteConfigurationResult | undefined> => {
         let root = getRootPath()
         const routeDir = `${root}/lib/route`;
         const routeConfigurationFlePath = `${routeDir}/${route_configuration_file_name}`;
         const pageArgFilePath = `${routeDir}/${route_page_args_file_name}`;
         const validRoutesFilePath = `${routeDir}/${valid_routes_file_name}`;
+        const shouldOpenEditor = options?.openEditor ?? true;
 
         // 確保目錄存在
         if (!fs.existsSync(routeDir)) {
@@ -31,18 +50,27 @@ export function registerCreateRouteConfiguration(context: vscode.ExtensionContex
             await updateAndFormatFile(pageArgFilePath, createPageArgsFile());
         }
 
+        const routeCaseLabel = `case ROUTE_${changeCase.constantCase(routeName)}:`;
+        let handlerSnippet = '';
+
         // 如果配置文件不存在，創建新文件
         if (!fs.existsSync(routeConfigurationFlePath)) {
             const newContent = createRouteConfiguration(routeName, routeParam, importText, widgetName, mainClass, routeArg)
             const newRouteHandler = generateRouteHandler(routeName, routeParam, widgetName, routeArg)
-            await updateAndFormatFile(routeConfigurationFlePath, newContent, true, newRouteHandler);
+            handlerSnippet = newRouteHandler;
+            await updateAndFormatFile(routeConfigurationFlePath, newContent, shouldOpenEditor, newRouteHandler);
         } else {
             // 更新現有的路由配置文件
-            await updateExistingRouteConfiguration(routeConfigurationFlePath, routeName, routeParam, importText, widgetName, mainClass, routeArg);
+            handlerSnippet = await updateExistingRouteConfiguration(routeConfigurationFlePath, routeName, routeParam, importText, widgetName, mainClass, routeArg, shouldOpenEditor);
         }
 
         // 更新 valid_routes.dart
         await updateValidRoutesFile(validRoutesFilePath, routeConfigurationFlePath);
+        return {
+            routeFilePath: routeConfigurationFlePath,
+            handlerSnippet,
+            routeCaseLabel,
+        };
     }));
 }
 
@@ -53,8 +81,9 @@ async function updateExistingRouteConfiguration(
     importText: string,
     widgetName: string,
     mainClass: string,
-    routeArg: string
-) {
+    routeArg: string,
+    openInEditor: boolean
+): Promise<string> {
     let text = readFileToText(filePath);
     let lines = text.split('\n');
 
@@ -81,7 +110,8 @@ async function updateExistingRouteConfiguration(
     // 重新生成文件內容
     const newContent = generateCompleteRouteFile(parseResult);
 
-    await updateAndFormatFile(filePath, newContent, true, newRouteHandler);
+    await updateAndFormatFile(filePath, newContent, openInEditor, newRouteHandler);
+    return newRouteHandler;
 }
 
 function parseRouteFile(lines: string[]) {

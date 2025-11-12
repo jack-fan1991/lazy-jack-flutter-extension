@@ -4,6 +4,7 @@ import { CustomCubitConfig } from '../../config/custom_cubit_config_provider';
 
 interface ReplaceOptions {
     lineNumber?: number;
+    viewFileUri?: vscode.Uri;
 }
 
 /**
@@ -20,13 +21,14 @@ export async function replaceCubitWithCustom(
         return false;
     }
 
-    const classMatch = line.text.match(/class\s+\w+\s+extends\s+Cubit<(\w+)>/);
+    const classMatch = line.text.match(/class\s+(\w+)\s+extends\s+Cubit<(\w+)>/);
     if (!classMatch) {
         vscode.window.showWarningMessage('目前 Cubit 宣告不符合預期格式');
         return false;
     }
 
-    const stateName = classMatch[1];
+    const cubitClassName = classMatch[1];
+    const stateName = classMatch[2];
     const uiModelName = stateName.replace(/State$/, 'UiModel');
     const stateFileName = toSnakeCase(stateName) + '.dart';
 
@@ -61,7 +63,19 @@ export async function replaceCubitWithCustom(
     }
     await document.save();
 
-    // 5. 刪除 state 檔案
+    // 5. 覆寫對應的 View BlocBuilder
+    if (options?.viewFileUri) {
+        await updateViewBlocBuilder({
+            viewUri: options.viewFileUri,
+            originalCubitName: cubitClassName,
+            originalStateName: stateName,
+            targetCubitGeneric: buildGenericType(cubitConfig.name, uiModelName),
+            targetStateGeneric: buildGenericType(cubitConfig.stateName, uiModelName),
+            importPath: cubitConfig.import,
+        });
+    }
+
+    // 6. 刪除 state 檔案
     const stateFilePath = path.join(path.dirname(document.uri.fsPath), stateFileName);
     try {
         await vscode.workspace.fs.delete(vscode.Uri.file(stateFilePath));
@@ -70,6 +84,46 @@ export async function replaceCubitWithCustom(
     }
 
     return true;
+}
+
+interface BlocBuilderUpdateOptions {
+    viewUri: vscode.Uri;
+    originalCubitName: string;
+    originalStateName: string;
+    targetCubitGeneric: string;
+    targetStateGeneric: string;
+    importPath: string;
+}
+
+async function updateViewBlocBuilder(options: BlocBuilderUpdateOptions): Promise<void> {
+    if (!options.targetCubitGeneric || !options.targetStateGeneric) {
+        return;
+    }
+
+    const viewDocument = await vscode.workspace.openTextDocument(options.viewUri);
+    const viewText = viewDocument.getText();
+    const originalPattern = new RegExp(
+        `BlocBuilder<\\s*${escapeRegExp(options.originalCubitName)}\\s*,\\s*${escapeRegExp(options.originalStateName)}\\s*>`
+    );
+
+    const match = originalPattern.exec(viewText);
+    if (!match) {
+        return;
+    }
+
+    const replacement = `BlocBuilder<${options.targetCubitGeneric}, ${options.targetStateGeneric}>`;
+    const edit = new vscode.WorkspaceEdit();
+    const range = new vscode.Range(
+        viewDocument.positionAt(match.index),
+        viewDocument.positionAt(match.index + match[0].length),
+    );
+    edit.replace(options.viewUri, range, replacement);
+    addImportIfNeeded(viewDocument, edit, options.importPath);
+
+    const applied = await vscode.workspace.applyEdit(edit);
+    if (applied) {
+        await viewDocument.save();
+    }
 }
 
 function resolveCubitLine(document: vscode.TextDocument, lineNumber?: number): vscode.TextLine | undefined {
@@ -142,6 +196,19 @@ function extractImportPath(importStatement: string): string | undefined {
 
 function escapeRegExp(value: string): string {
     return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function buildGenericType(typeName: string, uiModelName: string): string {
+    const trimmed = (typeName ?? '').trim();
+    if (trimmed.length === 0) {
+        return '';
+    }
+
+    if (trimmed.includes('<')) {
+        return trimmed;
+    }
+
+    return `${trimmed}<${uiModelName}>`;
 }
 
 function toSnakeCase(value: string): string {

@@ -111,17 +111,20 @@ transaction/
       "lazy-jack-flutter-extension.customCubit": [
         {
           "name": "BetterCubit",
-          "import": "package:mobile_core/better_cubit.dart"
+          "import": "package:mobile_core/better_cubit.dart",
+          "stateName": "AsyncState"
         },
         {
           "name": "FlowCubit",
-          "import": "import 'package:flow_core/flow_cubit.dart';"
+          "import": "import 'package:flow_core/flow_cubit.dart';",
+          "stateName": "FlowState"
         }
       ]
     }
     ```
     - `name`：Quick Fix 會顯示的自訂 Cubit 類別名稱。
     - `import`：可填完整 `import '...';` 或純路徑，外掛會自動補齊語句並避免重覆插入。
+    - `stateName`：自訂 Cubit 搭配的狀態類別（產生器會套用為 BlocBuilder 的 state 型別）。
     - 可建立多個項目，Quick Fix 會同時列出所有自訂 Cubit 供選擇。
 
 

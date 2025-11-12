@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.213",
+  "version": "0.0.214",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -37,10 +37,14 @@
               "import": {
                 "type": "string",
                 "description": "Import path for the Cubit class, e.g., 'package:xxx/xxx.dart'."
+              },
+              "stateName": {
+                "type": "string",
+                "description": "State class name paired with the Cubit, e.g., 'AsyncState'."
               }
             }
           },
-          "description": "Provide the custom Cubit name and import path used by Quick Fix."
+          "description": "Provide custom Cubit definitions plus their imports and states for Quick Fix and generators."
         },
         "lazy-jack-flutter-extension.resultWrapper": {
           "type": "object",

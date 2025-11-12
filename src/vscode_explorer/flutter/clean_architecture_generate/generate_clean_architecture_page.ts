@@ -4,7 +4,9 @@ import * as path from 'path';
 import * as changeCase from "change-case";
 import { APP } from '../../../extension';
 import { reFormat } from '../../../utils/src/vscode_utils/activate_editor_utils';
-import { route_page_args_file_name } from '../page_and_route_generate/generate_route_temp';
+import { RouteConfigurationResult, route_page_args_file_name } from '../page_and_route_generate/generate_route_temp';
+import { customCubitConfigProvider, CustomCubitConfig } from '../../../config/custom_cubit_config_provider';
+import { replaceCubitWithCustom } from '../../../helper/dart/custom_cubit_replacer';
 
 
 const COMMAND_ID = "lazyJack.generateCleanArchitecturePage";
@@ -28,6 +30,21 @@ export function registerCleanArchitecturePageGenerate(context: vscode.ExtensionC
         }
 
         const pageName = changeCase.snakeCase(pageNameInput);
+
+        const registerRouteChoice = await vscode.window.showQuickPick(
+            ['完成後註冊路由', '暫時不註冊'],
+            {
+                placeHolder: '是否在產生完成後自動註冊路由?',
+                title: 'Clean Architecture 產生器',
+            }
+        );
+
+        if (!registerRouteChoice) {
+            vscode.window.showWarningMessage('已取消建立頁面');
+            return;
+        }
+
+        const shouldRegisterRoute = registerRouteChoice === '完成後註冊路由';
 
         const entitiesChoice = await vscode.window.showQuickPick(
             ['使用 Entities 層', '不使用 Entities 層'],
@@ -53,22 +70,10 @@ export function registerCleanArchitecturePageGenerate(context: vscode.ExtensionC
             await vscode.window.showTextDocument(uri);
             await reFormat();
             vscode.window.showInformationMessage(`✅ Page 模組 for "${resolver.pageNamePascalCase}" 建立成功！`);
-            vscode.window.showInformationMessage(`💡 是否要將 ${resolver.pageNamePascalCase}Page 註冊為路由?`, '是', '否').then((value) => {
-                if (value === '是') {
-                    const importPathValue = path.join(resolver.libDir, 'pages', `${resolver.pageNameSnakeCase}_page.dart`).replace(/\\/g, '/');
-                    const importStatement = `import 'package:${APP.flutterLibName}/${importPathValue}';`;
-                    const argType = `Route${resolver.pageNamePascalCase}PageArgs`;
-                    vscode.commands.executeCommand(
-                        "command_create_routeConfiguration",
-                        resolver.pageNamePascalCase,
-                        `${resolver.pageNamePascalCase}Page.routeName`,
-                        importStatement,
-                        `${resolver.pageNamePascalCase}Page`,
-                        resolver.pageNamePascalCase,
-                        argType
-                    );
-                }
-            });
+            await promptCustomCubitReplacement(resolver);
+            if (shouldRegisterRoute) {
+                await registerRoute(resolver);
+            }
 
         } catch (err: any) {
             console.error(err);
@@ -101,6 +106,115 @@ function createPageFiles(resolver: PagePathResolver) {
         fs.writeFileSync(resolver.entityPath, getDomainEntityTemplate(resolver));
     }
     fs.writeFileSync(resolver.uiModelPath, getPresentationUiModelTemplate(resolver));
+}
+
+async function registerRoute(resolver: PagePathResolver): Promise<void> {
+    const importPathValue = path.join(
+        resolver.libDir,
+        'pages',
+        `${resolver.pageNameSnakeCase}_page.dart`
+    ).replace(/\\/g, '/');
+    const importStatement = `import 'package:${APP.flutterLibName}/${importPathValue}';`;
+    const argType = `Route${resolver.pageName}Args`;
+
+    const result = await vscode.commands.executeCommand<RouteConfigurationResult>(
+        "command_create_routeConfiguration",
+        resolver.pageNamePascalCase,
+        `${resolver.pageName}.routeName`,
+        importStatement,
+        resolver.pageName,
+        resolver.pageNamePascalCase,
+        argType,
+        { openEditor: false }
+    );
+
+    if (!result) {
+        return;
+    }
+
+    const viewAction = '檢視路由';
+    vscode.window.showInformationMessage('路由設定已更新', viewAction).then(async (selection) => {
+        if (selection === viewAction) {
+            await openRoutePreview(result);
+        }
+    });
+}
+
+async function openRoutePreview(result: RouteConfigurationResult): Promise<void> {
+    try {
+        const document = await vscode.workspace.openTextDocument(vscode.Uri.file(result.routeFilePath));
+        const editor = await vscode.window.showTextDocument(document, { preview: false });
+        const text = document.getText();
+
+        let target = result.handlerSnippet;
+        let offset = text.indexOf(target);
+
+        if (offset === -1) {
+            target = result.routeCaseLabel;
+            offset = text.indexOf(target);
+        }
+
+        if (offset === -1) {
+            vscode.window.showWarningMessage('無法定位新路由，請手動檢視 route_configuration.dart');
+            return;
+        }
+
+        const start = document.positionAt(offset);
+        const end = document.positionAt(offset + target.length);
+        const range = new vscode.Range(start, end);
+        editor.selection = new vscode.Selection(range.start, range.end);
+        editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
+    } catch (error) {
+        vscode.window.showErrorMessage(`無法開啟 RouteConfiguration: ${(error as Error).message}`);
+    }
+}
+
+async function promptCustomCubitReplacement(resolver: PagePathResolver): Promise<void> {
+    const customCubits = customCubitConfigProvider();
+    if (customCubits.length === 0) {
+        return;
+    }
+
+    if (!fs.existsSync(resolver.cubitPath)) {
+        return;
+    }
+
+    const quickPickItems: CustomCubitQuickPickItem[] = [
+        {
+            label: '維持預設 Cubit',
+            description: '不進行自訂替換',
+            config: null,
+        },
+        ...customCubits.map(config => ({
+            label: config.name,
+            description: config.import,
+            config,
+        })),
+    ];
+
+    const picked = await vscode.window.showQuickPick(quickPickItems, {
+        placeHolder: '是否改用自訂 Cubit 實作?',
+    });
+
+    if (!picked || !picked.config) {
+        return;
+    }
+
+    try {
+        const cubitDocument = await vscode.workspace.openTextDocument(vscode.Uri.file(resolver.cubitPath));
+        const success = await replaceCubitWithCustom(cubitDocument, picked.config, {
+            viewFileUri: vscode.Uri.file(resolver.viewPath),
+        });
+        if (success) {
+            vscode.window.showInformationMessage(`已使用 ${picked.config.name} 取代預設 Cubit`);
+        }
+    } catch (error) {
+        vscode.window.showErrorMessage(`自訂 Cubit 替換失敗: ${(error as Error).message}`);
+    }
+}
+
+interface CustomCubitQuickPickItem extends vscode.QuickPickItem {
+    config: CustomCubitConfig | null;
 }
 
 
@@ -353,7 +467,7 @@ class ${r.cubitName} extends Cubit<${r.stateName}> {
   Future<void> fetch(String id) async {
     emit(const ${r.stateName}.loading());
     try {
-      final featureEntity = await _get${r.featureNamePascalCase}(id);
+      final featureEntity = await _get${r.featureNamePascalCase}.call(id);
       final entity = ${r.entityName}(
         id: featureEntity.id,
         name: featureEntity.name,
@@ -384,7 +498,7 @@ class ${r.cubitName} extends Cubit<${r.stateName}> {
   Future<void> fetch(String id) async {
     emit(const ${r.stateName}.loading());
     try {
-      final model = await _get${r.featureNamePascalCase}(id);
+      final model = await _get${r.featureNamePascalCase}.call(id);
       final uiModel = ${r.uiModelName}.fromModel(model);
       emit(${r.stateName}.success(uiModel));
     } catch (e) {
@@ -418,7 +532,7 @@ function getDomainEntityTemplate(r: PagePathResolver): string {
 import 'package:equatable/equatable.dart';
 
 class ${r.entityName} extends Equatable {
-  // TODO: 定義業務實體屬性
+  // TODO: Define entity fields
   final String id;
   final String name;
 

@@ -6,6 +6,7 @@ const CUSTOM_CUBIT_KEY = 'customCubit';
 export interface CustomCubitConfig {
     name: string;
     import: string;
+    stateName: string;
 }
 
 /**
@@ -19,6 +20,7 @@ export function customCubitConfigProvider(): CustomCubitConfig[] {
         .map(item => ({
             name: (item?.name ?? '').trim(),
             import: (item?.import ?? '').trim(),
+            stateName: (item?.stateName ?? '').trim(),
         }))
-        .filter(item => item.name.length > 0);
+        .filter(item => item.name.length > 0 && item.import.length > 0 );
 }

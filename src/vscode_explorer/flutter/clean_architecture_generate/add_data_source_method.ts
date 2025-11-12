@@ -371,14 +371,8 @@ export function registerAddDataSourceMethod(context: vscode.ExtensionContext) {
             await addRepoImplMethod(resolver.repoImplPath, finalReturnType, methodName, repoImplImports, resolver);
 
             vscode.window.showInformationMessage(`✅ Method '${methodName}' added to data layer.`);
-            
-            if (baseReturnType !== 'void') {
-                const modelUri = vscode.Uri.file(resolver.getModelPath(baseReturnType));
-                await vscode.window.showTextDocument(modelUri);
-            } else {
-                const uri = vscode.Uri.file(resolver.domainRepoPath);
-                await vscode.window.showTextDocument(uri);
-            }
+
+            await openWorkingFiles(resolver, baseReturnType, methodName);
             await reFormat();
 
         } catch (err: any) {
@@ -386,6 +380,70 @@ export function registerAddDataSourceMethod(context: vscode.ExtensionContext) {
             vscode.window.showErrorMessage(`Failed to add method: ${err.message}`);
         }
     }));
+}
+
+async function openWorkingFiles(resolver: DataPathResolver, baseReturnType: string, methodName: string) {
+    const leftUri =
+        baseReturnType !== 'void'
+            ? vscode.Uri.file(resolver.getModelPath(baseReturnType))
+            : vscode.Uri.file(resolver.domainRepoPath);
+    const leftDocument = await vscode.workspace.openTextDocument(leftUri);
+    await vscode.window.showTextDocument(leftDocument, { viewColumn: vscode.ViewColumn.One, preview: false });
+
+    if (!resolver.remoteDatasourceImplPath) {
+        return;
+    }
+
+    const implUri = vscode.Uri.file(resolver.remoteDatasourceImplPath);
+    const implDocument = await vscode.workspace.openTextDocument(implUri);
+    const implEditor = await vscode.window.showTextDocument(implDocument, {
+        viewColumn: vscode.ViewColumn.Two,
+        preview: false,
+    });
+    highlightMethodInEditor(implEditor, methodName);
+}
+
+function highlightMethodInEditor(editor: vscode.TextEditor, methodName: string) {
+    const document = editor.document;
+    const content = document.getText();
+    const methodIndex = content.indexOf(`${methodName}(`);
+    if (methodIndex === -1) {
+        return;
+    }
+
+    let startIndex = content.lastIndexOf('@override', methodIndex);
+    if (startIndex === -1) {
+        startIndex = methodIndex;
+    }
+
+    const braceStart = content.indexOf('{', methodIndex);
+    if (braceStart === -1) {
+        const fallbackRange = new vscode.Range(
+            document.positionAt(startIndex),
+            document.positionAt(methodIndex + methodName.length + 2),
+        );
+        editor.selection = new vscode.Selection(fallbackRange.start, fallbackRange.end);
+        editor.revealRange(fallbackRange, vscode.TextEditorRevealType.InCenter);
+        return;
+    }
+
+    let braceDepth = 0;
+    let endIndex = braceStart;
+    for (let i = braceStart; i < content.length; i++) {
+        if (content[i] === '{') {
+            braceDepth++;
+        } else if (content[i] === '}') {
+            braceDepth--;
+            if (braceDepth === 0) {
+                endIndex = i + 1;
+                break;
+            }
+        }
+    }
+
+    const range = new vscode.Range(document.positionAt(startIndex), document.positionAt(endIndex));
+    editor.selection = new vscode.Selection(range.start, range.end);
+    editor.revealRange(range, vscode.TextEditorRevealType.InCenter);
 }
 
 async function modifyFile(filePath: string, imports: string[], methodString: string) {
