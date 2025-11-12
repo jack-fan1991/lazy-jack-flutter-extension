@@ -105,6 +105,25 @@ transaction/
     - 若未設定，讀取方法預設回傳 `Future<NewModel?>`，寫入方法回傳 `Future<void>`。
     - 舊設定鍵 `lazy-jack-flutter-extension.dataReturnWrapper` 仍會被辨識，但建議改用新的 `resultWrapper`。
 
+  * Cubit Quick Fix 亦可依需求提供多種替換方案，於 `settings.json` 加入：
+    ```json
+    {
+      "lazy-jack-flutter-extension.customCubit": [
+        {
+          "name": "BetterCubit",
+          "import": "package:mobile_core/better_cubit.dart"
+        },
+        {
+          "name": "FlowCubit",
+          "import": "import 'package:flow_core/flow_cubit.dart';"
+        }
+      ]
+    }
+    ```
+    - `name`：Quick Fix 會顯示的自訂 Cubit 類別名稱。
+    - `import`：可填完整 `import '...';` 或純路徑，外掛會自動補齊語句並避免重覆插入。
+    - 可建立多個項目，Quick Fix 會同時列出所有自訂 Cubit 供選擇。
+
 
   #### Dart Asset Transformer
   * [ReadMore](./doc/assets_creator.md)
