@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import { customCubitConfigProvider, CustomCubitConfig } from '../../../config/custom_cubit_config_provider';
 import { EzCodeActionProviderInterface } from '../../ez_code_action';
 
 export class CubitQuickFixer implements EzCodeActionProviderInterface {
@@ -15,18 +16,20 @@ export class CubitQuickFixer implements EzCodeActionProviderInterface {
             return;
         }
 
-        const config = vscode.workspace.getConfiguration('lazy-jack-flutter-extension');
-        const customCubits = config.get<string[]>('customCubit', []);
+        const customCubits = customCubitConfigProvider();
+        if (customCubits.length === 0) {
+            return [];
+        }
 
-        return customCubits.map(cubit => this.createFixAction(document, range, cubit));
+        return customCubits.map(cubitConfig => this.createFixAction(document, range, cubitConfig));
     }
 
-    private createFixAction(document: vscode.TextDocument, range: vscode.Range, cubitType: string): vscode.CodeAction {
-        const fix = new vscode.CodeAction(`🚀 Replace with ${cubitType}`, vscode.CodeActionKind.Refactor);
+    private createFixAction(document: vscode.TextDocument, range: vscode.Range, cubitConfig: CustomCubitConfig): vscode.CodeAction {
+        const fix = new vscode.CodeAction(`🚀 Replace with ${cubitConfig.name}`, vscode.CodeActionKind.Refactor);
         fix.command = {
             command: CubitQuickFixer.command,
-            title: `🚀 Replace with ${cubitType}`,
-            arguments: [document, range, cubitType]
+            title: `🚀 Replace with ${cubitConfig.name}`,
+            arguments: [document, range, cubitConfig]
         };
         return fix;
     }
@@ -35,7 +38,7 @@ export class CubitQuickFixer implements EzCodeActionProviderInterface {
     context.subscriptions.push(
         vscode.commands.registerCommand(
             CubitQuickFixer.command,
-            async (document: vscode.TextDocument, range: vscode.Range, cubitType: string) => {
+            async (document: vscode.TextDocument, range: vscode.Range, cubitConfig: CustomCubitConfig) => {
                 const path = require("path");
                 const line = document.lineAt(range.start.line);
 
@@ -52,7 +55,7 @@ export class CubitQuickFixer implements EzCodeActionProviderInterface {
                 // 1. 修改 Cubit class 繼承
                 const newClassText = line.text.replace(
                     `Cubit<${stateName}>`,
-                    `${cubitType}<${uiModelName}>`
+                    `${cubitConfig.name}<${uiModelName}>`
                 );
                 edit.replace(document.uri, line.range, newClassText);
 
@@ -65,11 +68,14 @@ export class CubitQuickFixer implements EzCodeActionProviderInterface {
                     }
                 }
 
-                // 3. 套用修改並存檔
+                // 3. 新增客製 Cubit 來源匯入
+                this.addImportIfNeeded(document, edit, cubitConfig.import);
+
+                // 4. 套用修改並存檔
                 await vscode.workspace.applyEdit(edit);
                 await document.save();
 
-                // 4. 刪掉檔案
+                // 5. 刪掉檔案
                 const stateFilePath = path.join(path.dirname(document.uri.fsPath), stateFileName);
                 try {
                     await vscode.workspace.fs.delete(vscode.Uri.file(stateFilePath));
@@ -83,4 +89,62 @@ export class CubitQuickFixer implements EzCodeActionProviderInterface {
         )
     );
 }
+
+    private addImportIfNeeded(document: vscode.TextDocument, edit: vscode.WorkspaceEdit, importPath: string) {
+        const importStatement = this.normalizeImportStatement(importPath);
+        if (!importStatement) return;
+
+        const importValue = this.extractImportPath(importStatement);
+        if (!importValue) return;
+
+        const existingImportRegex = new RegExp(`import\\s+['"]${this.escapeRegExp(importValue)}['"];`, 'm');
+        if (existingImportRegex.test(document.getText())) {
+            return;
+        }
+
+        const insertPosition = this.findImportInsertPosition(document);
+        const isFileStart = insertPosition.line === 0 && insertPosition.character === 0;
+        const insertText = `${isFileStart ? '' : '\n'}${importStatement}\n`;
+
+        edit.insert(document.uri, insertPosition, insertText);
+    }
+
+    private findImportInsertPosition(document: vscode.TextDocument): vscode.Position {
+        let lastImportLine = -1;
+        for (let i = 0; i < document.lineCount; i++) {
+            const trimmed = document.lineAt(i).text.trim();
+            if (trimmed.startsWith('import ')) {
+                lastImportLine = i;
+            }
+        }
+
+        if (lastImportLine >= 0) {
+            return document.lineAt(lastImportLine).range.end;
+        }
+
+        return new vscode.Position(0, 0);
+    }
+
+    private normalizeImportStatement(rawImport: string): string {
+        const trimmed = rawImport.trim();
+        if (!trimmed) return '';
+
+        if (trimmed.startsWith('import ')) {
+            return trimmed.endsWith(';') ? trimmed : `${trimmed};`;
+        }
+
+        const cleaned = trimmed.replace(/^['"]|['"]$/g, '');
+        if (!cleaned) return '';
+
+        return `import '${cleaned}';`;
+    }
+
+    private extractImportPath(importStatement: string): string | undefined {
+        const match = importStatement.match(/import\s+['"](.+)['"];$/);
+        return match ? match[1] : undefined;
+    }
+
+    private escapeRegExp(value: string): string {
+        return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    }
 }

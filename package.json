@@ -2,7 +2,7 @@
   "name": "lazy-jack",
   "displayName": "lazyJ tools",
   "description": "lets go",
-  "version": "0.0.212",
+  "version": "0.0.213",
   "publisher": "jackFan",
   "icon": "image/lazy_man.png",
   "engines": {
@@ -28,9 +28,19 @@
           "type": "array",
           "default": [],
           "items": {
-            "type": "string"
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "description": "Custom Cubit class name, e.g., 'BetterCubit'."
+              },
+              "import": {
+                "type": "string",
+                "description": "Import path for the Cubit class, e.g., 'package:xxx/xxx.dart'."
+              }
+            }
           },
-          "description": "Custom Cubit types for the Quick Fix."
+          "description": "Provide the custom Cubit name and import path used by Quick Fix."
         },
         "lazy-jack-flutter-extension.resultWrapper": {
           "type": "object",
