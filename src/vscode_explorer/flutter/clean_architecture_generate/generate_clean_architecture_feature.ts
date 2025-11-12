@@ -6,6 +6,8 @@ import { reFormat } from '../../../utils/src/vscode_utils/activate_editor_utils'
 import { APP } from '../../../extension';
 import { route_page_args_file_name } from '../page_and_route_generate/generate_route_temp';
 import { toUpperCamelCase } from '../../../utils/src/regex/regex_utils';
+import { customCubitConfigProvider, CustomCubitConfig } from '../../../config/custom_cubit_config_provider';
+import { replaceCubitWithCustom } from '../../../helper/dart/custom_cubit_replacer';
 
 const command_clean_architecture = "command_clean_architecture";
 
@@ -23,21 +25,42 @@ export function registerCleanArchitectureGenerate(context: vscode.ExtensionConte
 
         featureName = changeCase.snakeCase(featureName);
 
-        const entitiesChoice = await vscode.window.showQuickPick(
-            ['使用 Entities 層', '不使用 Entities 層'],
+        const dataLayerChoice = await vscode.window.showQuickPick(
+            ['建立 Data 層', '不建立 Data 層 (使用外部模組)'],
             {
-                placeHolder: '是否建立 Entities 層?',
+                placeHolder: '是否建立 Data 層?',
                 title: 'Clean Architecture 產生器',
             }
         );
 
-        if (!entitiesChoice) {
+        if (!dataLayerChoice) {
             vscode.window.showWarningMessage('已取消建立功能');
             return;
         }
 
-        const useEntitiesLayer = entitiesChoice === '使用 Entities 層';
-        const resolver = new PathResolver(folderUri.path, featureName, useEntitiesLayer);
+        const useDataLayer = dataLayerChoice === '建立 Data 層';
+
+        let useEntitiesLayer = true;
+        if (useDataLayer) {
+            const entitiesChoice = await vscode.window.showQuickPick(
+                ['使用 Entities 層', '不使用 Entities 層'],
+                {
+                    placeHolder: '是否建立 Entities 層?',
+                    title: 'Clean Architecture 產生器',
+                }
+            );
+
+            if (!entitiesChoice) {
+                vscode.window.showWarningMessage('已取消建立功能');
+                return;
+            }
+
+            useEntitiesLayer = entitiesChoice === '使用 Entities 層';
+        } else {
+            vscode.window.showInformationMessage('未建立 Data 層時會自動啟用 Entities 層以保持資料流程。');
+        }
+
+        const resolver = new PathResolver(folderUri.path, featureName, useEntitiesLayer, useDataLayer);
 
         try {
             // 1. 創建所有資料夾
@@ -50,24 +73,9 @@ export function registerCleanArchitectureGenerate(context: vscode.ExtensionConte
             const uri = vscode.Uri.file(resolver.presentation.page);
             await vscode.window.showTextDocument(uri);
             await reFormat();
-            vscode.window.showInformationMessage(`💡 是否要將 ${resolver.pageName} 註冊為路由?`, '是', '否').then((value) => {
-                if (value === '是') {
-                    // 確保在 Windows 和 Unix-like 系統上都使用正斜線
-                    const importPathValue = path.join(resolver.libDir, `${resolver.featureNameSnakeCase}`, 'presentation', 'pages', `${resolver.featureNameSnakeCase}_page.dart`).replace(/\\/g, '/');
-                    const importStatement = `import 'package:${APP.flutterLibName}/${importPathValue}';`;
-                    const argType = `Route${resolver.pageName}Args`;
-                    vscode.commands.executeCommand(
-                        "command_create_routeConfiguration", 
-                        resolver.featureNamePascalCase, 
-                        `${resolver.pageName}.routeName`, 
-                        importStatement,
-                        resolver.pageName, 
-                        resolver.featureNamePascalCase,
-                        argType
-                        
-                    );
-                }
-            });
+            await promptCustomCubitReplacement(resolver);
+            await promptRouteRegistration(resolver);
+          
 
         } catch (err: any) {
             console.error(err);
@@ -84,10 +92,12 @@ function createDirectoryStructure(resolver: PathResolver) {
         ...(resolver.useEntities ? [resolver.domain.entitiesDir] : []),
         resolver.domain.repoDir,
         resolver.domain.usecasesDir,
-        resolver.data.dir,
-        resolver.data.datasourcesDir,
-        resolver.data.modelsDir,
-        resolver.data.repoImplsDir,
+        ...(resolver.useDataLayer ? [
+            resolver.data.dir,
+            resolver.data.datasourcesDir,
+            resolver.data.modelsDir,
+            resolver.data.repoImplsDir,
+        ] : []),
         resolver.presentation.dir,
         resolver.presentation.blocDir,
         resolver.presentation.modelsDir,
@@ -113,10 +123,12 @@ function createFeatureFiles(resolver: PathResolver) {
     fs.writeFileSync(resolver.domain.usecase, getDomainUsecaseTemplate(resolver));
 
     // Data
-    fs.writeFileSync(resolver.data.datasource, getDataDatasourceTemplate(resolver));
-    fs.writeFileSync(resolver.data.datasourceImpl, getDataDatasourceImplTemplate(resolver));
-    fs.writeFileSync(resolver.data.model, getDataModelTemplate(resolver));
-    fs.writeFileSync(resolver.data.repositoryImpl, getDataRepositoryImplTemplate(resolver));
+    if (resolver.useDataLayer) {
+        fs.writeFileSync(resolver.data.datasource, getDataDatasourceTemplate(resolver));
+        fs.writeFileSync(resolver.data.datasourceImpl, getDataDatasourceImplTemplate(resolver));
+        fs.writeFileSync(resolver.data.model, getDataModelTemplate(resolver));
+        fs.writeFileSync(resolver.data.repositoryImpl, getDataRepositoryImplTemplate(resolver));
+    }
 
     // Presentation
     fs.writeFileSync(resolver.presentation.cubit, getPresentationCubitTemplate(resolver));
@@ -126,11 +138,83 @@ function createFeatureFiles(resolver: PathResolver) {
     fs.writeFileSync(resolver.presentation.page, getPresentationPageTemplate(resolver));
 }
 
+async function promptRouteRegistration(resolver: PathResolver): Promise<void> {
+    const answer = await vscode.window.showInformationMessage(
+        `💡 是否要將 ${resolver.pageName} 註冊為路由?`,
+        '是',
+        '否'
+    );
+
+    if (answer !== '是') {
+        return;
+    }
+
+    const importPathValue = path.join(
+        resolver.libDir,
+        `${resolver.featureNameSnakeCase}`,
+        'presentation',
+        'pages',
+        `${resolver.featureNameSnakeCase}_page.dart`
+    ).replace(/\\/g, '/');
+
+    const importStatement = `import 'package:${APP.flutterLibName}/${importPathValue}';`;
+    const argType = `Route${resolver.pageName}Args`;
+
+    await vscode.commands.executeCommand(
+        "command_create_routeConfiguration",
+        resolver.featureNamePascalCase,
+        `${resolver.pageName}.routeName`,
+        importStatement,
+        resolver.pageName,
+        resolver.featureNamePascalCase,
+        argType
+    );
+}
+
+async function promptCustomCubitReplacement(resolver: PathResolver): Promise<void> {
+    const customCubits = customCubitConfigProvider();
+    if (customCubits.length === 0) {
+        return;
+    }
+
+    if (!fs.existsSync(resolver.presentation.cubit)) {
+        return;
+    }
+
+    const quickPickItems: CustomCubitQuickPickItem[] = customCubits.map(config => ({
+        label: config.name,
+        description: config.import,
+        config,
+    }));
+
+    const picked = await vscode.window.showQuickPick(quickPickItems, {
+        placeHolder: '是否改用自訂 Cubit 實作?',
+    });
+
+    if (!picked) {
+        return;
+    }
+
+    try {
+        const cubitDocument = await vscode.workspace.openTextDocument(vscode.Uri.file(resolver.presentation.cubit));
+        const success = await replaceCubitWithCustom(cubitDocument, picked.config);
+        if (success) {
+            vscode.window.showInformationMessage(`已使用 ${picked.config.name} 取代預設 Cubit`);
+        }
+    } catch (error) {
+        vscode.window.showErrorMessage(`自訂 Cubit 替換失敗: ${(error as Error).message}`);
+    }
+}
+
+interface CustomCubitQuickPickItem extends vscode.QuickPickItem {
+    config: CustomCubitConfig;
+}
+
 // #region Templates
 
 function getDiInjectionTemplate(r: PathResolver): string {
     return `
-// TODO: 設置此模組的依賴注入
+// TODO: Configure dependency injection for this module
 // import 'package:get_it/get_it.dart';
 
 // final _getIt = GetIt.instance;
@@ -159,7 +243,7 @@ function getDomainEntityTemplate(r: PathResolver): string {
 import 'package:equatable/equatable.dart';
 
 class ${r.entityName} extends Equatable {
-  // TODO: 定義業務實體屬性
+  // TODO: Define entity fields
   final String id;
   final String name;
 
@@ -206,7 +290,7 @@ class ${r.usecaseName} {
   ${r.usecaseName}(this.repository);
 
   Future<${r.entityName}> call(String id) async {
-    // 在這裡可以加入參數驗證、日誌記錄等業務邏輯
+    // Add parameter validation, logging, or other business rules here
     return await repository.get${r.featureNamePascalCase}(id);
   }
 }
@@ -244,7 +328,7 @@ function getDataDatasourceImplTemplate(r: PathResolver): string {
 import '${r.importPath("data", "datasource")}';
 import '${r.importPath("data", "model")}';
 
-// import 'package:dio/dio.dart'; // 範例
+// import 'package:dio/dio.dart'; // Example
 
 class ${r.datasourceImplName} implements ${r.datasourceName} {
   // final Dio dio;
@@ -259,7 +343,7 @@ class ${r.datasourceImplName} implements ${r.datasourceName} {
     //   throw Exception('Failed to load ${r.featureNameSnakeCase}');
     // }
     await Future.delayed(const Duration(seconds: 1));
-    return ${r.modelName}(id: '1', name: '範例資料');
+    return ${r.modelName}(id: '1', name: 'Sample data');
   }
 }
 `;
@@ -285,7 +369,7 @@ class ${r.modelName} with _$${r.modelName} {
 
     factory ${r.modelName}.fromJson(Map<String, dynamic> json) => _$${r.modelName}FromJson(json);
 
-    // 將 Model 轉換為業務層的 Entity
+    // Convert data model to the corresponding domain entity
     ${r.entityName} toEntity() {
       return ${r.entityName}(
         id: id,
@@ -338,9 +422,9 @@ class ${r.repositoryImplName} implements ${r.repositoryName} {
       // final remoteData = await remoteDataSource.fetch${r.featureNamePascalCase}(id);
       // return remoteData.toEntity();
       await Future.delayed(const Duration(seconds: 1));
-      return ${r.entityName}(id: '1', name: '範例資料');
+      return ${r.entityName}(id: '1', name: 'Sample data');
     } catch (e) {
-      // 處理錯誤，例如從本地資料源獲取或拋出自定義異常
+      // Handle failures, e.g. fallback to local source or throw custom errors
       throw Exception('Failed to get data for $id');
     }
   }
@@ -368,7 +452,7 @@ class ${r.repositoryImplName} implements ${r.repositoryName} {
       final remoteData = await remoteDataSource.fetch${r.featureNamePascalCase}(id);
       return remoteData;
     } catch (e) {
-      // 處理錯誤，例如從本地資料源獲取或拋出自定義異常
+      // Handle failures, e.g. fallback to local source or throw custom errors
       throw Exception('Failed to get data for $id');
     }
   }
@@ -535,6 +619,31 @@ function getPresentationPageTemplate(r: PathResolver): string {
   const featurePath = `${r.libDir}/${r.featureNameSnakeCase}`;
   const repoImplImport = `package:${APP.flutterLibName}/${featurePath}/data/repo_impls/${r.featureNameSnakeCase}_repository_impl.dart`;
   const datasourceImplImport = `package:${APP.flutterLibName}/${featurePath}/data/sources/${r.featureNameSnakeCase}_remote_data_source_impl.dart`;
+  const dataImports = r.useDataLayer
+    ? `
+import '${r.importPath("domain", "repository")}';
+import '${repoImplImport}';
+import '${datasourceImplImport}';
+`
+    : `
+import '${r.importPath("domain", "repository")}';
+`;
+  const manualTip = r.useDataLayer
+    ? "// Prefer DI tools (e.g., get_it) over manual instantiation."
+    : "// TODO: Provide concrete Repository and Cubit implementations via external modules or DI.";
+  const cubitInitBlock = r.useDataLayer
+    ? `
+    final remoteDataSource = ${r.datasourceImplName}();
+    final repository = ${r.repositoryImplName}(remoteDataSource: remoteDataSource);
+    final usecase = ${r.usecaseName}(repository);
+    _cubit = ${r.cubitName}(usecase);
+    _cubit.fetch(widget.args.exampleId ?? '1'); // Initial data fetch
+`
+    : `
+    _cubit = throw UnimplementedError('Inject ${r.cubitName} via your module here');
+    // Example: _cubit = GetIt.instance<${r.cubitName}>();
+    _cubit.fetch(widget.args.exampleId ?? '1');
+`;
 
   return `
 import 'package:flutter/material.dart';
@@ -543,11 +652,9 @@ import 'package:${APP.flutterLibName}/route/${route_page_args_file_name}';
 import '${r.importPath("presentation", "cubit")}';
 import '${r.importPath("presentation", "view")}';
 import '${r.importPath("domain", "usecase")}';
-import '${r.importPath("domain", "repository")}';
-import '${repoImplImport}';
-import '${datasourceImplImport}';
+${dataImports}
 
-// Tip: It's recommended to use a dependency injection tool like get_it instead of manual instantiation.
+${manualTip}
 
 class ${argType} extends RouteArgs {
   // TODO: Define the parameters required for this page here
@@ -584,13 +691,9 @@ class _${r.pageName}State extends State<${r.pageName}> {
   @override
   void initState() {
     super.initState();
-    // This is a manual dependency injection for demonstration purposes.
-    // In a real project, it is highly recommended to use a dependency injection framework (e.g., get_it).
-    final remoteDataSource = ${r.datasourceImplName}();
-    final repository = ${r.repositoryImplName}(remoteDataSource: remoteDataSource);
-    final usecase = ${r.usecaseName}(repository);
-    _cubit = ${r.cubitName}(usecase);
-    _cubit.fetch(widget.args.exampleId ?? '1'); // Initial data fetch
+    // Manual injection for demonstration only.
+    // Use DI frameworks such as get_it in production code.
+${cubitInitBlock}
   }
 
   @override
@@ -625,6 +728,7 @@ class PathResolver {
     public readonly libDir: string;
     public readonly featureDir: string;
     public readonly useEntities: boolean;
+    public readonly useDataLayer: boolean;
 
     // Feature Names
     public readonly featureNameSnakeCase: string;
@@ -650,11 +754,12 @@ class PathResolver {
     public readonly widgetName: string;
     public readonly pageName: string;
 
-    constructor(currentPath: string, featureName: string, useEntities: boolean) {
+    constructor(currentPath: string, featureName: string, useEntities: boolean, useDataLayer: boolean) {
         this.rootPath = currentPath;
         this.featureNameSnakeCase = featureName;
         this.featureNamePascalCase = toUpperCamelCase(featureName);
         this.useEntities = useEntities;
+        this.useDataLayer = useDataLayer;
 
         this.libDir = this.rootPath.split('lib/')[1];
         this.featureDir = path.join(this.rootPath, `${this.featureNameSnakeCase}`);
