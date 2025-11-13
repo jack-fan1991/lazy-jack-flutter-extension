@@ -20,14 +20,28 @@ export function registerAddBlocWidget(context: vscode.ExtensionContext) {
         }
 
         const cubitName = changeCase.snakeCase(cubitNameInput);
-        const resolver = new CubitPathResolver(folderUri.path, cubitName);
+        const widgetCategory = await pickWidgetCategory(folderUri.fsPath);
+        if (widgetCategory === null) {
+            vscode.window.showWarningMessage('已取消建立 Bloc Widget');
+            return;
+        }
+
+        const resolver = new CubitPathResolver(folderUri.path, cubitName, widgetCategory ?? undefined);
 
         try {
             createDirectoryStructure(resolver);
             createCubitFiles(resolver);
 
-            const uri = vscode.Uri.file(resolver.cubitPath);
-            await vscode.window.showTextDocument(uri);
+            const cubitUri = vscode.Uri.file(resolver.cubitPath);
+            const viewUri = vscode.Uri.file(resolver.viewPath);
+            await vscode.window.showTextDocument(cubitUri, {
+                viewColumn: vscode.ViewColumn.One,
+                preview: false,
+            });
+            await vscode.window.showTextDocument(viewUri, {
+                viewColumn: vscode.ViewColumn.Two,
+                preview: false,
+            });
             await reFormat();
             vscode.window.showInformationMessage(`✅ Cubit 檔案 for "${resolver.cubitNamePascalCase}" 建立成功！`);
 
@@ -39,7 +53,7 @@ export function registerAddBlocWidget(context: vscode.ExtensionContext) {
 }
 
 function createDirectoryStructure(resolver: CubitPathResolver) {
-    const dirs = [resolver.blocDir, resolver.modelsDir, resolver.widgetsDir];
+    const dirs = [resolver.blocDir, resolver.modelsDir, resolver.widgetsDir, resolver.widgetTargetDir];
     dirs.forEach(dir => {
         if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
@@ -62,6 +76,8 @@ class CubitPathResolver {
     public readonly blocDir: string;
     public readonly modelsDir: string;
     public readonly widgetsDir: string;
+    public readonly widgetCategoryName?: string;
+    public readonly widgetTargetDir: string;
 
     public readonly cubitPath: string;
     public readonly statePath: string;
@@ -72,7 +88,7 @@ class CubitPathResolver {
     public readonly cubitName: string;
     public readonly stateName: string;
 
-    constructor(parentPath: string, cubitName: string) {
+    constructor(parentPath: string, cubitName: string, widgetCategoryName?: string) {
         this.parentDir = parentPath;
         this.cubitNameSnakeCase = cubitName;
         this.cubitNamePascalCase = changeCase.pascalCase(cubitName);
@@ -80,11 +96,13 @@ class CubitPathResolver {
         this.blocDir = path.join(this.parentDir, 'bloc');
         this.modelsDir = path.join(this.parentDir, 'models');
         this.widgetsDir = path.join(this.parentDir, 'widgets');
+        this.widgetCategoryName = widgetCategoryName;
+        this.widgetTargetDir = widgetCategoryName ? path.join(this.widgetsDir, widgetCategoryName) : this.widgetsDir;
 
         this.cubitPath = path.join(this.blocDir, `${this.cubitNameSnakeCase}_cubit.dart`);
         this.statePath = path.join(this.blocDir, `${this.cubitNameSnakeCase}_state.dart`);
         this.uiModelPath = path.join(this.modelsDir, `${this.cubitNameSnakeCase}_ui_model.dart`);
-        this.viewPath = path.join(this.widgetsDir, `${this.cubitNameSnakeCase}_view.dart`);
+        this.viewPath = path.join(this.widgetTargetDir, `${this.cubitNameSnakeCase}_view.dart`);
 
         this.cubitName = `${this.cubitNamePascalCase}Cubit`;
         this.stateName = `${this.cubitNamePascalCase}State`;
@@ -106,7 +124,10 @@ class CubitPathResolver {
             case 'ui_model':
                  return `package:${APP.flutterLibName}/${path.join(this.libDir, 'models', `${this.cubitNameSnakeCase}_ui_model.dart`).replace(/\\/g, '/')}`;
             case 'view':
-                 return `package:${APP.flutterLibName}/${path.join(this.libDir, 'widgets', `${this.cubitNameSnakeCase}_view.dart`).replace(/\\/g, '/')}`;
+                const widgetSegments = this.widgetCategoryName
+                    ? ['widgets', this.widgetCategoryName, `${this.cubitNameSnakeCase}_view.dart`]
+                    : ['widgets', `${this.cubitNameSnakeCase}_view.dart`];
+                return `package:${APP.flutterLibName}/${path.join(this.libDir, ...widgetSegments).replace(/\\/g, '/')}`;
         }
     }
 }
@@ -224,6 +245,48 @@ class ${r.viewName} extends StatelessWidget {
 }
 
 // #endregion
+
+type WidgetCategoryPickItem = vscode.QuickPickItem & { value?: string };
+
+async function pickWidgetCategory(presentationPath: string): Promise<string | undefined | null> {
+    const widgetsDir = path.join(presentationPath, 'widgets');
+    if (!fs.existsSync(widgetsDir)) {
+        return undefined;
+    }
+
+    const candidates = fs.readdirSync(widgetsDir, { withFileTypes: true })
+        .filter(entry => entry.isDirectory())
+        .map(entry => entry.name)
+        .filter(name => !!name);
+
+    if (candidates.length === 0) {
+        return undefined;
+    }
+
+    const pickItems: WidgetCategoryPickItem[] = [
+        {
+            label: '不分類 (widgets/)',
+            description: '直接建立於 widgets 根目錄',
+            value: undefined,
+        },
+        ...candidates.map(dirName => ({
+            label: dirName,
+            description: path.join('widgets', dirName),
+            value: dirName,
+        })),
+    ];
+
+    const selection = await vscode.window.showQuickPick(pickItems, {
+        placeHolder: '選擇 Bloc Widget 要使用的分類',
+        title: 'Widget 子分類',
+    });
+
+    if (!selection) {
+        return null;
+    }
+
+    return selection.value;
+}
 
 // Helper function to create a freezed template
 function createFreezedTemplate({
