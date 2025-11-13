@@ -26,12 +26,9 @@ import { registerToGqlFragmentToDart } from './vscode_explore_menu/graphql_fragm
 import { registerCreateRouteConfiguration, registerRouteConfigurationWatcher } from './vscode_explorer/flutter/page_and_route_generate/generate_route_temp';
 import { registerFlutterPageGenerate } from './vscode_explorer/flutter/page_and_route_generate/generate_flutter_page';
 import { runCommand } from './utils/src/terminal_utils/terminal_utils';
-import { registerCleanArchitectureGenerate } from './vscode_explorer/flutter/clean_architecture_generate/generate_clean_architecture_feature';
-import { registerCleanArchitecturePageGenerate } from './vscode_explorer/flutter/clean_architecture_generate/generate_clean_architecture_page';
-import { registerAddBlocWidget } from './vscode_explorer/flutter/clean_architecture_generate/generate_clean_architecture_bloc_widget';
 import { registerCreateModuleTemplate } from './vscode_explorer/flutter/clean_module_generate/create_module_template';
 import { registerAddModuleMethod } from './vscode_explorer/flutter/clean_module_generate/add_module_method';
-import { registerAddDataSourceMethod } from './vscode_explorer/flutter/clean_architecture_generate/add_data_source_method';
+import { registerCleanArchitectureGenerateModule } from './vscode_explorer/flutter/clean_architecture_generate/clean_architecture_generate_module';
 
 export let sidebarManger = new SidebarManager()
 export class APP {
@@ -86,13 +83,10 @@ export async function activate(context: vscode.ExtensionContext) {
 
   //側邊欄擴展
   registerGenerateSvg(context)
-  registerCleanArchitectureGenerate(context)
-  registerCleanArchitecturePageGenerate(context)
+  registerCleanArchitectureGenerateModule(context)
   registerFlutterPageGenerate(context)
-  registerAddBlocWidget(context)
   registerCreateModuleTemplate(context)
   registerAddModuleMethod(context)
-  registerAddDataSourceMethod(context)
 
 }
 
@@ -108,4 +102,3 @@ function setupSideBar(context: vscode.ExtensionContext) {
     .registerSideBarCommands(context, "lazy-jack.sidebar_command_onselect")
     .registerSideBar(context)
 }
-
