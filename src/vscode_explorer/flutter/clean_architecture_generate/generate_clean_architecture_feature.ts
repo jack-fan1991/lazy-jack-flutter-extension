@@ -85,8 +85,16 @@ export function registerCleanArchitectureGenerate(context: vscode.ExtensionConte
             createFeatureFiles(resolver);
 
             // 3. 完成後操作
-            const uri = vscode.Uri.file(resolver.presentation.page);
-            await vscode.window.showTextDocument(uri);
+            const cubitUri = vscode.Uri.file(resolver.presentation.cubit);
+            const pageUri = vscode.Uri.file(resolver.presentation.page);
+            await vscode.window.showTextDocument(cubitUri, {
+                viewColumn: vscode.ViewColumn.One,
+                preview: false,
+            });
+            await vscode.window.showTextDocument(pageUri, {
+                viewColumn: vscode.ViewColumn.Two,
+                preview: false,
+            });
             await reFormat();
             await promptCustomCubitReplacement(resolver);
             if (shouldRegisterRoute) {
@@ -183,11 +191,10 @@ async function registerRoute(resolver: PathResolver): Promise<void> {
     }
 
     const viewAction = '檢視路由';
-    vscode.window.showInformationMessage('路由設定已更新', viewAction).then(async (selection) => {
-        if (selection === viewAction) {
-            await openRoutePreview(result);
-        }
-    });
+    const selection = await vscode.window.showInformationMessage('路由設定已更新', viewAction);
+    if (selection === viewAction) {
+        await openRoutePreview(result);
+    }
 }
 
 async function openRoutePreview(result: RouteConfigurationResult): Promise<void> {
