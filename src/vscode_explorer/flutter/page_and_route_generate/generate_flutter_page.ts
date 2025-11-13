@@ -9,10 +9,10 @@ import { APP } from '../../../extension';
 import { getRootPath } from '../../../utils/src/vscode_utils/vscode_env_utils';
 import { route_configuration_file_name, route_page_args_file_name } from './generate_route_temp';
 
-const command_clean_architecture = "command_generate_flutter_page"
+const COMMAND_ID = "lazyJack.flutter.createTypeSafePage";
 
 export function registerFlutterPageGenerate(context: vscode.ExtensionContext) {
-    context.subscriptions.push(vscode.commands.registerCommand(command_clean_architecture, async (folderUri) => {
+    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_ID, async (folderUri) => {
 
         let featureName = await vscode.window.showInputBox({
             placeHolder: 'Enter Page name',

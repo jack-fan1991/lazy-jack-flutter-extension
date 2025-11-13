@@ -9,7 +9,7 @@ import { customCubitConfigProvider, CustomCubitConfig } from '../../../config/cu
 import { replaceCubitWithCustom } from '../../../helper/dart/custom_cubit_replacer';
 
 
-const COMMAND_ID = "lazyJack.generateCleanArchitecturePage";
+const COMMAND_ID = "lazyJack.cleanArch.createSubPage";
 
 export function registerCleanArchitecturePageGenerate(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_ID, async (folderUri: vscode.Uri) => {

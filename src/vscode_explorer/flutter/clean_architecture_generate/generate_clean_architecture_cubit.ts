@@ -5,9 +5,9 @@ import * as changeCase from "change-case";
 import { reFormat } from '../../../utils/src/vscode_utils/activate_editor_utils';
 import { APP } from '../../../extension';
 
-const COMMAND_ID = "lazyJack.createCubit";
+const COMMAND_ID = "lazyJack.cleanArch.addBlocWidget";
 
-export function registerCreateCubit(context: vscode.ExtensionContext) {
+export function registerAddBlocWidget(context: vscode.ExtensionContext) {
     context.subscriptions.push(vscode.commands.registerCommand(COMMAND_ID, async (folderUri: vscode.Uri) => {
         const cubitNameInput = await vscode.window.showInputBox({
             placeHolder: '輸入 Cubit 名稱 (例如: user settings)',

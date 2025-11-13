@@ -5,7 +5,7 @@ import * as changeCase from "change-case";
 import { toUpperCamelCase } from '../../../utils/src/regex/regex_utils';
 import { reFormat } from '../../../utils/src/vscode_utils/activate_editor_utils';
 
-const COMMAND_ID = "lazyJack.addDataSourceMethod";
+const COMMAND_ID = "lazyJack.cleanArch.addDataSourceMethod";
 
 type RepositoryImplCandidate = {
     filePath: string;

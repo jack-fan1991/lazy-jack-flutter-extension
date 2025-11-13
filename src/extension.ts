@@ -28,7 +28,7 @@ import { registerFlutterPageGenerate } from './vscode_explorer/flutter/page_and_
 import { runCommand } from './utils/src/terminal_utils/terminal_utils';
 import { registerCleanArchitectureGenerate } from './vscode_explorer/flutter/clean_architecture_generate/generate_clean_architecture_feature';
 import { registerCleanArchitecturePageGenerate } from './vscode_explorer/flutter/clean_architecture_generate/generate_clean_architecture_page';
-import { registerCreateCubit } from './vscode_explorer/flutter/clean_architecture_generate/generate_clean_architecture_cubit';
+import { registerAddBlocWidget } from './vscode_explorer/flutter/clean_architecture_generate/generate_clean_architecture_cubit';
 import { registerCreateModuleTemplate } from './vscode_explorer/flutter/clean_module_generate/create_module_template';
 import { registerAddModuleMethod } from './vscode_explorer/flutter/clean_module_generate/add_module_method';
 import { registerAddDataSourceMethod } from './vscode_explorer/flutter/clean_architecture_generate/add_data_source_method';
@@ -89,7 +89,7 @@ export async function activate(context: vscode.ExtensionContext) {
   registerCleanArchitectureGenerate(context)
   registerCleanArchitecturePageGenerate(context)
   registerFlutterPageGenerate(context)
-  registerCreateCubit(context)
+  registerAddBlocWidget(context)
   registerCreateModuleTemplate(context)
   registerAddModuleMethod(context)
   registerAddDataSourceMethod(context)

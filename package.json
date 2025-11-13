@@ -152,12 +152,12 @@
       },
       {
         "category": "lazy Jack",
-        "command": "command_clean_architecture",
-        "title": "✨ Create Feature Template"
+        "command": "lazyJack.cleanArch.createFeatureModule",
+        "title": "✨ Create Clean Arch Feature Module"
       },
       {
         "category": "lazy Jack",
-        "command": "command_generate_flutter_page",
+        "command": "lazyJack.flutter.createTypeSafePage",
         "title": "✨ Create TypeSafe Page"
       },
       {
@@ -167,28 +167,28 @@
       },
       {
         "category": "lazy Jack",
-        "command": "lazyJack.generateCleanArchitecturePage",
-        "title": "✨ Add sub page"
+        "command": "lazyJack.cleanArch.createSubPage",
+        "title": "✨ Create Clean Arch Subpage"
       },
       {
         "category": "lazy Jack",
-        "command": "lazyJack.createCubit",
-        "title": "✨ Add sub view"
+        "command": "lazyJack.cleanArch.addBlocWidget",
+        "title": "✨ Add Bloc widget"
       },
       {
         "category": "lazy Jack",
-        "command": "lazyJack.addDataSourceMethod",
-        "title": "✨ Add Data Source Method"
+        "command": "lazyJack.cleanArch.addDataSourceMethod",
+        "title": "✨ Add Clean Arch Data Source Method"
       },
       {
         "category": "lazy Jack",
-        "command": "lazyJack.createModuleTemplate",
+        "command": "lazyJack.modules.createTemplate",
         "title": "✨ Create Module Template"
       },
       {
         "category": "lazy Jack",
-        "command": "lazyJack.addModuleMethod",
-        "title": "✨ Add Module Data Source Method"
+        "command": "lazyJack.modules.addMethod",
+        "title": "✨ Add Module Method"
       }
     ],
     "menus": {
@@ -216,43 +216,44 @@
           "when": "explorerResourceIsFolder  && (resourceFilename =~ /.*(svg|image).*/)"
         },
         {
-          "command": "command_clean_architecture",
-          "title": "✨ Create Clean Arch Feature Module",
-          "when": "explorerResourceIsFolder && (  resourcePath =~ /.*features.*/ && !(resourceFilename =~ /^(modules|presentation|models|bloc|domain|repository|usecases|di|data|sources|repo_impls|entities|repositories)$/))"
-        },
-        {
-          "command": "lazyJack.createCubit",
-          "title": "✨ Create Clean Arch Cubit",
-          "when": "explorerResourceIsFolder && (resourceFilename =~ /.*(presentation).*/)"
-        },
-        {
-          "command": "command_generate_flutter_page",
-          "title": "✨Create TypeSafe Page",
-          "when": "explorerResourceIsFolder && resourcePath =~ /.*lib.*/ && !(resourceFilename =~ /^(modules|features|presentation|models|bloc|domain|repository|usecases|di|data|sources|repo_impls|entities|repositories)$/)"
-        },
-        {
           "command": "graphql_code_gen_fragment_to_dart_type_def",
           "title": "✨ Graphql Fragment to dart typedef",
           "when": "explorerResourceIsFolder && resourceFilename == '__generated'"
         },
         {
-          "command": "lazyJack.generateCleanArchitecturePage",
+          "command": "lazyJack.cleanArch.createSubPage",
           "when": "explorerResourceIsFolder && resourcePath =~ /.*\\/features\\/.*\\/presentation$/",
-          "title": "✨ Add Clean Arch Subpage module"
+          "title": "✨ Create Clean Arch Subpage Module"
         },
         {
-          "command": "lazyJack.addDataSourceMethod",
+          "command": "lazyJack.cleanArch.addDataSourceMethod",
+          "title": "✨ Add Clean Arch Data Source Method",
           "when": "explorerResourceIsFolder && ( resourcePath =~ /.*features.*/ && resourcePath =~ /\\/data/ )"
         },
         {
-          "command": "lazyJack.createModuleTemplate",
+          "command": "lazyJack.modules.createTemplate",
           "title": "✨ Create Module Template",
           "when": "explorerResourceIsFolder && resourceFilename == 'modules'"
         },
         {
-          "command": "lazyJack.addModuleMethod",
+          "command": "lazyJack.modules.addMethod",
           "title": "✨ Add Module Method",
           "when": "explorerResourceIsFolder && resourcePath =~ /.*[\\\\/]lib[\\\\/]modules[\\\\/][^\\\\/]+$/"
+        },
+        {
+          "command": "lazyJack.cleanArch.createFeatureModule",
+          "title": "✨ Create Clean Arch Feature Module",
+          "when": "explorerResourceIsFolder && (  resourcePath =~ /.*features.*/ && !(resourceFilename =~ /^(modules|presentation|models|bloc|domain|repository|usecases|di|data|sources|repo_impls|entities|repositories)$/))"
+        },
+        {
+          "command": "lazyJack.cleanArch.addBlocWidget",
+          "title": "✨ Add Bloc widget",
+          "when": "explorerResourceIsFolder && (resourceFilename =~ /.*(presentation).*/)"
+        },
+        {
+          "command": "lazyJack.flutter.createTypeSafePage",
+          "title": "✨ Create TypeSafe Page",
+          "when": "explorerResourceIsFolder && resourcePath =~ /.*lib.*/ && !(resourceFilename =~ /^(modules|features|presentation|models|bloc|domain|repository|usecases|di|data|sources|repo_impls|entities|repositories)$/)"
         }
       ]
     },

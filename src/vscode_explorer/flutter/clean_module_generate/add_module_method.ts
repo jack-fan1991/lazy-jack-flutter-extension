@@ -4,7 +4,7 @@ import * as path from 'path';
 import * as changeCase from 'change-case';
 import { reFormat } from '../../../utils/src/vscode_utils/activate_editor_utils';
 
-const COMMAND_ID = 'lazyJack.addModuleMethod';
+const COMMAND_ID = 'lazyJack.modules.addMethod';
 
 interface ReturnTypeContext {
   baseType: string;

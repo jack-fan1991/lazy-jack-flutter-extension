@@ -9,10 +9,10 @@ import { toUpperCamelCase } from '../../../utils/src/regex/regex_utils';
 import { customCubitConfigProvider, CustomCubitConfig } from '../../../config/custom_cubit_config_provider';
 import { replaceCubitWithCustom } from '../../../helper/dart/custom_cubit_replacer';
 
-const command_clean_architecture = "command_clean_architecture";
+const COMMAND_ID = "lazyJack.cleanArch.createFeatureModule";
 
 export function registerCleanArchitectureGenerate(context: vscode.ExtensionContext) {
-    context.subscriptions.push(vscode.commands.registerCommand(command_clean_architecture, async (folderUri) => {
+    context.subscriptions.push(vscode.commands.registerCommand(COMMAND_ID, async (folderUri) => {
         let featureName = await vscode.window.showInputBox({
             placeHolder: '輸入功能名稱 (例如: user profile)',
             prompt: '將會自動轉換為蛇形命名 (snake_case)',
