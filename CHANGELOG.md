@@ -1,3 +1,11 @@
+# 0.0.216
+## 🐛 Bugfix
+- **Clean Architecture Generator**: Fix route name format
+  - Ensure all `routeName` starts with `/` (e.g., `/user-settings`)
+  - Fixed `generate_clean_architecture_page.ts` and `generate_clean_architecture_feature.ts`
+  - Align with existing `generate_flutter_page.ts` behavior
+
+
 # 0.0.185
 ## ✨ Features
 - **Git Sidebar**: Added a sidebar interface for Git operations.
