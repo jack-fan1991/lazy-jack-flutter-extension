@@ -679,7 +679,7 @@ class ${r.widgetName} extends StatelessWidget {
 
 function getPresentationPageTemplate(r: PathResolver): string {
   const argType = `Route${r.pageName}Args`;
-  const webPath = changeCase.paramCase(r.featureNameSnakeCase);
+  const webPath = `/${changeCase.paramCase(r.featureNameSnakeCase)}`;
   const featurePath = `${r.libDir}/${r.featureNameSnakeCase}`;
   const repoImplImport = `package:${APP.flutterLibName}/${featurePath}/data/repo_impls/${r.featureNameSnakeCase}_repository_impl.dart`;
   const datasourceImplImport = `package:${APP.flutterLibName}/${featurePath}/data/sources/${r.featureNameSnakeCase}_remote_data_source_impl.dart`;

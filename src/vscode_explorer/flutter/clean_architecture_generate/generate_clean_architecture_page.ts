@@ -363,7 +363,7 @@ class PagePathResolver {
 
 function getPresentationPageTemplate(r: PagePathResolver): string {
     const argType = `Route${r.pageName}Args`;
-    const webPath = changeCase.paramCase(r.pageNameSnakeCase);
+    const webPath = `/${changeCase.paramCase(r.pageNameSnakeCase)}`;
 
     return `
 import 'package:flutter/material.dart';
