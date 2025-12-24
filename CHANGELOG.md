@@ -1,4 +1,14 @@
 # 0.0.216
+## ♻️ Refactor
+- **Asset Generator**: Complete overhaul with enhanced capabilities
+  - Unified SVG and PNG asset generation workflow
+  - Implemented path-based classification for enum naming (e.g., `svg/home/card.svg` → `homeCard`)
+  - Added conflict detection with QuickPick interface for duplicate enum names
+  - Display asset statistics showing added/removed/retained items after generation
+  - Improved file naming by preserving full path including 'assets' folder
+  - Added 'View File' button option after generation completion
+  - Created comprehensive test samples in `test/svg_test_sample/`
+
 ## 🐛 Bugfix
 - **Clean Architecture Generator**: Fix route name format
   - Ensure all `routeName` starts with `/` (e.g., `/user-settings`)
