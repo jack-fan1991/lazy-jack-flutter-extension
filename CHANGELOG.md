@@ -1,3 +1,11 @@
+# 0.0.217
+## ✨ Features
+- **Dart Asset Transformer**: Improved command trigger condition
+  - Changed from filename-based matching (`resourceFilename =~ /.*(svg|image).*/)`) 
+  - To path-based matching (`resourcePath =~ /.*[\\/]assets[\\/].*/)`)
+  - Now triggers on any folder under the `assets` directory and its subdirectories
+  - More flexible and consistent with the refactored asset generation workflow
+
 # 0.0.216
 ## ♻️ Refactor
 - **Asset Generator**: Complete overhaul with enhanced capabilities
