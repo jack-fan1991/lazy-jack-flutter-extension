@@ -213,7 +213,7 @@
         {
           "command": "command_dart_assert",
           "title": "✨ Dart Asset Transformer",
-          "when": "explorerResourceIsFolder  && (resourceFilename =~ /.*(svg|image).*/)"
+          "when": "explorerResourceIsFolder && resourcePath =~ /.*[\\\\/]assets[\\\\/].*/"
         },
         {
           "command": "graphql_code_gen_fragment_to_dart_type_def",
