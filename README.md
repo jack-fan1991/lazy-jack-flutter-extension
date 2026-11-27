@@ -1,3 +1,11 @@
+# lazyJ tools
+
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/jackFan.lazy-jack?label=VS%20Code%20Marketplace)](https://marketplace.visualstudio.com/items?itemName=jackFan.lazy-jack) [![Installs](https://img.shields.io/visual-studio-marketplace/i/jackFan.lazy-jack)](https://marketplace.visualstudio.com/items?itemName=jackFan.lazy-jack)
+
+- **VS Code Marketplace**: [lazyJ tools](https://marketplace.visualstudio.com/items?itemName=jackFan.lazy-jack)
+
+---
+
 # Feature 
 ## Most of feature is support on MacOs
 ## New 
